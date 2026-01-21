@@ -3,6 +3,7 @@ package com.example.babyfood.di
 import android.content.Context
 import androidx.room.Room
 import com.example.babyfood.data.local.database.BabyFoodDatabase
+import com.example.babyfood.data.local.database.MIGRATION_1_2
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,6 +25,7 @@ object DatabaseModule {
             BabyFoodDatabase::class.java,
             "baby_food_database"
         )
+            .addMigrations(MIGRATION_1_2)
             .fallbackToDestructiveMigration()
             .build()
     }
@@ -39,4 +41,12 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun providePlanDao(database: BabyFoodDatabase) = database.planDao()
+
+    @Provides
+    @Singleton
+    fun provideHealthRecordDao(database: BabyFoodDatabase) = database.healthRecordDao()
+
+    @Provides
+    @Singleton
+    fun provideGrowthRecordDao(database: BabyFoodDatabase) = database.growthRecordDao()
 }

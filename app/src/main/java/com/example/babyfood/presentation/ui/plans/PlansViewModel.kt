@@ -77,6 +77,7 @@ class PlansViewModel @Inject constructor(
         babyId: Long,
         recipeId: Long,
         plannedDate: kotlinx.datetime.LocalDate,
+        mealPeriod: com.example.babyfood.domain.model.MealPeriod,
         notes: String?
     ) {
         viewModelScope.launch {
@@ -85,6 +86,7 @@ class PlansViewModel @Inject constructor(
                     babyId = babyId,
                     recipeId = recipeId,
                     plannedDate = plannedDate,
+                    mealPeriod = mealPeriod,
                     status = PlanStatus.PLANNED,
                     notes = notes
                 )

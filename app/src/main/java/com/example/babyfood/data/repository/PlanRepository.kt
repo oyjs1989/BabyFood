@@ -2,6 +2,7 @@ package com.example.babyfood.data.repository
 
 import com.example.babyfood.data.local.database.dao.PlanDao
 import com.example.babyfood.data.local.database.entity.PlanEntity
+import com.example.babyfood.domain.model.MealPeriod
 import com.example.babyfood.domain.model.Plan
 import com.example.babyfood.domain.model.PlanStatus
 import kotlinx.coroutines.flow.Flow
@@ -23,6 +24,9 @@ class PlanRepository @Inject constructor(
     fun getPlansByBabyAndDate(babyId: Long, date: LocalDate): Flow<List<Plan>> =
         planDao.getPlansByBabyAndDate(babyId, date).map { entities -> entities.map { entity -> entity.toDomainModel() } }
 
+    suspend fun getPlansByBabyDateAndPeriod(babyId: Long, date: LocalDate, period: MealPeriod): Plan? =
+        planDao.getPlansByBabyDateAndPeriod(babyId, date, period.name)?.toDomainModel()
+
     fun getPlansByBabyAndStatus(babyId: Long, status: PlanStatus): Flow<List<Plan>> =
         planDao.getPlansByBabyAndStatus(babyId, status).map { entities -> entities.map { entity -> entity.toDomainModel() } }
 
@@ -41,11 +45,27 @@ class PlanRepository @Inject constructor(
     suspend fun deletePlansByBaby(babyId: Long) =
         planDao.deletePlansByBaby(babyId)
 
+    suspend fun replacePlanForPeriod(babyId: Long, date: LocalDate, period: MealPeriod, newRecipeId: Long) {
+        // 先删除该餐段的原计划，再插入新计划
+        val existingPlan = getPlansByBabyDateAndPeriod(babyId, date, period)
+        if (existingPlan != null) {
+            deletePlanById(existingPlan.id)
+        }
+        insertPlan(Plan(
+            babyId = babyId,
+            recipeId = newRecipeId,
+            plannedDate = date,
+            mealPeriod = period,
+            status = PlanStatus.PLANNED
+        ))
+    }
+
     private fun PlanEntity.toDomainModel(): Plan = Plan(
         id = id,
         babyId = babyId,
         recipeId = recipeId,
         plannedDate = plannedDate,
+        mealPeriod = mealPeriod,
         status = status,
         notes = notes
     )
@@ -55,6 +75,7 @@ class PlanRepository @Inject constructor(
         babyId = babyId,
         recipeId = recipeId,
         plannedDate = plannedDate,
+        mealPeriod = mealPeriod,
         status = status,
         notes = notes
     )

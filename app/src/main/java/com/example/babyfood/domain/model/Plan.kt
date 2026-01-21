@@ -7,6 +7,7 @@ data class Plan(
     val babyId: Long,
     val recipeId: Long,
     val plannedDate: LocalDate,
+    val mealPeriod: MealPeriod,  // 餐段时间段
     val status: PlanStatus = PlanStatus.PLANNED,
     val notes: String? = null
 )

@@ -17,6 +17,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.babyfood.presentation.ui.home.components.TodayMenuScreen
 
 sealed class BottomNavItem(
     val route: String,
@@ -76,13 +77,9 @@ fun MainScreen() {
             startDestination = "home",
             modifier = Modifier.padding(paddingValues)
         ) {
-            // 首页
+            // 首页 - 今日餐单
             composable("home") {
-                Text(
-                    text = "首页",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
+                TodayMenuScreen()
             }
 
             // 食谱库
@@ -103,12 +100,112 @@ fun MainScreen() {
                 )
             }
 
-            // 宝宝信息
+            // 宝宝页面
             composable("baby") {
-                Text(
-                    text = "宝宝信息",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onBackground
+                com.example.babyfood.presentation.ui.baby.BabyListScreen(
+                    onNavigateToAdd = {
+                        navController.navigate("baby/form/0")
+                    },
+                    onNavigateToEdit = { babyId ->
+                        navController.navigate("baby/form/$babyId")
+                    }
+                )
+            }
+
+            // 添加/编辑宝宝表单
+            composable("baby/form/{babyId}") { backStackEntry ->
+                val babyId = backStackEntry.arguments?.getString("babyId")?.toLong() ?: 0L
+                com.example.babyfood.presentation.ui.baby.BabyFormScreen(
+                    babyId = babyId,
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onSave = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            // 宝宝详情页
+            composable("baby/detail/{babyId}") { backStackEntry ->
+                val babyId = backStackEntry.arguments?.getString("babyId")?.toLong() ?: 0L
+                com.example.babyfood.presentation.ui.baby.BabyDetailScreen(
+                    babyId = babyId,
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onEdit = {
+                        navController.navigate("baby/form/$babyId")
+                    },
+                    onManageAllergies = {
+                        navController.navigate("baby/allergy/$babyId")
+                    },
+                    onManagePreferences = {
+                        navController.navigate("baby/preference/$babyId")
+                    }
+                )
+            }
+
+            // 过敏食材管理
+            composable("baby/allergy/{babyId}") { backStackEntry ->
+                val babyId = backStackEntry.arguments?.getString("babyId")?.toLong() ?: 0L
+                com.example.babyfood.presentation.ui.baby.AllergyManagementScreen(
+                    babyId = babyId,
+                    onBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            // 偏好食材管理
+            composable("baby/preference/{babyId}") { backStackEntry ->
+                val babyId = backStackEntry.arguments?.getString("babyId")?.toLong() ?: 0L
+                com.example.babyfood.presentation.ui.baby.PreferenceManagementScreen(
+                    babyId = babyId,
+                    onBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            // 体检记录列表
+            composable("baby/health/{babyId}") { backStackEntry ->
+                val babyId = backStackEntry.arguments?.getString("babyId")?.toLong() ?: 0L
+                com.example.babyfood.presentation.ui.health.HealthRecordListScreen(
+                    babyId = babyId,
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onAddRecord = {
+                        navController.navigate("baby/health/form/$babyId/0")
+                    }
+                )
+            }
+
+            // 添加/编辑体检记录
+            composable("baby/health/form/{babyId}/{recordId}") { backStackEntry ->
+                val babyId = backStackEntry.arguments?.getString("babyId")?.toLong() ?: 0L
+                val recordId = backStackEntry.arguments?.getString("recordId")?.toLong() ?: 0L
+                com.example.babyfood.presentation.ui.health.HealthRecordFormScreen(
+                    babyId = babyId,
+                    recordId = recordId,
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onSave = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            // 生长曲线
+            composable("baby/growth/{babyId}") { backStackEntry ->
+                val babyId = backStackEntry.arguments?.getString("babyId")?.toLong() ?: 0L
+                com.example.babyfood.presentation.ui.growth.GrowthCurveScreen(
+                    babyId = babyId,
+                    onBack = {
+                        navController.popBackStack()
+                    }
                 )
             }
         }

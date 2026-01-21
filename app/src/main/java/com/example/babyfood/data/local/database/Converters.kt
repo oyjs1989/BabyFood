@@ -2,7 +2,9 @@ package com.example.babyfood.data.local.database
 
 import androidx.room.TypeConverter
 import com.example.babyfood.domain.model.Ingredient
+import com.example.babyfood.domain.model.MealPeriod
 import com.example.babyfood.domain.model.Nutrition
+import com.example.babyfood.domain.model.NutritionGoal
 import com.example.babyfood.domain.model.PlanStatus
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.encodeToString
@@ -46,6 +48,40 @@ class Converters {
 
     @TypeConverter
     fun toPlanStatus(statusString: String): PlanStatus = PlanStatus.valueOf(statusString)
+
+    // NutritionGoal converters - 新增
+    @TypeConverter
+    fun fromNutritionGoal(goal: NutritionGoal?): String =
+        if (goal == null) "" else json.encodeToString(goal.toEntity())
+
+    @TypeConverter
+    fun toNutritionGoal(jsonString: String): NutritionGoal? =
+        if (jsonString.isEmpty()) null else json.decodeFromString<NutritionGoalEntity>(jsonString).toDomainModel()
+
+    // MealPeriod converters - 新增
+    @TypeConverter
+    fun fromMealPeriod(period: MealPeriod): String = period.name
+
+    @TypeConverter
+    fun toMealPeriod(periodString: String): MealPeriod = MealPeriod.valueOf(periodString)
+
+    // AllergyItem converters - 新增
+    @TypeConverter
+    fun fromAllergyItemList(items: List<com.example.babyfood.domain.model.AllergyItem>): String = 
+        json.encodeToString(items)
+
+    @TypeConverter
+    fun toAllergyItemList(jsonString: String): List<com.example.babyfood.domain.model.AllergyItem> = 
+        json.decodeFromString(jsonString)
+
+    // PreferenceItem converters - 新增
+    @TypeConverter
+    fun fromPreferenceItemList(items: List<com.example.babyfood.domain.model.PreferenceItem>): String = 
+        json.encodeToString(items)
+
+    @TypeConverter
+    fun toPreferenceItemList(jsonString: String): List<com.example.babyfood.domain.model.PreferenceItem> = 
+        json.decodeFromString(jsonString)
 }
 
 // Entity versions for serialization
@@ -85,6 +121,28 @@ fun Nutrition.toEntity(): NutritionEntity = NutritionEntity(
     fat = fat,
     carbohydrates = carbohydrates,
     fiber = fiber,
+    calcium = calcium,
+    iron = iron
+)
+
+// NutritionGoalEntity - 新增
+data class NutritionGoalEntity(
+    val calories: Float,
+    val protein: Float,
+    val calcium: Float,
+    val iron: Float
+) {
+    fun toDomainModel(): NutritionGoal = NutritionGoal(
+        calories = calories,
+        protein = protein,
+        calcium = calcium,
+        iron = iron
+    )
+}
+
+fun NutritionGoal.toEntity(): NutritionGoalEntity = NutritionGoalEntity(
+    calories = calories,
+    protein = protein,
     calcium = calcium,
     iron = iron
 )

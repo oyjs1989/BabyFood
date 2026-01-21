@@ -1,9 +1,9 @@
-package com.example.babyfood.presentation.ui.baby
+package com.example.babyfood.presentation.ui.health
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.babyfood.data.repository.BabyRepository
-import com.example.babyfood.domain.model.Baby
+import com.example.babyfood.data.repository.HealthRecordRepository
+import com.example.babyfood.domain.model.HealthRecord
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,56 +12,48 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class BabyViewModel @Inject constructor(
-    private val babyRepository: BabyRepository
+class HealthRecordViewModel @Inject constructor(
+    private val healthRecordRepository: HealthRecordRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(BabyUiState())
-    val uiState: StateFlow<BabyUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(HealthRecordUiState())
+    val uiState: StateFlow<HealthRecordUiState> = _uiState.asStateFlow()
 
-    init {
-        loadBabies()
-    }
-
-    private fun loadBabies() {
+    fun loadHealthRecords(babyId: Long) {
         viewModelScope.launch {
-            babyRepository.getAllBabies().collect { babies ->
+            healthRecordRepository.getHealthRecordsByBaby(babyId).collect { records ->
                 _uiState.value = _uiState.value.copy(
-                    babies = babies,
+                    healthRecords = records,
                     isLoading = false
                 )
             }
         }
     }
 
-    fun saveBaby(baby: Baby) {
+    fun saveHealthRecord(record: HealthRecord) {
         viewModelScope.launch {
             try {
-                if (baby.id == 0L) {
-                    babyRepository.insertBaby(baby)
+                if (record.id == 0L) {
+                    healthRecordRepository.insertHealthRecord(record)
                 } else {
-                    babyRepository.updateBaby(baby)
+                    healthRecordRepository.updateHealthRecord(record)
                 }
                 _uiState.value = _uiState.value.copy(
                     isSaved = true,
                     error = null
                 )
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    error = e.message
-                )
+                _uiState.value = _uiState.value.copy(error = e.message)
             }
         }
     }
 
-    fun deleteBaby(baby: Baby) {
+    fun deleteHealthRecord(record: HealthRecord) {
         viewModelScope.launch {
             try {
-                babyRepository.deleteBaby(baby)
+                healthRecordRepository.deleteHealthRecord(record)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    error = e.message
-                )
+                _uiState.value = _uiState.value.copy(error = e.message)
             }
         }
     }
@@ -75,10 +67,9 @@ class BabyViewModel @Inject constructor(
     }
 }
 
-data class BabyUiState(
-    val babies: List<Baby> = emptyList(),
+data class HealthRecordUiState(
+    val healthRecords: List<HealthRecord> = emptyList(),
     val isLoading: Boolean = true,
     val isSaved: Boolean = false,
-    val error: String? = null,
-    val selectedBaby: Baby? = null
+    val error: String? = null
 )

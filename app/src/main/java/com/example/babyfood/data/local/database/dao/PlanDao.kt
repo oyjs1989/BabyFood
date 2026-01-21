@@ -18,8 +18,11 @@ interface PlanDao {
     @Query("SELECT * FROM plans WHERE id = :planId")
     suspend fun getPlanById(planId: Long): PlanEntity?
 
-    @Query("SELECT * FROM plans WHERE babyId = :babyId AND plannedDate = :date")
-    fun getPlansByBabyAndDate(babyId: Long, date: LocalDate): Flow<List<PlanEntity>>
+    @Query("SELECT * FROM plans WHERE babyId = :babyId AND plannedDate = :date ORDER BY meal_period ASC")
+    fun getPlansByBabyAndDate(babyId: Long, date: LocalDate): Flow<List<PlanEntity>>  // 修改：按餐段排序
+
+    @Query("SELECT * FROM plans WHERE babyId = :babyId AND plannedDate = :date AND meal_period = :period LIMIT 1")
+    suspend fun getPlansByBabyDateAndPeriod(babyId: Long, date: LocalDate, period: String): PlanEntity?  // 新增
 
     @Query("SELECT * FROM plans WHERE babyId = :babyId AND status = :status ORDER BY plannedDate ASC")
     fun getPlansByBabyAndStatus(babyId: Long, status: com.example.babyfood.domain.model.PlanStatus): Flow<List<PlanEntity>>

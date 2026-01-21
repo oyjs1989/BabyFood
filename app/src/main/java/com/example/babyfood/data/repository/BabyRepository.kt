@@ -3,6 +3,7 @@ package com.example.babyfood.data.repository
 import com.example.babyfood.data.local.database.dao.BabyDao
 import com.example.babyfood.data.local.database.entity.BabyEntity
 import com.example.babyfood.domain.model.Baby
+import com.example.babyfood.domain.model.NutritionGoal
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -30,6 +31,13 @@ class BabyRepository @Inject constructor(
     suspend fun deleteBabyById(babyId: Long) =
         babyDao.deleteBabyById(babyId)
 
+    suspend fun updateNutritionGoal(babyId: Long, nutritionGoal: NutritionGoal) {
+        val baby = getBabyById(babyId)
+        if (baby != null) {
+            updateBaby(baby.copy(nutritionGoal = nutritionGoal))
+        }
+    }
+
     private fun BabyEntity.toDomainModel(): Baby = Baby(
         id = id,
         name = name,
@@ -37,7 +45,8 @@ class BabyRepository @Inject constructor(
         allergies = allergies,
         weight = weight,
         height = height,
-        preferences = preferences
+        preferences = preferences,
+        nutritionGoal = nutritionGoal
     )
 
     private fun Baby.toEntity(): BabyEntity = BabyEntity(
@@ -47,6 +56,7 @@ class BabyRepository @Inject constructor(
         allergies = allergies,
         weight = weight,
         height = height,
-        preferences = preferences
+        preferences = preferences,
+        nutritionGoal = nutritionGoal
     )
 }
