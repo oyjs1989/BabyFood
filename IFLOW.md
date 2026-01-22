@@ -7,6 +7,7 @@ BabyFood 是一个使用 Kotlin 开发的 Android 应用程序，专注于婴幼
 ### 核心功能
 - **今日餐单**：展示宝宝每日餐单，支持营养目标自定义和餐单推荐
 - **宝宝档案**：管理多个宝宝信息，包括基本信息、过敏食材、偏好食材
+- **食谱管理**：管理食谱库，支持浏览、搜索、添加、编辑、删除食谱
 - **体检记录**：记录宝宝的体检数据，包括体重、身高、头围、血液指标等
 - **生长曲线**：追踪宝宝生长发育情况，对比标准生长曲线
 - **黑白名单**：管理过敏食材和偏好食材，支持有效期设置
@@ -88,6 +89,8 @@ BabyFood/
 │   │       │   │       ├── RecipeRepository.kt
 │   │       │   │       ├── HealthRecordRepository.kt
 │   │       │   │       └── GrowthRecordRepository.kt
+│   │       │   ├── init/                 # 数据初始化
+│   │       │   │   └── RecipeInitializer.kt
 │   │       │   ├── di/                     # 依赖注入
 │   │       │   │   └── DatabaseModule.kt
 │   │       │   ├── domain/                 # 领域层
@@ -125,7 +128,10 @@ BabyFood/
 │   │       │           ├── plans/          # 计划管理
 │   │       │           │   └── PlansViewModel.kt
 │   │       │           ├── recipes/        # 食谱管理
-│   │       │           │   └── RecipesViewModel.kt
+│   │       │           │   ├── RecipesViewModel.kt
+│   │       │           │   ├── RecipesListScreen.kt
+│   │       │           │   ├── RecipeDetailScreen.kt
+│   │       │           │   └── RecipeFormScreen.kt
 │   │       │           ├── health/         # 体检记录
 │   │       │           │   ├── HealthRecordViewModel.kt
 │   │       │           │   ├── HealthRecordListScreen.kt
@@ -266,16 +272,19 @@ Database (Room SQLite)
 - **数据库版本**：3（支持迁移 v1→v2→v3）
 - **Kotlin 版本**：2.0.21
 - **Compose 编译器**：使用 Kotlin 2.0.21 内置编译器
+- **Kotlin 序列化**：已配置编译器插件，支持 `@Serializable` 注解
+- **序列化用途**：内置食谱初始化、服务器数据同步、数据库类型转换
 
 ## 当前项目状态
 
 项目已完成基础架构搭建和核心功能开发，采用 MVVM 架构模式。
 
 ### 构建状态
-- ✅ **最新构建**：BUILD SUCCESSFUL（2026-01-21）
+- ✅ **最新构建**：BUILD SUCCESSFUL（2026-01-22）
 - ✅ **数据库版本**：3（支持迁移）
 - ✅ **所有 UI 页面**：已实现并通过编译验证
 - ✅ **导航路由**：完整配置并可用
+- ✅ **Kotlin 序列化**：已配置并支持服务器数据同步
 
 ### 已实现功能
 
@@ -301,13 +310,21 @@ Database (Room SQLite)
 - ✅ 支持备注信息
 - ✅ 数据持久化存储
 
-#### 4. 生长记录
+#### 4. 食谱管理
+- ✅ 食谱列表页面（支持搜索、按月龄筛选、按分类筛选）
+- ✅ 食谱详情页面（显示食材、步骤、营养成分）
+- ✅ 添加/编辑食谱功能（支持食材添加/删除、步骤编辑）
+- ✅ 内置食谱初始化（15个常用辅食食谱，6-24个月）
+- ✅ Kotlin 序列化配置（支持从服务器获取食谱）
+- ✅ 删除食谱功能（仅限用户自定义食谱）
+
+#### 5. 生长记录
 - ✅ 生长记录数据模型
 - ✅ 生长记录列表展示
 - ✅ 支持体重、身高、头围数据记录
 - ✅ 数据持久化存储
 
-#### 3. 数据模型
+#### 6. 数据模型
 - ✅ Baby - 宝宝信息（含过敏、偏好、营养目标）
 - ✅ Plan - 餐单计划（含餐段时间段）
 - ✅ Recipe - 食谱信息（含营养成分）
@@ -319,7 +336,7 @@ Database (Room SQLite)
 - ✅ GrowthRecord - 生长记录
 - ✅ GrowthStandard - WHO/中国生长标准
 
-#### 4. 数据库
+#### 7. 数据库
 - ✅ Room 数据库（当前版本：3）
 - ✅ 数据库迁移策略
   - MIGRATION_1_2：添加 mealPeriod 字段到 plans 表
@@ -328,12 +345,12 @@ Database (Room SQLite)
 - ✅ TypeConverters 支持复杂类型（AllergyItem、PreferenceItem、LocalDate 等）
 - ✅ 数据库索引优化
 
-#### 5. 业务逻辑层
+#### 8. 业务逻辑层
 - ✅ Repository 封装数据访问
 - ✅ ViewModel 状态管理
 - ✅ Hilt 依赖注入
 
-#### 6. UI 层
+#### 9. UI 层
 - ✅ Jetpack Compose UI
 - ✅ Material Design 3 主题
 - ✅ 底部导航栏
@@ -346,6 +363,9 @@ Database (Room SQLite)
 - ✅ 体检记录列表页面
 - ✅ 添加/编辑体检记录表单
 - ✅ 生长曲线页面（基础版本）
+- ✅ 食谱列表页面（RecipesListScreen）
+- ✅ 食谱详情页面（RecipeDetailScreen）
+- ✅ 添加/编辑食谱表单（RecipeFormScreen）
 - ✅ 完整的导航路由
 
 ### 待完善功能
@@ -353,6 +373,7 @@ Database (Room SQLite)
 #### 高级功能
 - 生长曲线可视化图表（集成图表库）
 - WHO/中国生长标准对比曲线
+- 辅食计划管理（计划列表、详情、创建/编辑功能）
 - AI 体检分析
 - 智能食谱推荐（基于反馈和生长数据）
 
@@ -398,6 +419,12 @@ Database (Room SQLite)
 - 检查 Compose 编译器配置
 - 尝试清理构建缓存：`gradlew.bat clean`
 
+### Kotlin 序列化错误
+- 确保 `@Serializable` 注解已添加到需要序列化的类
+- 检查 `build.gradle.kts` 中序列化插件配置正确
+- 清理构建缓存：`gradlew.bat clean`
+- 确保 Kotlin 序列化库版本与 Kotlin 版本匹配
+
 ## 下一步开发
 
 ### 短期目标（高优先级）
@@ -407,13 +434,7 @@ Database (Room SQLite)
    - 对比 WHO/中国标准生长曲线
    - 添加数据点标注和交互
 
-2. 完善食谱管理
-   - 食谱列表页面
-   - 食谱详情页面
-   - 添加/编辑食谱功能
-   - 食谱营养成分展示
-
-3. 完善辅食计划
+2. 完善辅食计划
    - 计划列表页面
    - 计划详情页面
    - 创建/编辑计划功能

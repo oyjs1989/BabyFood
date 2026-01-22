@@ -84,10 +84,38 @@ fun MainScreen() {
 
             // 食谱库
             composable("recipes") {
-                Text(
-                    text = "食谱库",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onBackground
+                com.example.babyfood.presentation.ui.recipes.RecipesListScreen(
+                    onNavigateToDetail = { recipeId ->
+                        navController.navigate("recipes/detail/$recipeId")
+                    },
+                    onNavigateToAdd = {
+                        navController.navigate("recipes/form/0")
+                    }
+                )
+            }
+
+            // 食谱详情
+            composable("recipes/detail/{recipeId}") { backStackEntry ->
+                val recipeId = backStackEntry.arguments?.getString("recipeId")?.toLong() ?: 0L
+                com.example.babyfood.presentation.ui.recipes.RecipeDetailScreen(
+                    recipeId = recipeId,
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onNavigateToEdit = { id ->
+                        navController.navigate("recipes/form/$id")
+                    }
+                )
+            }
+
+            // 添加/编辑食谱
+            composable("recipes/form/{recipeId}") { backStackEntry ->
+                val recipeId = backStackEntry.arguments?.getString("recipeId")?.toLongOrNull()
+                com.example.babyfood.presentation.ui.recipes.RecipeFormScreen(
+                    recipeId = recipeId,
+                    onBack = {
+                        navController.popBackStack()
+                    }
                 )
             }
 

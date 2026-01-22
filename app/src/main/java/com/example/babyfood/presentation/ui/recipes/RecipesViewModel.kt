@@ -70,6 +70,70 @@ class RecipesViewModel @Inject constructor(
             searchQuery = ""
         )
     }
+
+    fun filterByCategory(category: String) {
+        viewModelScope.launch {
+            recipeRepository.getRecipesByCategory(category).collect { recipes ->
+                _uiState.value = _uiState.value.copy(
+                    filteredRecipes = recipes,
+                    selectedCategory = category
+                )
+            }
+        }
+    }
+
+    fun getRecipeById(recipeId: Long): Recipe? {
+        var recipe: Recipe? = null
+        viewModelScope.launch {
+            recipe = recipeRepository.getRecipeById(recipeId)
+        }
+        return recipe
+    }
+
+    suspend fun getRecipeByIdAsync(recipeId: Long): Recipe? {
+        return recipeRepository.getRecipeById(recipeId)
+    }
+
+    fun addRecipe(recipe: Recipe) {
+        viewModelScope.launch {
+            try {
+                recipeRepository.insertRecipe(recipe)
+                _uiState.value = _uiState.value.copy(isSaved = true, error = null)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = "添加食谱失败: ${e.message}")
+            }
+        }
+    }
+
+    fun updateRecipe(recipe: Recipe) {
+        viewModelScope.launch {
+            try {
+                recipeRepository.updateRecipe(recipe)
+                _uiState.value = _uiState.value.copy(isSaved = true, error = null)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = "更新食谱失败: ${e.message}")
+            }
+        }
+    }
+
+    fun deleteRecipe(recipeId: Long) {
+        viewModelScope.launch {
+            try {
+                recipeRepository.deleteRecipeById(recipeId)
+                _uiState.value = _uiState.value.copy(isSaved = true, error = null)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = "删除食谱失败: ${e.message}")
+            }
+        }
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    fun clearSavedFlag() {
+        _uiState.value = _uiState.value.copy(isSaved = false)
+    }
 }
 
 data class RecipesUiState(
@@ -78,5 +142,7 @@ data class RecipesUiState(
     val isLoading: Boolean = true,
     val selectedAge: Int? = null,
     val selectedCategory: String? = null,
-    val searchQuery: String = ""
+    val searchQuery: String = "",
+    val isSaved: Boolean = false,
+    val error: String? = null
 )

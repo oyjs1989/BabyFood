@@ -1,5 +1,7 @@
 package com.example.babyfood.domain.model
 
+import kotlinx.serialization.Serializable
+
 data class Recipe(
     val id: Long = 0,
     val name: String,
@@ -13,12 +15,14 @@ data class Recipe(
     val imageUrl: String? = null
 )
 
+@Serializable
 data class Ingredient(
     val name: String,
     val amount: String,  // 例如：100g
     val isAllergen: Boolean = false
 )
 
+@Serializable
 data class Nutrition(
     val calories: Float?,    // kcal
     val protein: Float?,     // g

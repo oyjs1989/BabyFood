@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -28,6 +29,7 @@ import com.example.babyfood.presentation.ui.home.PlanWithRecipe
 fun MealTimeline(
     plans: List<PlanWithRecipe>,
     onShuffle: (MealPeriod) -> Unit,
+    onSelectRecipe: (MealPeriod) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -37,7 +39,8 @@ fun MealTimeline(
             MealPeriodCard(
                 period = period,
                 planWithRecipe = plans.find { it.plan.mealPeriod == period },
-                onShuffle = { onShuffle(period) }
+                onShuffle = { onShuffle(period) },
+                onSelectRecipe = { onSelectRecipe(period) }
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
@@ -48,7 +51,8 @@ fun MealTimeline(
 private fun MealPeriodCard(
     period: MealPeriod,
     planWithRecipe: PlanWithRecipe?,
-    onShuffle: () -> Unit
+    onShuffle: () -> Unit,
+    onSelectRecipe: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -103,6 +107,15 @@ private fun MealPeriodCard(
                 Icon(
                     imageVector = Icons.Default.Refresh,
                     contentDescription = "换一换",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            // 选择食谱按钮
+            IconButton(onClick = onSelectRecipe) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "选择食谱",
                     tint = MaterialTheme.colorScheme.primary
                 )
             }

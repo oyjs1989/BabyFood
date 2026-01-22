@@ -1,5 +1,8 @@
 package com.example.babyfood.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class NutritionGoal(
     val calories: Float,      // kcal
     val protein: Float,       // g

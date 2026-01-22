@@ -19,6 +19,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -27,6 +30,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.babyfood.presentation.ui.home.HomeViewModel
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toLocalDateTime
 
 @Composable
@@ -35,6 +39,19 @@ fun TodayMenuScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+
+    // 使用本地化日期格式
+    val dateFormat = java.text.SimpleDateFormat("M月d日", java.util.Locale.getDefault())
+    val dateString = dateFormat.format(
+        java.util.Date(
+            today.toJavaLocalDateTime().atZone(
+                java.time.ZoneId.systemDefault()
+            ).toInstant().toEpochMilli()
+        )
+    )
+
+    // 控制未来一周计划的展开/折叠状态
+    var isWeeklyExpanded by remember { mutableStateOf(false) }
 
     if (uiState.isLoading) {
         Column(
@@ -84,7 +101,7 @@ fun TodayMenuScreen(
         ) {
             // 日期标题
             Text(
-                text = "${today.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${today.dayOfMonth}日",
+                text = dateString,
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -105,8 +122,36 @@ fun TodayMenuScreen(
 
             MealTimeline(
                 plans = uiState.todayPlans,
-                onShuffle = { period -> viewModel.shuffleMealPeriod(period) }
+                onShuffle = { period -> viewModel.shuffleMealPeriod(period) },
+                onSelectRecipe = { period ->
+                    viewModel.showRecipeSelector(period, kotlinx.datetime.LocalDate(today.year, today.monthNumber, today.dayOfMonth))
+                }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 未来一周计划
+            WeeklyPlansSection(
+                weeklyPlans = uiState.weeklyPlans,
+                isExpanded = isWeeklyExpanded,
+                onToggleExpand = { isWeeklyExpanded = !isWeeklyExpanded }
             )
         }
+    }
+
+    // 食谱选择对话框
+    if (uiState.showRecipeSelector) {
+        RecipeSelectorDialog(
+            availableRecipes = uiState.availableRecipes,
+            onDismiss = { viewModel.hideRecipeSelector() },
+            onRecipeSelected = { recipeId ->
+                viewModel.selectRecipeForMealPeriod(
+                    recipeId = recipeId,
+                    period = uiState.selectedMealPeriod ?: com.example.babyfood.domain.model.MealPeriod.BREAKFAST,
+                    date = kotlinx.datetime.LocalDate(today.year, today.monthNumber, today.dayOfMonth)
+                )
+                viewModel.hideRecipeSelector()
+            }
+        )
     }
 }

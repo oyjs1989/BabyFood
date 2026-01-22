@@ -17,8 +17,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.plus
 import javax.inject.Inject
 import kotlin.random.Random
 
@@ -63,8 +66,12 @@ class HomeViewModel @Inject constructor(
                         PlanWithRecipe(plan, recipe)
                     }
 
+                    // 加载未来一周的计划
+                    val weeklyPlans = loadWeeklyPlans(selectedBaby.id, today)
+
                     _uiState.value = _uiState.value.copy(
                         todayPlans = plansWithRecipes,
+                        weeklyPlans = weeklyPlans,
                         nutritionGoal = selectedBaby.getEffectiveNutritionGoal(),
                         isLoading = false
                     )
@@ -76,6 +83,23 @@ class HomeViewModel @Inject constructor(
                 isLoading = false
             )
         }
+    }
+
+    private suspend fun loadWeeklyPlans(babyId: Long, startDate: LocalDate): Map<LocalDate, List<PlanWithRecipe>> {
+        val weeklyPlans = mutableMapOf<LocalDate, List<PlanWithRecipe>>()
+
+        // 加载未来7天的计划
+        for (i in 1..7) {
+            val date = startDate.plus(i, kotlinx.datetime.DateTimeUnit.DAY)
+            val plans = planRepository.getPlansByBabyAndDate(babyId, date).first()
+            val plansWithRecipes = plans.map { plan ->
+                val recipe = recipeRepository.getRecipeById(plan.recipeId)
+                PlanWithRecipe(plan, recipe)
+            }
+            weeklyPlans[date] = plansWithRecipes
+        }
+
+        return weeklyPlans
     }
 
     fun selectBaby(baby: Baby) {
@@ -133,14 +157,75 @@ class HomeViewModel @Inject constructor(
             babyRepository.updateNutritionGoal(selectedBaby.id, goal)
         }
     }
+
+    // 获取适合的食谱列表（用于选择）
+    suspend fun getAvailableRecipes(): List<Recipe> {
+        val selectedBaby = _uiState.value.selectedBaby ?: return emptyList()
+
+        // 获取适合该月龄的所有食谱
+        val recipes = recipeRepository.getRecipesByAge(selectedBaby.ageInMonths).first()
+
+        // 排除过敏原
+        val filteredRecipes = recipes.filter { recipe ->
+            recipe.ingredients.none { ingredient ->
+                selectedBaby.getEffectiveAllergies().contains(ingredient.name)
+            }
+        }
+
+        return filteredRecipes
+    }
+
+    // 选择食谱并添加到计划
+    fun selectRecipeForMealPeriod(recipeId: Long, period: MealPeriod, date: LocalDate) {
+        val selectedBaby = _uiState.value.selectedBaby ?: return
+
+        viewModelScope.launch {
+            planRepository.replacePlanForPeriod(
+                babyId = selectedBaby.id,
+                date = date,
+                period = period,
+                newRecipeId = recipeId
+            )
+
+            // 重新加载计划
+            loadTodayPlans()
+        }
+    }
+
+    // 显示食谱选择器
+    fun showRecipeSelector(period: MealPeriod, date: LocalDate) {
+        viewModelScope.launch {
+            val recipes = getAvailableRecipes()
+            _uiState.value = _uiState.value.copy(
+                showRecipeSelector = true,
+                selectedMealPeriod = period,
+                availableRecipes = recipes,
+                selectedDate = date
+            )
+        }
+    }
+
+    // 隐藏食谱选择器
+    fun hideRecipeSelector() {
+        _uiState.value = _uiState.value.copy(
+            showRecipeSelector = false,
+            selectedMealPeriod = null,
+            selectedDate = null
+        )
+    }
 }
 
 data class HomeUiState(
     val babies: List<Baby> = emptyList(),
     val selectedBaby: Baby? = null,
     val todayPlans: List<PlanWithRecipe> = emptyList(),
+    val weeklyPlans: Map<LocalDate, List<PlanWithRecipe>> = emptyMap(),
     val nutritionGoal: NutritionGoal? = null,
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val showRecipeSelector: Boolean = false,
+    val selectedMealPeriod: MealPeriod? = null,
+    val availableRecipes: List<Recipe> = emptyList(),
+    val selectedDate: LocalDate? = null
 )
 
 data class PlanWithRecipe(

@@ -34,6 +34,13 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    // Kotlin 序列化编译器选项
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+        compilerOptions {
+            freeCompilerArgs.add("-opt-in=kotlinx.serialization.ExperimentalSerializationApi")
+        }
+    }
     buildFeatures {
         compose = true
     }
@@ -79,7 +86,7 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.5.0")
 
     // Date & Time
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
 
     // Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")

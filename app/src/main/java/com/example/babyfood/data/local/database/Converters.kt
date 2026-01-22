@@ -7,6 +7,7 @@ import com.example.babyfood.domain.model.Nutrition
 import com.example.babyfood.domain.model.NutritionGoal
 import com.example.babyfood.domain.model.PlanStatus
 import kotlinx.datetime.LocalDate
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -85,6 +86,7 @@ class Converters {
 }
 
 // Entity versions for serialization
+@Serializable
 data class IngredientEntity(
     val name: String,
     val amount: String,
@@ -95,6 +97,7 @@ data class IngredientEntity(
 
 fun Ingredient.toEntity(): IngredientEntity = IngredientEntity(name, amount, isAllergen)
 
+@Serializable
 data class NutritionEntity(
     val calories: Float?,
     val protein: Float?,
@@ -126,6 +129,7 @@ fun Nutrition.toEntity(): NutritionEntity = NutritionEntity(
 )
 
 // NutritionGoalEntity - 新增
+@Serializable
 data class NutritionGoalEntity(
     val calories: Float,
     val protein: Float,
