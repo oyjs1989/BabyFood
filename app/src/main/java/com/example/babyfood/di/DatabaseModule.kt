@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Room
 import com.example.babyfood.data.local.database.BabyFoodDatabase
 import com.example.babyfood.data.local.database.MIGRATION_1_2
+import com.example.babyfood.data.local.database.MIGRATION_2_3
+import com.example.babyfood.data.local.database.MIGRATION_3_4
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,7 +27,7 @@ object DatabaseModule {
             BabyFoodDatabase::class.java,
             "baby_food_database"
         )
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
             .fallbackToDestructiveMigration()
             .build()
     }

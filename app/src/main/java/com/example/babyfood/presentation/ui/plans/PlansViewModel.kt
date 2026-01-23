@@ -103,6 +103,22 @@ class PlansViewModel @Inject constructor(
         }
     }
 
+    fun updatePlan(plan: Plan) {
+        viewModelScope.launch {
+            try {
+                planRepository.updatePlan(plan)
+                _uiState.value = _uiState.value.copy(
+                    isSaved = true,
+                    error = null
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = e.message
+                )
+            }
+        }
+    }
+
     fun updatePlanStatus(planId: Long, status: PlanStatus) {
         viewModelScope.launch {
             try {

@@ -2,6 +2,7 @@ package com.example.babyfood.data.repository
 
 import com.example.babyfood.data.local.database.dao.PlanDao
 import com.example.babyfood.data.local.database.entity.PlanEntity
+import com.example.babyfood.data.local.database.entity.toEntity
 import com.example.babyfood.domain.model.MealPeriod
 import com.example.babyfood.domain.model.Plan
 import com.example.babyfood.domain.model.PlanStatus
@@ -59,24 +60,4 @@ class PlanRepository @Inject constructor(
             status = PlanStatus.PLANNED
         ))
     }
-
-    private fun PlanEntity.toDomainModel(): Plan = Plan(
-        id = id,
-        babyId = babyId,
-        recipeId = recipeId,
-        plannedDate = plannedDate,
-        mealPeriod = mealPeriod,
-        status = status,
-        notes = notes
-    )
-
-    private fun Plan.toEntity(): PlanEntity = PlanEntity(
-        id = id,
-        babyId = babyId,
-        recipeId = recipeId,
-        plannedDate = plannedDate,
-        mealPeriod = mealPeriod,
-        status = status,
-        notes = notes
-    )
 }

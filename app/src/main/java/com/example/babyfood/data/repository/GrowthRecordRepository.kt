@@ -2,6 +2,7 @@ package com.example.babyfood.data.repository
 
 import com.example.babyfood.data.local.database.dao.GrowthRecordDao
 import com.example.babyfood.data.local.database.entity.GrowthRecordEntity
+import com.example.babyfood.data.local.database.entity.toEntity
 import com.example.babyfood.domain.model.GrowthRecord
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -19,43 +20,13 @@ class GrowthRecordRepository @Inject constructor(
         growthRecordDao.getGrowthRecordById(recordId)?.toDomainModel()
 
     suspend fun insertGrowthRecord(record: GrowthRecord): Long =
-        growthRecordDao.insertGrowthRecord(
-            com.example.babyfood.data.local.database.entity.GrowthRecordEntity(
-                id = record.id,
-                babyId = record.babyId,
-                recordDate = record.recordDate,
-                weight = record.weight,
-                height = record.height,
-                headCircumference = record.headCircumference,
-                notes = record.notes
-            )
-        )
+        growthRecordDao.insertGrowthRecord(record.toEntity())
 
     suspend fun updateGrowthRecord(record: GrowthRecord) =
-        growthRecordDao.updateGrowthRecord(
-            com.example.babyfood.data.local.database.entity.GrowthRecordEntity(
-                id = record.id,
-                babyId = record.babyId,
-                recordDate = record.recordDate,
-                weight = record.weight,
-                height = record.height,
-                headCircumference = record.headCircumference,
-                notes = record.notes
-            )
-        )
+        growthRecordDao.updateGrowthRecord(record.toEntity())
 
     suspend fun deleteGrowthRecord(record: GrowthRecord) =
-        growthRecordDao.deleteGrowthRecord(
-            com.example.babyfood.data.local.database.entity.GrowthRecordEntity(
-                id = record.id,
-                babyId = record.babyId,
-                recordDate = record.recordDate,
-                weight = record.weight,
-                height = record.height,
-                headCircumference = record.headCircumference,
-                notes = record.notes
-            )
-        )
+        growthRecordDao.deleteGrowthRecord(record.toEntity())
 
     suspend fun deleteGrowthRecordById(recordId: Long) =
         growthRecordDao.deleteGrowthRecordById(recordId)

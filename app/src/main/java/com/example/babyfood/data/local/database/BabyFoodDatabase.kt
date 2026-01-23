@@ -80,6 +80,13 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
+// 数据库迁移：从版本 3 到版本 4
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // No-op migration - schema is compatible, version bump only
+    }
+}
+
 @Database(
     entities = [
         BabyEntity::class,
@@ -88,7 +95,7 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
         HealthRecordEntity::class,
         GrowthRecordEntity::class
     ],
-    version = 3,  // 升级到版本 3
+    version = 4,  // 升级到版本 4
     exportSchema = false
 )
 @TypeConverters(Converters::class)
