@@ -21,6 +21,8 @@ fun BabyDetailScreen(
     onEdit: () -> Unit,
     onManageAllergies: () -> Unit,
     onManagePreferences: () -> Unit,
+    onNavigateToHealthRecords: () -> Unit,
+    onNavigateToGrowth: () -> Unit,
     viewModel: BabyViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -178,6 +180,64 @@ fun BabyDetailScreen(
                                 )
                             }
                         }
+                    }
+                }
+
+                // 体检记录
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "体检记录",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            TextButton(onClick = onNavigateToHealthRecords) {
+                                Text("查看")
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "查看和管理宝宝的体检记录，包括体重、身高、头围等数据",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+
+                // 生长曲线
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "生长曲线",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            TextButton(onClick = onNavigateToGrowth) {
+                                Text("查看")
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "查看宝宝的体重、身高、头围生长曲线，对比 WHO/中国标准",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
                     }
                 }
             }

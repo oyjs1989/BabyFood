@@ -18,6 +18,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.babyfood.presentation.ui.home.components.TodayMenuScreen
+import com.example.babyfood.presentation.ui.plans.PlanListScreen
+import com.example.babyfood.presentation.ui.plans.PlanDetailScreen
+import com.example.babyfood.presentation.ui.plans.PlanFormScreen
 
 sealed class BottomNavItem(
     val route: String,
@@ -121,10 +124,51 @@ fun MainScreen() {
 
             // 辅食计划
             composable("plans") {
-                Text(
-                    text = "辅食计划",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onBackground
+                PlanListScreen(
+                    onNavigateToDetail = { planId ->
+                        navController.navigate("plans/detail/$planId")
+                    },
+                    onNavigateToAdd = { babyId ->
+                        navController.navigate("plans/form/$babyId/0")
+                    }
+                )
+            }
+
+            // 计划详情
+            composable("plans/detail/{planId}") { backStackEntry ->
+                val planId = backStackEntry.arguments?.getString("planId")?.toLong() ?: 0L
+                PlanDetailScreen(
+                    planId = planId,
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onNavigateToEdit = { planId ->
+                        navController.navigate("plans/form/0/$planId")
+                    }
+                )
+            }
+
+            // 添加/编辑计划
+            composable("plans/form/{babyId}/{planId}") { backStackEntry ->
+                val babyId = backStackEntry.arguments?.getString("babyId")?.toLong() ?: 0L
+                val planId = backStackEntry.arguments?.getString("planId")?.toLong() ?: 0L
+                val selectedDate = if (backStackEntry.arguments?.containsKey("date") == true) {
+                    // 如果有传递日期参数，使用传递的日期
+                    null
+                } else {
+                    null
+                }
+                
+                PlanFormScreen(
+                    babyId = babyId,
+                    planId = if (planId > 0) planId else null,
+                    selectedDate = selectedDate,
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onSave = {
+                        navController.popBackStack()
+                    }
                 )
             }
 
@@ -134,8 +178,8 @@ fun MainScreen() {
                     onNavigateToAdd = {
                         navController.navigate("baby/form/0")
                     },
-                    onNavigateToEdit = { babyId ->
-                        navController.navigate("baby/form/$babyId")
+                    onNavigateToDetail = { babyId ->
+                        navController.navigate("baby/detail/$babyId")
                     }
                 )
             }
@@ -170,6 +214,12 @@ fun MainScreen() {
                     },
                     onManagePreferences = {
                         navController.navigate("baby/preference/$babyId")
+                    },
+                    onNavigateToHealthRecords = {
+                        navController.navigate("baby/health/$babyId")
+                    },
+                    onNavigateToGrowth = {
+                        navController.navigate("baby/growth/$babyId")
                     }
                 )
             }

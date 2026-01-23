@@ -14,12 +14,14 @@ import kotlinx.datetime.LocalDate
 interface HealthRecordDao {
     @Query("SELECT * FROM health_records WHERE babyId = :babyId ORDER BY recordDate DESC")
     fun getHealthRecordsByBaby(babyId: Long): Flow<List<HealthRecordEntity>>
-
     @Query("SELECT * FROM health_records WHERE id = :recordId")
     suspend fun getHealthRecordById(recordId: Long): HealthRecordEntity?
 
     @Query("SELECT * FROM health_records WHERE babyId = :babyId ORDER BY recordDate DESC LIMIT 1")
     suspend fun getLatestHealthRecord(babyId: Long): HealthRecordEntity?
+
+    @Query("SELECT * FROM health_records ORDER BY recordDate ASC")
+    suspend fun getAllHealthRecordsSync(): List<HealthRecordEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHealthRecord(record: HealthRecordEntity): Long

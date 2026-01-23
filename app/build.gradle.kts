@@ -39,6 +39,7 @@ android {
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
             freeCompilerArgs.add("-opt-in=kotlinx.serialization.ExperimentalSerializationApi")
+            freeCompilerArgs.add("-opt-in=androidx.compose.material3.ExperimentalMaterial3Api")
         }
     }
     buildFeatures {
@@ -90,6 +91,11 @@ dependencies {
 
     // Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+
+    // Vico Charts
+    implementation("com.patrykandpatrick.vico:compose:2.0.0-alpha.20")
+    implementation("com.patrykandpatrick.vico:compose-m3:2.0.0-alpha.20")
+    implementation("com.patrykandpatrick.vico:core:2.0.0-alpha.20")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

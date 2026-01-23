@@ -32,7 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @Composable
 fun BabyListScreen(
     onNavigateToAdd: () -> Unit = {},
-    onNavigateToEdit: (Long) -> Unit = {},
+    onNavigateToDetail: (Long) -> Unit = {},
     viewModel: BabyViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -84,7 +84,7 @@ fun BabyListScreen(
                     items(uiState.babies) { baby ->
                         BabyCard(
                             baby = baby,
-                            onClick = { onNavigateToEdit(baby.id) }
+                            onClick = { onNavigateToDetail(baby.id) }
                         )
                     }
                 }

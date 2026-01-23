@@ -50,6 +50,7 @@ BabyFood 是一个使用 Kotlin 开发的 Android 应用程序，专注于婴幼
 - `androidx.room:room-*` - Room 数据库
 - `org.jetbrains.kotlinx:kotlinx-datetime:*` - Kotlinx DateTime 日期时间处理
 - `org.jetbrains.kotlinx:kotlinx-serialization:*` - Kotlinx 序列化支持
+- `com.patrykandpatrick.vico:compose:*` - Vico 图表库（生长曲线可视化）
 
 ### 测试框架
 - `junit:junit:4.13.2` - 单元测试
@@ -362,20 +363,21 @@ Database (Room SQLite)
 - ✅ 偏好食材管理页面
 - ✅ 体检记录列表页面
 - ✅ 添加/编辑体检记录表单
-- ✅ 生长曲线页面（基础版本）
+- ✅ 生长曲线页面（集成 Vico 图表库，支持体重/身高/头围曲线可视化，对比 WHO/中国标准）
 - ✅ 食谱列表页面（RecipesListScreen）
 - ✅ 食谱详情页面（RecipeDetailScreen）
 - ✅ 添加/编辑食谱表单（RecipeFormScreen）
+- ✅ 辅食计划列表/详情/表单（PlanListScreen/PlanDetailScreen/PlanFormScreen）
 - ✅ 完整的导航路由
 
 ### 待完善功能
 
 #### 高级功能
-- 生长曲线可视化图表（集成图表库）
-- WHO/中国生长标准对比曲线
-- 辅食计划管理（计划列表、详情、创建/编辑功能）
-- AI 体检分析
-- 智能食谱推荐（基于反馈和生长数据）
+- AI 体检分析（集成 LLM API，实现智能体检单分析）
+- 智能食谱推荐（优化换一换功能，实现协同过滤算法）
+- 图片支持（食谱图片上传/展示）
+- 数据导出与分享（PDF/Excel 导出、Android Sharesheet）
+- 搜索优化（搜索历史、热门推荐、收藏功能）
 
 ## 开发环境配置
 

@@ -73,6 +73,13 @@ class BabyViewModel @Inject constructor(
     fun clearSavedFlag() {
         _uiState.value = _uiState.value.copy(isSaved = false)
     }
+
+    fun loadBaby(babyId: Long) {
+        viewModelScope.launch {
+            val baby = babyRepository.getBabyById(babyId)
+            _uiState.value = _uiState.value.copy(selectedBaby = baby)
+        }
+    }
 }
 
 data class BabyUiState(
