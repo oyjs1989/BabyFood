@@ -662,6 +662,112 @@ Database (Room SQLite) / Cloud DB
 - 本地规则仅作为安全网和兜底方案
 - 避免过度工程化
 
+#### AI Function Calling（工具调用）原则
+在 AI 功能扩展中，遵循工具调用原则，使 AI 能够通过结构化接口调用应用功能。
+
+**核心原理：**
+
+AI 调用工具的本质是一个"回合制游戏"，AI 不直接执行代码，而是输出结构化文本（通常是 JSON），由程序解析参数并执行真正的工具调用，最后将结果传回 AI 生成最终回复。
+
+**调用流程：**
+
+1. **定义阶段**：程序在发给 AI 的请求中附带工具列表，使用 JSON Schema 格式描述工具名称、参数类型、必填项、枚举值等
+2. **决策阶段**：AI 接收用户问题和工具列表，通过内部推理判断是否需要调用工具
+3. **输出阶段**：AI 输出函数名和参数（JSON 格式），例如：`{"name": "get_recipe", "arguments": "{\"recipeId\": 1}"}`
+4. **执行阶段**：程序监听 AI 返回，解析参数，执行真实的函数（如查询数据库、调用 API）
+5. **总结阶段**：程序将工具执行结果再次发送给 AI，AI 结合结果用自然语言回答用户
+
+**参数控制策略：**
+
+为了保证 AI 输出正确的参数，需要遵循以下策略：
+
+- **强约束的 JSON Schema**：明确参数类型（string、number、boolean）、必填字段（required）、枚举值（enum）
+- **详细的参数描述**：用大白话描述参数含义和格式，避免歧义
+- **模型微调支持**：主流模型（GPT-4o、Claude 3.5 Sonnet）都经过函数调用微调，会自动进入"结构化输出模式"
+
+**在 BabyFood 中的应用：**
+
+以下业务功能适合工具化，可被 AI 调用：
+
+1. **食谱管理工具**
+   - `search_recipes`：搜索食谱（支持关键词、月龄、分类筛选）
+   - `get_recipe_detail`：获取食谱详情（食材、步骤、营养成分）
+   - `create_recipe`：创建新食谱
+   - `update_recipe`：更新食谱信息
+   - `delete_recipe`：删除食谱
+
+2. **宝宝档案管理工具**
+   - `get_baby_list`：获取宝宝列表
+   - `get_baby_detail`：获取宝宝详情（基本信息、营养目标、黑白名单）
+   - `create_baby`：创建宝宝档案
+   - `update_baby`：更新宝宝信息
+   - `add_allergy`：添加过敏食材
+   - `add_preference`：添加偏好食材
+
+3. **体检记录管理工具**
+   - `get_health_records`：获取体检记录列表
+   - `get_health_record_detail`：获取体检记录详情
+   - `create_health_record`：创建体检记录
+   - `analyze_health`：分析体检数据（调用 AI 健康分析服务）
+
+4. **生长记录管理工具**
+   - `get_growth_records`：获取生长记录列表
+   - `create_growth_record`：创建生长记录
+   - `get_growth_curve`：获取生长曲线数据
+
+5. **餐单计划管理工具**
+   - `get_plans`：获取餐单计划列表
+   - `get_plan_detail`：获取计划详情
+   - `create_plan`：创建餐单计划
+   - `generate_recommendation`：生成 AI 推荐计划（调用 RecommendationService）
+
+6. **营养目标工具**
+   - `calculate_nutrition_goal`：根据月龄计算营养目标
+   - `get_nutrition_goal`：获取宝宝当前营养目标
+   - `update_nutrition_goal`：更新营养目标
+
+7. **黑白名单管理工具**
+   - `get_allergies`：获取过敏食材列表
+   - `get_preferences`：获取偏好食材列表
+   - `add_allergy_item`：添加过敏食材（支持有效期）
+   - `add_preference_item`：添加偏好食材（支持有效期）
+
+**工具定义示例：**
+
+```json
+{
+  "type": "function",
+  "function": {
+    "name": "get_recipe_detail",
+    "description": "获取指定食谱的详细信息，包括食材清单、制作步骤和营养成分",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "recipeId": {
+          "type": "integer",
+          "description": "食谱的唯一标识符（ID），例如：1、15、30"
+        }
+      },
+      "required": ["recipeId"]
+    }
+  }
+}
+```
+
+**设计要求：**
+
+- **工具定义必须使用严格的 JSON Schema**：明确类型、必填项、枚举值
+- **参数描述必须清晰明确**：避免歧义，提供示例
+- **必填字段必须明确列出**：AI 会检查必填项是否齐全
+- **枚举值必须限制在固定范围内**：避免 AI 编造无效值
+
+**核心思想：**
+
+- AI 是决策者，程序是执行者
+- 通过结构化接口实现 AI 与应用的交互
+- 参数准确性依赖于 JSON Schema 的严格定义
+- 工具调用扩展了 AI 的能力边界，使其能够操作真实数据
+
 ## 常见问题
 
 ### 构建失败
