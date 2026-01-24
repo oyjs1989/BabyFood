@@ -3,6 +3,7 @@ package com.example.babyfood.presentation.ui.plans
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,6 +27,7 @@ fun PlanFormScreen(
     selectedDate: kotlinx.datetime.LocalDate? = null,
     onBack: () -> Unit = {},
     onSave: () -> Unit = {},
+    onNavigateToRecommendationEditor: (Long) -> Unit = {},
     viewModel: PlansViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -63,7 +65,11 @@ fun PlanFormScreen(
             val plan = uiState.plans.find { it.id == planId }
             if (plan != null) {
                 plannedDate = plan.plannedDate
-                selectedMealPeriod = plan.mealPeriod
+                selectedMealPeriod = try {
+                    MealPeriod.valueOf(plan.mealPeriod)
+                } catch (e: Exception) {
+                    MealPeriod.BREAKFAST  // 默认值
+                }
                 selectedRecipeId = plan.recipeId
                 selectedStatus = plan.status
                 notes = plan.notes ?: ""
@@ -99,6 +105,34 @@ fun PlanFormScreen(
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ),
                 actions = {
+                    // AI推荐按钮（仅在创建模式显示）
+                    if (planId == null || planId == 0L) {
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    val recommendation = viewModel.generateDailyRecommendation(babyId, plannedDate)
+                                    if (recommendation != null) {
+                                        onNavigateToRecommendationEditor(babyId)
+                                    }
+                                }
+                            },
+                            enabled = !uiState.isGenerating
+                        ) {
+                            if (uiState.isGenerating) {
+                                androidx.compose.material3.CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(
+                                    androidx.compose.material.icons.Icons.Default.AutoAwesome,
+                                    contentDescription = "AI推荐"
+                                )
+                            }
+                        }
+                    }
+                    
+                    // 保存按钮
                     IconButton(
                         onClick = {
                             if (selectedRecipeId == null) {
@@ -116,7 +150,7 @@ fun PlanFormScreen(
                                             val updatedPlan = existingPlan.copy(
                                                 recipeId = selectedRecipeId!!,
                                                 plannedDate = plannedDate,
-                                                mealPeriod = selectedMealPeriod,
+                                                mealPeriod = selectedMealPeriod.name,
                                                 status = selectedStatus,
                                                 notes = notes.ifBlank { null }
                                             )

@@ -14,6 +14,9 @@ interface BabyDao {
     @Query("SELECT * FROM babies")
     fun getAllBabies(): Flow<List<BabyEntity>>
 
+    @Query("SELECT * FROM babies")
+    suspend fun getAllBabiesSync(): List<BabyEntity>
+
     @Query("SELECT * FROM babies WHERE id = :babyId")
     suspend fun getBabyById(babyId: Long): BabyEntity?
 

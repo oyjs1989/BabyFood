@@ -15,6 +15,9 @@ interface PlanDao {
     @Query("SELECT * FROM plans WHERE babyId = :babyId ORDER BY plannedDate ASC")
     fun getPlansByBaby(babyId: Long): Flow<List<PlanEntity>>
 
+    @Query("SELECT * FROM plans")
+    suspend fun getAllPlansSync(): List<PlanEntity>
+
     @Query("SELECT * FROM plans WHERE id = :planId")
     suspend fun getPlanById(planId: Long): PlanEntity?
 
@@ -27,11 +30,20 @@ interface PlanDao {
     @Query("SELECT * FROM plans WHERE babyId = :babyId AND status = :status ORDER BY plannedDate ASC")
     fun getPlansByBabyAndStatus(babyId: Long, status: com.example.babyfood.domain.model.PlanStatus): Flow<List<PlanEntity>>
 
+    @Query("SELECT * FROM plans WHERE babyId = :babyId AND plannedDate BETWEEN :startDate AND :endDate ORDER BY plannedDate ASC, meal_period ASC")
+    fun getPlansByBabyAndDateRange(babyId: Long, startDate: LocalDate, endDate: LocalDate): Flow<List<PlanEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlan(plan: PlanEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPlans(plans: List<PlanEntity>): List<Long>
+
     @Update
     suspend fun updatePlan(plan: PlanEntity)
+
+    @Update
+    suspend fun updatePlans(plans: List<PlanEntity>)
 
     @Delete
     suspend fun deletePlan(plan: PlanEntity)

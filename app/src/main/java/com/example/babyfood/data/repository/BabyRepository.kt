@@ -6,6 +6,7 @@ import com.example.babyfood.domain.model.Baby
 import com.example.babyfood.domain.model.NutritionGoal
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.Clock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -19,17 +20,49 @@ class BabyRepository @Inject constructor(
     suspend fun getBabyById(babyId: Long): Baby? =
         babyDao.getBabyById(babyId)?.toDomainModel()
 
-    suspend fun insertBaby(baby: Baby): Long =
-        babyDao.insertBaby(baby.toEntity())
+    suspend fun insertBaby(baby: Baby): Long {
+        val entity = baby.toEntity().copy(
+            syncStatus = "PENDING_UPLOAD",
+            lastSyncTime = null,
+            version = 1
+        )
+        return babyDao.insertBaby(entity)
+    }
 
-    suspend fun updateBaby(baby: Baby) =
-        babyDao.updateBaby(baby.toEntity())
+    suspend fun updateBaby(baby: Baby) {
+        val existing = babyDao.getBabyById(baby.id)
+        if (existing != null) {
+            val entity = baby.toEntity().copy(
+                cloudId = existing.cloudId,
+                syncStatus = "PENDING_UPLOAD",
+                lastSyncTime = existing.lastSyncTime,
+                version = existing.version + 1
+            )
+            babyDao.updateBaby(entity)
+        }
+    }
 
-    suspend fun deleteBaby(baby: Baby) =
-        babyDao.deleteBaby(baby.toEntity())
+    suspend fun deleteBaby(baby: Baby) {
+        val existing = babyDao.getBabyById(baby.id)
+        if (existing != null) {
+            // 软删除
+            val entity = baby.toEntity().copy(
+                cloudId = existing.cloudId,
+                syncStatus = "PENDING_UPLOAD",
+                lastSyncTime = existing.lastSyncTime,
+                version = existing.version + 1,
+                isDeleted = true
+            )
+            babyDao.updateBaby(entity)
+        }
+    }
 
-    suspend fun deleteBabyById(babyId: Long) =
-        babyDao.deleteBabyById(babyId)
+    suspend fun deleteBabyById(babyId: Long) {
+        val baby = getBabyById(babyId)
+        if (baby != null) {
+            deleteBaby(baby)
+        }
+    }
 
     suspend fun updateNutritionGoal(babyId: Long, nutritionGoal: NutritionGoal) {
         val baby = getBabyById(babyId)
@@ -57,6 +90,11 @@ class BabyRepository @Inject constructor(
         weight = weight,
         height = height,
         preferences = preferences,
-        nutritionGoal = nutritionGoal
+        nutritionGoal = nutritionGoal,
+        cloudId = null,
+        syncStatus = "LOCAL_ONLY",
+        lastSyncTime = null,
+        version = 1,
+        isDeleted = false
     )
 }

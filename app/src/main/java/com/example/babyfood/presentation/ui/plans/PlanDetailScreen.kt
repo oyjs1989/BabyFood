@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.babyfood.domain.model.MealPeriod
 import com.example.babyfood.domain.model.Plan
 import com.example.babyfood.domain.model.PlanStatus
 import kotlinx.coroutines.launch
@@ -100,7 +101,7 @@ fun PlanDetailScreen(
                 // 基本信息卡片
                 InfoCard(title = "基本信息") {
                     InfoRow(label = "日期", value = "${plan.plannedDate.year}年${plan.plannedDate.monthNumber}月${plan.plannedDate.dayOfMonth}日")
-                    InfoRow(label = "餐段", value = plan.mealPeriod.displayName)
+                    InfoRow(label = "餐段", value = try { MealPeriod.valueOf(plan.mealPeriod).displayName } catch (e: Exception) { plan.mealPeriod })
                     InfoRow(label = "状态", value = getStatusDisplayName(plan.status))
                     if (!plan.notes.isNullOrBlank()) {
                         InfoRow(label = "备注", value = plan.notes ?: "")

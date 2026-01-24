@@ -23,6 +23,8 @@ fun BabyDetailScreen(
     onManagePreferences: () -> Unit,
     onNavigateToHealthRecords: () -> Unit,
     onNavigateToGrowth: () -> Unit,
+    onNavigateToAiSettings: () -> Unit,
+    onNavigateToAiRecommendation: () -> Unit,
     viewModel: BabyViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -235,6 +237,64 @@ fun BabyDetailScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "查看宝宝的体重、身高、头围生长曲线，对比 WHO/中国标准",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+
+                // AI 设置
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "AI 设置",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            TextButton(onClick = onNavigateToAiSettings) {
+                                Text("设置")
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "配置 AI 健康分析功能，选择本地规则引擎或远程 LLM API",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+
+                // AI 推荐
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "AI 辅食推荐",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            TextButton(onClick = onNavigateToAiRecommendation) {
+                                Text("推荐")
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "基于宝宝年龄、过敏、偏好等信息，智能生成一周饮食计划",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )

@@ -12,8 +12,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.babyfood.domain.model.MealPeriod
 import com.example.babyfood.domain.model.PlanStatus
+import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import java.time.format.TextStyle
 import java.util.Locale
@@ -34,11 +37,15 @@ import java.util.Locale
 fun PlanListScreen(
     onNavigateToDetail: (Long) -> Unit = {},
     onNavigateToAdd: (Long) -> Unit = {},
+    onNavigateToRecommendationEditor: (Long) -> Unit = {},
     viewModel: PlansViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val scope = rememberCoroutineScope()
     var selectedDate by remember { mutableStateOf(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date) }
     var currentMonth by remember { mutableStateOf(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date) }
+    var showDateRangePicker by remember { mutableStateOf(false) }
+    var showAddMenu by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -51,14 +58,42 @@ fun PlanListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    uiState.selectedBaby?.let { baby ->
-                        onNavigateToAdd(baby.id)
-                    }
+            Box {
+                // 主悬浮按钮
+                FloatingActionButton(
+                    onClick = { showAddMenu = true }
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "添加")
                 }
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "添加计划")
+                
+                // 选项菜单
+                DropdownMenu(
+                    expanded = showAddMenu,
+                    onDismissRequest = { showAddMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("手动添加") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Add, contentDescription = "手动添加")
+                        },
+                        onClick = {
+                            showAddMenu = false
+                            uiState.selectedBaby?.let { baby ->
+                                onNavigateToAdd(baby.id)
+                            }
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("AI推荐") },
+                        leadingIcon = {
+                            Icon(Icons.Default.AutoAwesome, contentDescription = "AI推荐")
+                        },
+                        onClick = {
+                            showAddMenu = false
+                            showDateRangePicker = true
+                        }
+                    )
+                }
             }
         }
     ) { paddingValues ->
@@ -101,6 +136,67 @@ fun PlanListScreen(
                 onPlanClick = onNavigateToDetail
             )
         }
+    }
+    
+    // 日期范围选择器对话框
+    if (showDateRangePicker) {
+        DateRangePickerDialog(
+            onDismiss = { showDateRangePicker = false },
+            onConfirm = { startDate, days ->
+                showDateRangePicker = false
+                // 生成AI推荐并跳转到编辑器
+                uiState.selectedBaby?.let { baby ->
+                    scope.launch {
+                        val recommendation = viewModel.generateWeeklyRecommendation(baby.id, startDate, days)
+                        if (recommendation != null) {
+                            onNavigateToRecommendationEditor(baby.id)
+                        }
+                        // 如果recommendation为null，错误信息已经在ViewModel中设置了
+                        // 错误对话框会自动显示
+                    }
+                }
+            }
+        )
+    }
+    
+    // AI推荐加载对话框
+    if (uiState.isGenerating) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("AI分析中") },
+            text = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(64.dp),
+                        strokeWidth = 4.dp
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "正在为您生成个性化辅食计划...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = { }
+        )
+    }
+    
+    // 错误对话框
+    if (uiState.error != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.clearError() },
+            title = { Text("错误") },
+            text = { Text(uiState.error ?: "") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.clearError() }) {
+                    Text("确定")
+                }
+            }
+        )
     }
 }
 
@@ -309,7 +405,7 @@ private fun SelectedDatePlans(
                 modifier = Modifier.padding(16.dp)
             )
         } else {
-            plans.sortedBy { it.mealPeriod.order }.forEach { plan ->
+            plans.sortedBy { try { MealPeriod.valueOf(it.mealPeriod).order } catch (e: Exception) { 0 } }.forEach { plan ->
                 PlanItem(
                     plan = plan,
                     onClick = { onPlanClick(plan.id) }
@@ -340,7 +436,7 @@ private fun PlanItem(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = plan.mealPeriod.displayName,
+                    text = try { MealPeriod.valueOf(plan.mealPeriod).displayName } catch (e: Exception) { plan.mealPeriod },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )

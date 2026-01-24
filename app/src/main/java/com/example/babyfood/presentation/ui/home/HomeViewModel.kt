@@ -114,7 +114,7 @@ class HomeViewModel @Inject constructor(
 
         viewModelScope.launch {
             // 获取当前计划的食谱ID（用于排除）
-            val currentPlan = _uiState.value.todayPlans.find { it.plan.mealPeriod == period }
+            val currentPlan = _uiState.value.todayPlans.find { it.plan.mealPeriod == period.name }
             val excludeRecipeIds = currentPlan?.recipe?.id?.let { listOf(it) } ?: emptyList()
 
             // 获取适合该月龄的所有食谱

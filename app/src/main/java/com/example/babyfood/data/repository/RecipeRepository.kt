@@ -30,20 +30,60 @@ class RecipeRepository @Inject constructor(
     fun getUserRecipes(): Flow<List<Recipe>> =
         recipeDao.getUserRecipes().map { entities -> entities.map { entity -> entity.toDomainModel() } }
 
-    suspend fun insertRecipe(recipe: Recipe): Long =
-        recipeDao.insertRecipe(recipe.toEntity())
+    suspend fun insertRecipe(recipe: Recipe): Long {
+        val entity = recipe.toEntity().copy(
+            syncStatus = "PENDING_UPLOAD",
+            lastSyncTime = null,
+            version = 1
+        )
+        return recipeDao.insertRecipe(entity)
+    }
 
-    suspend fun insertRecipes(recipes: List<Recipe>) =
-        recipeDao.insertRecipes(recipes.map { recipe -> recipe.toEntity() })
+    suspend fun insertRecipes(recipes: List<Recipe>) {
+        val entities = recipes.map { recipe ->
+            recipe.toEntity().copy(
+                syncStatus = "PENDING_UPLOAD",
+                lastSyncTime = null,
+                version = 1
+            )
+        }
+        recipeDao.insertRecipes(entities)
+    }
 
-    suspend fun updateRecipe(recipe: Recipe) =
-        recipeDao.updateRecipe(recipe.toEntity())
+    suspend fun updateRecipe(recipe: Recipe) {
+        val existing = recipeDao.getRecipeById(recipe.id)
+        if (existing != null) {
+            val entity = recipe.toEntity().copy(
+                cloudId = existing.cloudId,
+                syncStatus = "PENDING_UPLOAD",
+                lastSyncTime = existing.lastSyncTime,
+                version = existing.version + 1
+            )
+            recipeDao.updateRecipe(entity)
+        }
+    }
 
-    suspend fun deleteRecipe(recipe: Recipe) =
-        recipeDao.deleteRecipe(recipe.toEntity())
+    suspend fun deleteRecipe(recipe: Recipe) {
+        val existing = recipeDao.getRecipeById(recipe.id)
+        if (existing != null) {
+            // 软删除
+            val entity = recipe.toEntity().copy(
+                cloudId = existing.cloudId,
+                syncStatus = "PENDING_UPLOAD",
+                lastSyncTime = existing.lastSyncTime,
+                version = existing.version + 1,
+                isDeleted = true
+            )
+            recipeDao.updateRecipe(entity)
+        }
+    }
 
-    suspend fun deleteRecipeById(recipeId: Long) =
-        recipeDao.deleteRecipeById(recipeId)
+    suspend fun deleteRecipeById(recipeId: Long) {
+        val recipe = getRecipeById(recipeId)
+        if (recipe != null && !recipe.isBuiltIn) {
+            deleteRecipe(recipe)
+        }
+    }
 
     private fun RecipeEntity.toDomainModel(): Recipe = Recipe(
         id = id,
@@ -68,6 +108,11 @@ class RecipeRepository @Inject constructor(
         nutrition = nutrition,
         category = category,
         isBuiltIn = isBuiltIn,
-        imageUrl = imageUrl
+        imageUrl = imageUrl,
+        cloudId = null,
+        syncStatus = "LOCAL_ONLY",
+        lastSyncTime = null,
+        version = 1,
+        isDeleted = false
     )
 }

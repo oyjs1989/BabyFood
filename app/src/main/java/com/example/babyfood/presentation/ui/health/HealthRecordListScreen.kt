@@ -24,6 +24,7 @@ fun HealthRecordListScreen(
     viewModel: HealthRecordViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showExpiredRecords by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.loadHealthRecords(babyId)
@@ -52,6 +53,24 @@ fun HealthRecordListScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
+            // 过滤开关
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "显示过期记录",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Switch(
+                    checked = showExpiredRecords,
+                    onCheckedChange = { showExpiredRecords = it }
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+
             if (uiState.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -59,23 +78,34 @@ fun HealthRecordListScreen(
                 ) {
                     CircularProgressIndicator()
                 }
-            } else if (uiState.healthRecords.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = androidx.compose.ui.Alignment.Center
-                ) {
-                    Text(
-                        text = "暂无体检记录\n\n点击右下角 + 按钮添加",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
             } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(uiState.healthRecords) { record ->
-                        HealthRecordCard(record = record)
+                val filteredRecords = if (showExpiredRecords) {
+                    uiState.healthRecords
+                } else {
+                    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                    uiState.healthRecords.filter { record ->
+                        record.expiryDate == null || record.expiryDate >= today
+                    }
+                }
+
+                if (filteredRecords.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = androidx.compose.ui.Alignment.Center
+                    ) {
+                        Text(
+                            text = if (showExpiredRecords) "暂无体检记录" else "暂无有效体检记录\n\n开启\"显示过期记录\"查看所有记录",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(filteredRecords) { record ->
+                            HealthRecordCard(record = record)
+                        }
                     }
                 }
             }
@@ -85,19 +115,41 @@ fun HealthRecordListScreen(
 
 @Composable
 private fun HealthRecordCard(record: com.example.babyfood.domain.model.HealthRecord) {
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val isExpired = record.expiryDate != null && record.expiryDate < today
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = if (isExpired) {
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        } else {
+            CardDefaults.cardColors()
+        }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Text(
-                text = record.recordDate.toString(),
-                style = MaterialTheme.typography.titleMedium
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Text(
+                    text = record.recordDate.toString(),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                if (isExpired) {
+                    SuggestionChip(
+                        onClick = {},
+                        label = { Text("已过期") }
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(8.dp))
             record.weight?.let { Text(text = "体重: ${it} kg") }
             record.height?.let { Text(text = "身高: ${it} cm") }
@@ -109,7 +161,18 @@ private fun HealthRecordCard(record: com.example.babyfood.domain.model.HealthRec
                 Text(
                     text = "AI分析: $it",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
+                    color = if (isExpired) {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    }
+                )
+            }
+            if (record.expiryDate != null) {
+                Text(
+                    text = "有效期至: ${record.expiryDate}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
             }
         }

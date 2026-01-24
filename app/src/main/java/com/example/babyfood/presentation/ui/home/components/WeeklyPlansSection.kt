@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.babyfood.domain.model.MealPeriod
 import com.example.babyfood.presentation.ui.home.PlanWithRecipe
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.toJavaLocalDate
@@ -123,7 +124,7 @@ private fun DayPlanItem(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "${planWithRecipe.plan.mealPeriod.displayName}: ",
+                        text = "${try { MealPeriod.valueOf(planWithRecipe.plan.mealPeriod).displayName } catch (e: Exception) { planWithRecipe.plan.mealPeriod }}: ",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )

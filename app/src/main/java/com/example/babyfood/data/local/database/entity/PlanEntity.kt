@@ -16,16 +16,25 @@ data class PlanEntity(
     val recipeId: Long,
     val plannedDate: LocalDate,
     @ColumnInfo(name = "meal_period")
-    val mealPeriod: MealPeriod,  // 新增
+    val mealPeriod: MealPeriod,
     val status: PlanStatus = PlanStatus.PLANNED,
-    val notes: String? = null
+    val notes: String? = null,
+
+    // 同步元数据字段（向后兼容，默认值）
+    val cloudId: String? = null,                    // 云端唯一标识
+    val cloudBabyId: String? = null,                // 云端宝宝 ID（用于云端关联）
+    val cloudRecipeId: String? = null,              // 云端食谱 ID（用于云端关联）
+    val syncStatus: String = "PENDING_UPLOAD",      // 同步状态（默认待上传）
+    val lastSyncTime: Long? = null,                 // 最后同步时间戳（毫秒）
+    val version: Int = 1,                           // 版本号（用于冲突检测）
+    val isDeleted: Boolean = false                  // 软删除标记
 ) {
     fun toDomainModel(): Plan = Plan(
         id = id,
         babyId = babyId,
         recipeId = recipeId,
         plannedDate = plannedDate,
-        mealPeriod = mealPeriod,
+        mealPeriod = mealPeriod.name,
         status = status,
         notes = notes
     )
@@ -36,7 +45,11 @@ fun Plan.toEntity(): PlanEntity = PlanEntity(
     babyId = babyId,
     recipeId = recipeId,
     plannedDate = plannedDate,
-    mealPeriod = mealPeriod,
+    mealPeriod = try {
+        MealPeriod.valueOf(mealPeriod)
+    } catch (e: Exception) {
+        MealPeriod.BREAKFAST  // 默认值
+    },
     status = status,
     notes = notes
 )

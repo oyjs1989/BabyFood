@@ -12,6 +12,7 @@ BabyFood 是一个使用 Kotlin 开发的 Android 应用程序，专注于婴幼
 - **生长曲线**：追踪宝宝生长发育情况，对比标准生长曲线
 - **黑白名单**：管理过敏食材和偏好食材，支持有效期设置
 - **营养目标**：根据月龄自动计算营养目标，支持手动调整
+- **AI 智能推荐**：基于 AI 的智能食谱推荐和周计划生成，支持本地规则引擎和远程 LLM API
 
 - **项目名称**：BabyFood
 - **项目类型**：Android 应用
@@ -51,6 +52,11 @@ BabyFood 是一个使用 Kotlin 开发的 Android 应用程序，专注于婴幼
 - `org.jetbrains.kotlinx:kotlinx-datetime:*` - Kotlinx DateTime 日期时间处理
 - `org.jetbrains.kotlinx:kotlinx-serialization:*` - Kotlinx 序列化支持
 - `com.patrykandpatrick.vico:compose:*` - Vico 图表库（生长曲线可视化）
+- `com.squareup.retrofit2:retrofit:2.9.0` - Retrofit 网络请求
+- `com.squareup.retrofit2:converter-kotlinx-serialization:0.8.0` - Kotlinx 序列化转换器
+- `com.squareup.okhttp3:okhttp:4.12.0` - OkHttp HTTP 客户端
+- `com.squareup.okhttp3:logging-interceptor:4.12.0` - OkHttp 日志拦截器
+- `androidx.work:work-runtime-ktx:2.9.0` - WorkManager 后台任务
 
 ### 测试框架
 - `junit:junit:4.13.2` - 单元测试
@@ -84,6 +90,40 @@ BabyFood/
 │   │       │   │   │           ├── RecipeEntity.kt
 │   │       │   │   │           ├── HealthRecordEntity.kt
 │   │       │   │   │           └── GrowthRecordEntity.kt
+│   │       │   │   ├── remote/            # 远程数据
+│   │       │   │   │   ├── api/           # REST API 接口
+│   │       │   │   │   │   ├── RecipeApiService.kt
+│   │       │   │   │   │   ├── PlanApiService.kt
+│   │       │   │   │   │   ├── BabyApiService.kt
+│   │       │   │   │   │   ├── SyncApiService.kt
+│   │       │   │   │   │   └── HealthAnalysisApiService.kt
+│   │       │   │   │   ├── dto/           # 数据传输对象
+│   │       │   │   │   │   ├── CloudBaby.kt
+│   │       │   │   │   │   ├── CloudPlan.kt
+│   │       │   │   │   │   ├── CloudRecipe.kt
+│   │       │   │   │   │   ├── HealthAnalysisRequest.kt
+│   │       │   │   │   │   ├── SyncPullResponse.kt
+│   │       │   │   │   │   ├── SyncPushRequest.kt
+│   │       │   │   │   │   └── SyncPushResponse.kt
+│   │       │   │   │   ├── mapper/       # 数据映射器
+│   │       │   │   │   │   ├── BabyMapper.kt
+│   │       │   │   │   │   ├── PlanMapper.kt
+│   │       │   │   │   │   └── RecipeMapper.kt
+│   │       │   │   │   └── RemoteDataSource.kt
+│   │       │   │   ├── sync/              # 同步管理
+│   │       │   │   │   └── SyncManager.kt
+│   │       │   │   ├── ai/                # AI 服务
+│   │       │   │   │   ├── HealthAnalysisService.kt
+│   │       │   │   │   ├── LocalHealthAnalysisStrategy.kt
+│   │       │   │   │   ├── RemoteHealthAnalysisStrategy.kt
+│   │       │   │   │   └── recommendation/     # AI 推荐系统
+│   │       │   │   │       ├── RecommendationService.kt
+│   │       │   │   │       ├── CandidateRecipeService.kt
+│   │       │   │   │       ├── MainModelStrategy.kt
+│   │       │   │   │       ├── CheapModelStrategy.kt
+│   │       │   │   │       └── RuleEngine.kt
+│   │       │   │   ├── strategy/          # 策略管理
+│   │       │   │   │   └── StrategyManager.kt
 │   │       │   │   └── repository/         # 数据仓库
 │   │       │   │       ├── BabyRepository.kt
 │   │       │   │       ├── PlanRepository.kt
@@ -93,7 +133,8 @@ BabyFood/
 │   │       │   ├── init/                 # 数据初始化
 │   │       │   │   └── RecipeInitializer.kt
 │   │       │   ├── di/                     # 依赖注入
-│   │       │   │   └── DatabaseModule.kt
+│   │       │   │   ├── DatabaseModule.kt
+│   │       │   │   └── NetworkModule.kt
 │   │       │   ├── domain/                 # 领域层
 │   │       │   │   └── model/              # 数据模型
 │   │       │   │       ├── Baby.kt
@@ -105,7 +146,12 @@ BabyFood/
 │   │       │   │       ├── PreferenceItem.kt
 │   │       │   │       ├── HealthRecord.kt
 │   │       │   │       ├── GrowthRecord.kt
-│   │       │   │       └── GrowthStandard.kt
+│   │       │   │       ├── GrowthStandard.kt
+│   │       │   │       ├── SyncStatus.kt
+│   │       │   │       ├── RecommendationRequest.kt
+│   │       │   │       ├── RecommendationResponse.kt
+│   │       │   │       ├── PlanConflict.kt
+│   │       │   │       └── ConflictResolution.kt
 │   │       │   └── presentation/          # 表现层
 │   │       │       ├── theme/             # 主题配置
 │   │       │       │   ├── Color.kt
@@ -125,9 +171,17 @@ BabyFood/
 │   │       │           │   └── components/
 │   │       │           │       ├── NutritionGoalCard.kt
 │   │       │           │       ├── MealTimeline.kt
-│   │       │           │       └── TodayMenuScreen.kt
+│   │       │           │       ├── TodayMenuScreen.kt
+│   │       │           │       ├── RecipeSelectorDialog.kt
+│   │       │           │       └── WeeklyPlansSection.kt
 │   │       │           ├── plans/          # 计划管理
-│   │       │           │   └── PlansViewModel.kt
+│   │       │           │   ├── PlansViewModel.kt
+│   │       │           │   ├── PlanListScreen.kt
+│   │       │           │   ├── PlanDetailScreen.kt
+│   │       │           │   ├── PlanFormScreen.kt
+│   │       │           │   ├── RecommendationEditorScreen.kt
+│   │       │           │   ├── ConflictResolutionDialog.kt
+│   │       │           │   └── DateRangePickerDialog.kt
 │   │       │           ├── recipes/        # 食谱管理
 │   │       │           │   ├── RecipesViewModel.kt
 │   │       │           │   ├── RecipesListScreen.kt
@@ -139,7 +193,13 @@ BabyFood/
 │   │       │           │   └── HealthRecordFormScreen.kt
 │   │       │           └── growth/         # 生长记录
 │   │       │               ├── GrowthRecordViewModel.kt
-│   │       │               └── GrowthCurveScreen.kt
+│   │       │               ├── GrowthCurveScreen.kt
+│   │       │               └── GrowthChart.kt
+│   │       │           ├── ai/             # AI 功能
+│   │       │               ├── AiSettingsViewModel.kt
+│   │       │               ├── RecommendationViewModel.kt
+│   │       │               ├── AiSettingsScreen.kt
+│   │       │               └── RecommendationScreen.kt
 │   │       ├── res/                          # 资源文件
 │   │       │   ├── drawable/                 # 图片资源
 │   │       │   ├── layout/                   # 布局文件
@@ -233,6 +293,52 @@ gradlew.bat uninstallDebug
 - 遵循 Android 官方代码规范
 - 使用有意义的变量和方法命名
 
+### 日志规范（强制要求）
+**所有开发组件都必须打印对应的日志，便于问题排查和调试。**
+
+#### 日志标签规范
+- 使用类名作为日志标签，格式：`android.util.Log.d("ClassName", "message")`
+- 例如：`PlansViewModel`、`RecommendationService`、`MainScreen`
+
+#### 日志级别规范
+- `Log.d()` - 调试信息：方法进入、关键步骤、状态变化
+- `Log.i()` - 一般信息：正常流程、成功操作
+- `Log.w()` - 警告信息：异常情况但可继续执行
+- `Log.e()` - 错误信息：操作失败、异常捕获
+
+#### 日志格式规范
+```
+========== 方法名开始 ==========
+✓ 操作成功
+❌ 操作失败
+⚠️ 警告信息
+========== 方法名结束 ==========
+```
+
+#### 必须添加日志的场景
+1. **ViewModel 方法**：所有公开方法必须记录进入和退出
+2. **Service 方法**：所有服务方法必须记录请求参数和响应结果
+3. **Repository 方法**：所有数据操作必须记录操作类型和结果
+4. **UI 组件**：关键状态变化必须记录
+5. **异常捕获**：所有 catch 块必须记录异常信息
+
+#### 日志示例
+```kotlin
+fun generateRecommendation() {
+    android.util.Log.d("PlansViewModel", "========== 开始生成推荐 ==========")
+    android.util.Log.d("PlansViewModel", "宝宝ID: $babyId")
+    
+    try {
+        val result = recommendationService.generateRecommendation(request)
+        android.util.Log.d("PlansViewModel", "✓ 推荐生成成功")
+        android.util.Log.d("PlansViewModel", "========== 推荐生成完成 ==========")
+    } catch (e: Exception) {
+        android.util.Log.e("PlansViewModel", "❌ 推荐生成失败: ${e.message}")
+        android.util.Log.e("PlansViewModel", "异常堆栈: ", e)
+    }
+}
+```
+
 ### 架构约定
 - 项目采用 MVVM 架构模式
 - 分层架构：UI 层 → ViewModel 层 → Repository 层 → DAO 层 → Database
@@ -248,10 +354,23 @@ UI (Jetpack Compose)
 ViewModel (StateFlow/LiveData)
     ↓ 调用 Repository 方法
 Repository (Flow)
-    ↓ 调用 DAO 方法
-DAO (Flow)
-    ↓ 操作数据库
-Database (Room SQLite)
+    ↓ 调用 DAO/Strategy 方法
+┌─────────────────────────────────┐
+│  Service Layer (策略管理)       │
+│  - StrategyManager              │
+│  - HealthAnalysisService        │
+│  - RecommendationService        │
+│  - LocalStrategy/RemoteStrategy │
+└─────────────────────────────────┘
+    ↓
+┌─────────────────────────────────┐
+│  Data Source Layer              │
+│  - LocalSource (Room DAO)       │
+│  - RemoteSource (API Service)   │
+│  - SyncManager                  │
+└─────────────────────────────────┘
+    ↓
+Database (Room SQLite) / Cloud DB
 ```
 
 ### 状态管理模式
@@ -270,7 +389,7 @@ Database (Room SQLite)
 - **非传递性 R 类**：已启用（`android.nonTransitiveRClass=true`）
 - **JVM 目标**：Java 17
 - **Gradle 配置缓存**：已禁用（`org.gradle.configuration-cache=false`）
-- **数据库版本**：3（支持迁移 v1→v2→v3）
+- **数据库版本**：6（支持迁移 v1→v2→v3→v4→v5→v6）
 - **Kotlin 版本**：2.0.21
 - **Compose 编译器**：使用 Kotlin 2.0.21 内置编译器
 - **Kotlin 序列化**：已配置编译器插件，支持 `@Serializable` 注解
@@ -281,20 +400,29 @@ Database (Room SQLite)
 项目已完成基础架构搭建和核心功能开发，采用 MVVM 架构模式。
 
 ### 构建状态
-- ✅ **最新构建**：BUILD SUCCESSFUL（2026-01-22）
-- ✅ **数据库版本**：3（支持迁移）
+- ✅ **最新构建**：BUILD SUCCESSFUL（2026-01-24）
+- ✅ **数据库版本**：6（支持迁移 v1→v2→v3→v4→v5→v6）
 - ✅ **所有 UI 页面**：已实现并通过编译验证
 - ✅ **导航路由**：完整配置并可用
 - ✅ **Kotlin 序列化**：已配置并支持服务器数据同步
+- ✅ **网络层**：Retrofit + OkHttp 已配置
+- ✅ **云同步架构**：完整实现（REST API、SyncManager、RemoteDataSource）
+- ✅ **AI 分析架构**：完整实现（本地规则引擎 + 远程 LLM API）
+- ✅ **AI 推荐架构**：完整实现（多策略推荐系统、规则引擎、候选筛选）
+- ✅ **内置食谱库**：30 个辅食食谱（6-24个月），覆盖早餐、午餐、晚餐、点心
+- ✅ **AI 推荐日志**：详细日志输出，便于调试和问题定位
+- ✅ **AI 推荐原则**：遵循奥卡姆剃刀原则，AI 优先，本地仅作兜底
 
 ### 已实现功能
 
 #### 1. 今日餐单首页
 - ✅ 宝宝今日核心营养目标展示（根据月龄自动计算，用户可调整）
 - ✅ 按时间轴卡片流展示早、午、晚、点心餐单
-- ✅ "换一换"功能（MVP 阶段使用简单随机推荐）
+- ✅ "换一换"功能（基于 AI 智能推荐，支持多策略切换）
 - ✅ 空状态提示（未添加宝宝时引导用户）
 - ✅ 基于黑白名单的食材过滤
+- ✅ 周计划展示（WeeklyPlansSection，显示本周计划概览）
+- ✅ 食谱选择对话框（RecipeSelectorDialog，为餐段时间段选择食谱）
 
 #### 2. 宝宝档案管理
 - ✅ 支持多个宝宝管理
@@ -310,12 +438,18 @@ Database (Room SQLite)
 - ✅ 支持记录体重、身高、头围、铁、钙、血红蛋白等指标
 - ✅ 支持备注信息
 - ✅ 数据持久化存储
+- ✅ AI 健康分析（本地规则引擎 + 远程 LLM API）
+- ✅ 自动同步到生长记录表
 
 #### 4. 食谱管理
 - ✅ 食谱列表页面（支持搜索、按月龄筛选、按分类筛选）
 - ✅ 食谱详情页面（显示食材、步骤、营养成分）
 - ✅ 添加/编辑食谱功能（支持食材添加/删除、步骤编辑）
-- ✅ 内置食谱初始化（15个常用辅食食谱，6-24个月）
+- ✅ 内置食谱初始化（30个常用辅食食谱，6-24个月）
+  - 早餐类：南瓜米糊、胡萝卜土豆泥、苹果泥、香蕉泥、肉末粥、蔬菜肉末粥、南瓜鸡肉粥
+  - 午餐类：鸡肉粥、牛肉土豆泥、蔬菜肉丸汤、番茄牛肉面、土豆烧鸡块、三鲜小馄饨、红烧牛肉面
+  - 晚餐类：清蒸鱼块、蔬菜肉末蒸蛋、虾仁蒸蛋
+  - 点心类：蛋黄泥、鱼肉泥、豆腐泥、西红柿炒鸡蛋、蒸蛋羹、水果沙拉、蔬菜小饼、蔬菜鸡蛋饼、虾仁炒蛋、蔬菜鸡肉丸、鱼丸汤
 - ✅ Kotlin 序列化配置（支持从服务器获取食谱）
 - ✅ 删除食谱功能（仅限用户自定义食谱）
 
@@ -324,6 +458,10 @@ Database (Room SQLite)
 - ✅ 生长记录列表展示
 - ✅ 支持体重、身高、头围数据记录
 - ✅ 数据持久化存储
+- ✅ GrowthChart 组件（基于 Vico 图表库）
+- ✅ 支持体重、身高、头围曲线绘制
+- ✅ 对比 WHO/中国标准生长曲线
+- ✅ 数据点标注和交互
 
 #### 6. 数据模型
 - ✅ Baby - 宝宝信息（含过敏、偏好、营养目标）
@@ -336,12 +474,23 @@ Database (Room SQLite)
 - ✅ HealthRecord - 体检记录
 - ✅ GrowthRecord - 生长记录
 - ✅ GrowthStandard - WHO/中国生长标准
+- ✅ SyncStatus - 同步状态枚举（SYNCED、PENDING_UPLOAD、PENDING_DOWNLOAD、ERROR、LOCAL_ONLY）
+- ✅ CloudBaby - 云端宝宝数据模型（脱敏版本）
+- ✅ CloudPlan - 云端计划数据模型
+- ✅ CloudRecipe - 云端食谱数据模型
+- ✅ RecommendationRequest - AI 推荐请求模型
+- ✅ RecommendationResponse - AI 推荐响应模型
+- ✅ PlanConflict - 计划冲突模型
+- ✅ ConflictResolution - 冲突解决模型
 
 #### 7. 数据库
-- ✅ Room 数据库（当前版本：3）
+- ✅ Room 数据库（当前版本：6）
 - ✅ 数据库迁移策略
   - MIGRATION_1_2：添加 mealPeriod 字段到 plans 表
   - MIGRATION_2_3：创建 health_records 和 growth_records 表
+  - MIGRATION_3_4：无操作迁移（版本号递增）
+  - MIGRATION_4_5：添加同步元数据字段（cloudId、syncStatus、lastSyncTime、version、isDeleted）
+  - MIGRATION_5_6：修复同步元数据字段约束（重建表）
 - ✅ 完整的 DAO 接口（BabyDao、PlanDao、RecipeDao、HealthRecordDao、GrowthRecordDao）
 - ✅ TypeConverters 支持复杂类型（AllergyItem、PreferenceItem、LocalDate 等）
 - ✅ 数据库索引优化
@@ -370,14 +519,99 @@ Database (Room SQLite)
 - ✅ 辅食计划列表/详情/表单（PlanListScreen/PlanDetailScreen/PlanFormScreen）
 - ✅ 完整的导航路由
 
+#### 10. 云同步架构
+- ✅ REST API 接口（Recipe、Plan、Baby、Sync、HealthAnalysis）
+- ✅ RemoteDataSource 接口和实现
+- ✅ SyncManager 同步管理器（拉取、推送、冲突解决）
+- ✅ 数据映射器（Entity ↔ Cloud 转换）
+- ✅ Repository 自动同步标记
+- ✅ 软删除支持（isDeleted 字段）
+- ✅ 版本控制（version 字段）
+- ✅ DTOs（SyncPullResponse、SyncPushRequest、SyncPushResponse）
+
+#### 11. AI 分析架构
+- ✅ HealthAnalysisService 接口
+- ✅ LocalHealthAnalysisStrategy（基于规则的本地健康分析）
+- ✅ RemoteHealthAnalysisStrategy（LLM API 远程健康分析）
+- ✅ StrategyManager 策略管理器（自动降级）
+- ✅ 健康指标检测（血红蛋白、铁、钙、体重、身高、头围）
+
+#### 12. AI 智能推荐系统
+- ✅ RecommendationService（推荐服务接口）
+- ✅ CandidateRecipeService（候选食谱筛选，基于月龄、过敏、偏好）
+- ✅ MainModelStrategy（主模型策略，生成周计划）
+- ✅ CheapModelStrategy（轻量模型策略，生成餐单文本描述）
+- ✅ RuleEngine（规则引擎，验证食谱和周计划）
+- ✅ 策略类型支持：LOCAL、REMOTE、HYBRID、DISABLED
+- ✅ 运行时策略切换和自动降级
+- ✅ **奥卡姆剃刀原则**：
+  - AI 推荐完全由模型策略生成，本地规则仅作记录日志
+  - 本地判断仅在 AI 无法处理时介入（如过敏食材硬性过滤）
+  - 简化逻辑，优先信任 AI 智能推荐
+
+#### 13. 辅食计划管理
+- ✅ 计划列表页面（PlanListScreen）
+- ✅ 计划详情页面（PlanDetailScreen，显示营养汇总）
+- ✅ 创建/编辑计划表单（PlanFormScreen）
+- ✅ AI 推荐编辑器（RecommendationEditorScreen，支持冲突解决）
+- ✅ 冲突解决对话框（ConflictResolutionDialog）
+- ✅ 日期范围选择对话框（DateRangePickerDialog）
+- ✅ 完整的状态管理和导航路由
+
+#### 17. 导航路由配置
+完整的导航路由配置，支持以下路由：
+
+- `home` - 今日餐单首页
+- `recipes` - 食谱列表
+- `recipes/detail/{recipeId}` - 食谱详情
+- `recipes/form/{recipeId}` - 添加/编辑食谱
+- `plans` - 计划列表
+- `plans/detail/{planId}` - 计划详情
+- `plans/form/{babyId}/{planId}` - 添加/编辑计划
+- `plans/recommendation/editor/{babyId}` - AI 推荐编辑器
+- `baby` - 宝宝列表
+- `baby/form/{babyId}` - 添加/编辑宝宝
+- `baby/detail/{babyId}` - 宝宝详情
+- `baby/allergy/{babyId}` - 过敏食材管理
+- `baby/preference/{babyId}` - 偏好食材管理
+- `baby/health/{babyId}` - 体检记录列表
+- `baby/health/form/{babyId}/{recordId}` - 添加/编辑体检记录
+- `baby/growth/{babyId}` - 生长曲线
+- `ai/settings` - AI 设置
+- `ai/recommendation` - AI 推荐
+
+#### 14. AI 设置与推荐界面
+- ✅ AI 设置页面（AiSettingsScreen，策略切换：本地/远程/混合）
+- ✅ AI 推荐界面（RecommendationScreen）
+- ✅ AiSettingsViewModel 和 RecommendationViewModel 完整实现
+
+#### 15. 首页增强功能
+- ✅ 食谱选择对话框（RecipeSelectorDialog，为餐段时间段选择食谱）
+- ✅ 周计划展示（WeeklyPlansSection，在首页显示本周计划）
+- ✅ 完整的换一换功能（基于 AI 推荐）
+
+#### 16. 生长曲线可视化
+- ✅ GrowthChart 组件（基于 Vico 图表库）
+- ✅ 支持体重、身高、头围曲线绘制
+- ✅ 对比 WHO/中国标准生长曲线
+- ✅ 数据点标注和交互
+
 ### 待完善功能
 
+#### 基础设施
+- 实现 SharedPreferences 存储 lastSyncTime
+- 实现本地 ID 映射（Plans 和 Babies 的 cloudId ↔ localId 映射）
+- 实现冲突解决用户选择 UI（允许用户选择保留云端或本地版本）
+- 安全的 API Key 管理（使用环境变量或 Android Keystore 存储 DashScope API Key）
+- 实现 JWT 认证（在 NetworkModule 中添加实际的认证逻辑）
+- 更新 API URL 为实际的后端服务器地址
+
 #### 高级功能
-- AI 体检分析（集成 LLM API，实现智能体检单分析）
-- 智能食谱推荐（优化换一换功能，实现协同过滤算法）
 - 图片支持（食谱图片上传/展示）
 - 数据导出与分享（PDF/Excel 导出、Android Sharesheet）
 - 搜索优化（搜索历史、热门推荐、收藏功能）
+- 后端服务器实现（REST API 接口实际部署）
+- 单元测试和集成测试
 
 ## 开发环境配置
 
@@ -390,6 +624,43 @@ Database (Room SQLite)
 ### Gradle 配置
 - JVM 参数：`-Xmx2048m -Dfile.encoding=UTF-8`
 - 并行构建：未启用（可根据需要启用）
+
+### 设计原则
+
+#### 奥卡姆剃刀原则（Occam's Razor）
+在 AI 功能设计和实现中，遵循奥卡姆剃刀原则："如无必要，勿增实体"。
+
+**应用场景：**
+
+1. **AI 推荐系统**
+   - **原则**：AI 优先，本地仅作兜底
+   - **实现**：
+     - AI 推荐完全由模型策略生成周计划
+     - 本地规则引擎仅用于记录日志，不干预结果
+     - 本地判断仅在 AI 无法处理的场景介入（如过敏食材硬性过滤、年龄范围验证）
+   - **避免**：过度依赖本地规则限制 AI 推荐的灵活性
+
+2. **AI 健康分析**
+   - **原则**：远程 LLM 优先，本地规则降级
+   - **实现**：
+     - 优先使用远程 LLM API 进行智能健康分析
+     - 网络失败或 API 不可用时，降级到本地规则引擎
+     - 本地规则仅提供基础的健康指标检测
+   - **避免**：本地规则过于复杂，影响用户体验
+
+3. **数据同步**
+   - **原则**：云端优先，本地为辅
+   - **实现**：
+     - 数据以云端为准，本地作为缓存
+     - 冲突时优先保留云端版本（或让用户选择）
+     - 本地数据仅在离线时使用
+   - **避免**：复杂的冲突解决逻辑导致数据不一致
+
+**核心思想：**
+- 简化系统复杂度
+- 优先信任 AI 智能能力
+- 本地规则仅作为安全网和兜底方案
+- 避免过度工程化
 
 ## 常见问题
 
@@ -427,46 +698,166 @@ Database (Room SQLite)
 - 清理构建缓存：`gradlew.bat clean`
 - 确保 Kotlin 序列化库版本与 Kotlin 版本匹配
 
+### AI 推荐相关问题
+
+#### 云端 AI 推荐接口规范
+
+**接口地址：** `POST /api/recommendation/generate`
+
+**请求格式（JSON）：**
+```json
+{
+  "babyId": 1,
+  "ageInMonths": 14,
+  "allergies": ["鸡蛋", "牛奶"],
+  "preferences": ["南瓜", "胡萝卜"],
+  "availableIngredients": ["鸡肉", "菠菜"],
+  "useAvailableIngredientsOnly": false,
+  "constraints": {
+    "maxFishPerWeek": 2,
+    "maxEggPerWeek": 3,
+    "breakfastComplexity": "MODERATE",
+    "maxDailyMeals": 4
+  },
+  "startDate": "2026-01-24",
+  "days": 7
+}
+```
+
+**响应格式（JSON）：**
+```json
+{
+  "success": true,
+  "errorMessage": null,
+  "weeklyPlan": {
+    "startDate": "2026-01-24",
+    "endDate": "2026-01-30",
+    "dailyPlans": [
+      {
+        "date": "2026-01-24",
+        "meals": [
+          {
+            "mealPeriod": "BREAKFAST",
+            "recipeId": 1,
+            "recipeName": "南瓜米糊",
+            "nutritionNotes": "提供优质蛋白质和碳水化合物",
+            "childFriendlyText": "早餐有南瓜米糊，香香的很好吃哦～"
+          },
+          {
+            "mealPeriod": "LUNCH",
+            "recipeId": 15,
+            "recipeName": "鸡肉粥",
+            "nutritionNotes": "提供丰富的蛋白质、维生素和矿物质",
+            "childFriendlyText": "午餐有鸡肉粥，营养满满！"
+          }
+        ]
+      }
+    ],
+    "nutritionSummary": {
+      "weeklyCalories": 3500.0,
+      "weeklyProtein": 175.0,
+      "weeklyCalcium": 2800.0,
+      "weeklyIron": 70.0,
+      "dailyAverage": {
+        "calories": 500.0,
+        "protein": 25.0,
+        "calcium": 400.0,
+        "iron": 10.0
+      },
+      "highlights": [
+        "蛋白质摄入充足，有助于肌肉发育",
+        "钙摄入充足，有助于骨骼发育"
+      ]
+    }
+  },
+  "warnings": [
+    "平均热量偏低，建议增加主食摄入"
+  ]
+}
+```
+
+**重要说明：**
+- **recipeId 字段**：响应中的 `recipeId` 是本地食谱的 ID，用于从本地数据库查找完整的食谱信息
+- **mealPeriod 枚举值**：必须是 `"BREAKFAST"`、`"LUNCH"`、`"DINNER"`、`"SNACK"` 之一
+- **日期格式**：使用 ISO 8601 格式，如 `"2026-01-24"`
+- **success 字段**：`true` 表示成功，`false` 表示失败
+- **errorMessage 字段**：失败时包含错误信息，成功时为 `null`
+
+#### AI 推荐显示"推荐数据加载失败"
+**可能原因：**
+1. 候选食谱为空（当前年龄段没有适合的食谱）
+2. 过敏食材过滤后没有合适的食谱
+3. 宝宝年龄超出支持范围（6-36个月）
+
+**排查步骤：**
+1. 查看日志中的"AI推荐服务"标签，查看详细错误信息
+2. 检查宝宝年龄是否在 6-36 个月范围内
+3. 检查是否设置了过敏食材，导致食谱被过滤
+4. 检查内置食谱库是否正常初始化（应有 30 个食谱）
+
+**解决方案：**
+- 如果是年龄问题，调整宝宝信息或添加更多年龄段食谱
+- 如果是过敏食材问题，暂时移除过敏食材或添加更多兼容食谱
+- 如果是食谱库问题，卸载应用重新安装
+
+#### AI 推荐结果蛋类/鱼类超限
+**说明：**
+- 根据**奥卡姆剃刀原则**，AI 推荐完全由模型策略生成
+- 本地规则仅记录日志，不干预结果
+- 超限警告仅作为参考信息，不影响推荐结果
+
+**原因：**
+- AI 模型可能根据营养均衡考虑，适当调整食材比例
+- 本地约束（如每周最多 3 次蛋类）仅供参考
+
+**处理方式：**
+- 用户可以根据实际需求手动调整周计划
+- 也可以在 AI 设置中调整约束条件
+
 ## 下一步开发
 
 ### 短期目标（高优先级）
-1. 完善生长曲线可视化
-   - 集成图表库（Compose Charts 或 MPAndroidChart）
-   - 绘制体重/身高/头围生长曲线
-   - 对比 WHO/中国标准生长曲线
-   - 添加数据点标注和交互
+1. 基础设施完善
+   - 实现 SharedPreferences 存储 lastSyncTime
+   - 实现本地 ID 映射（Plans 和 Babies）
+   - 实现冲突解决用户选择 UI
+   - 安全的 API Key 管理（环境变量或 Android Keystore）
+   - 实现 JWT 认证逻辑
+   - 更新 API URL 为实际后端地址
 
-2. 完善辅食计划
-   - 计划列表页面
-   - 计划详情页面
-   - 创建/编辑计划功能
-   - 计划模板功能
+2. 后端服务器实现
+   - 实现 Recipe、Plan、Baby、Sync REST API 接口
+   - 实现用户认证和授权
+   - 实现数据同步服务
+   - 部署服务器并配置域名
 
 ### 中期目标（中优先级）
-1. 智能推荐优化
-   - 基于用户反馈的推荐算法
-   - 基于生长数据的营养调整
-   - 季节性食谱推荐
-   - 过敏食材自动过滤
+1. 同步功能完善
+   - 实现完整的冲突解决策略
+   - 添加手动同步按钮
+   - 完善同步状态显示
+   - 添加同步日志和错误处理
 
-2. 数据同步
-   - 云端数据备份
-   - 多设备同步
-   - 离线模式支持
-
-3. 用户体验优化
-   - 搜索功能
-   - 筛选功能
+2. 用户体验优化
+   - 搜索历史记录
+   - 热门推荐功能
    - 收藏功能
    - 分享功能
-   - 数据导出功能
+   - 数据导出功能（PDF/Excel）
+
+3. 图片支持
+   - 食谱图片上传
+   - 食谱图片展示
+   - 图片压缩和优化
+   - 云存储集成
 
 ### 长期目标（低优先级）
-1. AI 功能
-   - AI 体检单识别
-   - AI 营养分析
+1. AI 功能增强
+   - AI 体检单识别（OCR）
+   - AI 营养分析增强
    - AI 食谱生成
    - AI 生长发育评估
+   - 协同过滤推荐算法优化
 
 2. 社区功能
    - 用户分享
@@ -479,6 +870,12 @@ Database (Room SQLite)
    - 专家咨询
    - 商品推荐
    - 会员系统
+
+4. 测试完善
+   - 单元测试
+   - 集成测试
+   - UI 测试
+   - 性能测试
 
 ## 许可证
 

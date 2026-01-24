@@ -15,6 +15,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,6 +29,7 @@ fun HealthRecordFormScreen(
     viewModel: HealthRecordViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val scope = rememberCoroutineScope()
     var recordDate by remember { mutableStateOf("") }
     var weight by remember { mutableStateOf("") }
     var height by remember { mutableStateOf("") }
@@ -34,6 +38,13 @@ fun HealthRecordFormScreen(
     var calciumLevel by remember { mutableStateOf("") }
     var hemoglobin by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
+
+    // AI 确认对话框状态
+    var showAiConfirmDialog by remember { mutableStateOf(false) }
+    var aiAnalysisResult by remember { mutableStateOf<String?>(null) }
+    var editableAiAnalysis by remember { mutableStateOf("") }
+    var expiryDays by remember { mutableStateOf(7) }
+    var pendingRecordId by remember { mutableStateOf(0L) }
 
     val scrollState = rememberScrollState()
     val isEditing = recordId > 0
@@ -54,6 +65,23 @@ fun HealthRecordFormScreen(
         } else {
             val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
             recordDate = today.toString()
+        }
+    }
+
+    // 监听保存状态，显示 AI 确认对话框
+    LaunchedEffect(uiState.isSaved) {
+        if (uiState.isSaved && !isEditing && pendingRecordId == 0L) {
+            // 查找最新保存的记录
+            val latestRecord = uiState.healthRecords
+                .filter { it.babyId == babyId }
+                .maxByOrNull { it.id }
+            
+            latestRecord?.aiAnalysis?.let { analysis ->
+                pendingRecordId = latestRecord.id
+                aiAnalysisResult = analysis
+                editableAiAnalysis = analysis
+                showAiConfirmDialog = true
+            }
         }
     }
 
@@ -163,8 +191,15 @@ fun HealthRecordFormScreen(
                         aiAnalysis = null,
                         expiryDate = null
                     )
+                    
+                    // 保存记录（会自动触发 AI 分析）
                     viewModel.saveHealthRecord(record)
-                    onSave()
+                    
+                    // 延迟调用 onSave，等待 AI 分析完成
+                    scope.launch {
+                        kotlinx.coroutines.delay(500)
+                        onSave()
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = recordDate.isNotBlank()
@@ -181,4 +216,122 @@ fun HealthRecordFormScreen(
             }
         }
     }
+
+    // AI 确认对话框
+    if (showAiConfirmDialog) {
+        AiAnalysisConfirmDialog(
+            aiAnalysis = editableAiAnalysis,
+            onAnalysisChange = { editableAiAnalysis = it },
+            expiryDays = expiryDays,
+            onExpiryDaysChange = { expiryDays = it },
+            onConfirm = {
+                // 计算有效期
+                val expiryDate = if (expiryDays > 0) {
+                    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                    today.plus(kotlinx.datetime.DatePeriod(days = expiryDays))
+                } else {
+                    null
+                }
+                
+                // 更新记录
+                val updatedRecord = com.example.babyfood.domain.model.HealthRecord(
+                    id = pendingRecordId,
+                    babyId = babyId,
+                    recordDate = kotlinx.datetime.LocalDate.parse(recordDate),
+                    weight = weight.toFloatOrNull(),
+                    height = height.toFloatOrNull(),
+                    headCircumference = headCircumference.toFloatOrNull(),
+                    ironLevel = ironLevel.toFloatOrNull(),
+                    calciumLevel = calciumLevel.toFloatOrNull(),
+                    hemoglobin = hemoglobin.toFloatOrNull(),
+                    notes = notes.ifBlank { null },
+                    aiAnalysis = editableAiAnalysis.ifBlank { null },
+                    expiryDate = expiryDate,
+                    isConfirmed = true
+                )
+                viewModel.saveHealthRecord(updatedRecord)
+                showAiConfirmDialog = false
+                pendingRecordId = 0L
+            },
+            onDismiss = {
+                showAiConfirmDialog = false
+                pendingRecordId = 0L
+            }
+        )
+    }
+}
+
+@Composable
+private fun AiAnalysisConfirmDialog(
+    aiAnalysis: String,
+    onAnalysisChange: (String) -> Unit,
+    expiryDays: Int,
+    onExpiryDaysChange: (Int) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("AI 分析结论") },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "AI 已为您生成健康分析结论，您可以确认或修改：",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                
+                OutlinedTextField(
+                    value = aiAnalysis,
+                    onValueChange = onAnalysisChange,
+                    label = { Text("分析结论") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
+                    minLines = 3
+                )
+                
+                Text(
+                    text = "数据有效期：",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = expiryDays == 7,
+                        onClick = { onExpiryDaysChange(7) },
+                        label = { Text("7天") }
+                    )
+                    FilterChip(
+                        selected = expiryDays == 30,
+                        onClick = { onExpiryDaysChange(30) },
+                        label = { Text("30天") }
+                    )
+                    FilterChip(
+                        selected = expiryDays == 90,
+                        onClick = { onExpiryDaysChange(90) },
+                        label = { Text("90天") }
+                    )
+                    FilterChip(
+                        selected = expiryDays == 0,
+                        onClick = { onExpiryDaysChange(0) },
+                        label = { Text("永久") }
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text("确认")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
 }
