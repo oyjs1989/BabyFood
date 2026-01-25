@@ -21,6 +21,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // 后端服务器配置
+        buildConfigField("String", "BACKEND_SERVER_IP", "\"${project.findProperty("BACKEND_SERVER_IP") ?: "39.108.143.232"}\"")
+        buildConfigField("String", "BACKEND_SERVER_PORT", "\"${project.findProperty("BACKEND_SERVER_PORT") ?: "8080"}\"")
     }
 
     buildTypes {

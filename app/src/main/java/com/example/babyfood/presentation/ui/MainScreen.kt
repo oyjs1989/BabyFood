@@ -8,10 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
+import com.example.babyfood.presentation.ui.icons.AppIcons
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,10 +41,10 @@ sealed class BottomNavItem(
     val icon: ImageVector,
     val label: String
 ) {
-    object Home : BottomNavItem("home", Icons.Default.Home, "首页")
-    object Recipes : BottomNavItem("recipes", Icons.Default.Favorite, "食谱")
-    object Plans : BottomNavItem("plans", Icons.Default.CalendarMonth, "计划")
-    object Baby : BottomNavItem("baby", Icons.Default.Person, "宝宝")
+    object Home : BottomNavItem("home", AppIcons.Home, "首页")
+    object Recipes : BottomNavItem("recipes", AppIcons.Recipes, "食谱")
+    object Plans : BottomNavItem("plans", AppIcons.Plans, "计划")
+    object Baby : BottomNavItem("baby", AppIcons.Baby, "宝宝")
 }
 
 @Composable
@@ -94,9 +91,40 @@ fun MainScreen() {
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = "home",
+            startDestination = "login",
             modifier = Modifier.padding(paddingValues)
         ) {
+            // 登录页面
+            composable("login") {
+                com.example.babyfood.presentation.ui.auth.LoginScreen(
+                    onLoginSuccess = {
+                        navController.navigate("home") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    },
+                    onRegisterClick = {
+                        navController.navigate("register")
+                    },
+                    onForgotPasswordClick = {
+                        // TODO: 导航到忘记密码页面
+                    }
+                )
+            }
+
+            // 注册页面
+            composable("register") {
+                com.example.babyfood.presentation.ui.auth.RegisterScreen(
+                    onRegisterSuccess = {
+                        navController.navigate("home") {
+                            popUpTo("register") { inclusive = true }
+                        }
+                    },
+                    onBackToLogin = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
             // 首页 - 今日餐单
             composable("home") {
                 TodayMenuScreen()

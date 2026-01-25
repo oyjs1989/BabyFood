@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 允许指定域名使用明文 HTTP 通信（仅用于开发环境） -->
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- 后端服务器 IP 地址 -->
+        <domain includeSubdomains="false">39.108.143.232</domain>
+    </domain-config>
+</network-security-config>

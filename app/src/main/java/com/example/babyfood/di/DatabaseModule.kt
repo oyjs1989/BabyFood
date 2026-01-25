@@ -8,6 +8,9 @@ import com.example.babyfood.data.local.database.MIGRATION_2_3
 import com.example.babyfood.data.local.database.MIGRATION_3_4
 import com.example.babyfood.data.local.database.MIGRATION_4_5
 import com.example.babyfood.data.local.database.MIGRATION_5_6
+import com.example.babyfood.data.local.database.MIGRATION_6_7
+import com.example.babyfood.data.local.database.MIGRATION_7_8
+import com.example.babyfood.data.local.database.MIGRATION_8_9
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,7 +32,7 @@ object DatabaseModule {
             BabyFoodDatabase::class.java,
             "baby_food_database"
         )
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
             .fallbackToDestructiveMigration()
             .build()
     }
@@ -53,4 +56,8 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideGrowthRecordDao(database: BabyFoodDatabase) = database.growthRecordDao()
+
+    @Provides
+    @Singleton
+    fun provideUserDao(database: BabyFoodDatabase) = database.userDao()
 }

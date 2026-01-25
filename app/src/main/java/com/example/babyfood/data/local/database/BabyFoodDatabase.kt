@@ -10,11 +10,13 @@ import com.example.babyfood.data.local.database.dao.GrowthRecordDao
 import com.example.babyfood.data.local.database.dao.HealthRecordDao
 import com.example.babyfood.data.local.database.dao.PlanDao
 import com.example.babyfood.data.local.database.dao.RecipeDao
+import com.example.babyfood.data.local.database.dao.UserDao
 import com.example.babyfood.data.local.database.entity.BabyEntity
 import com.example.babyfood.data.local.database.entity.GrowthRecordEntity
 import com.example.babyfood.data.local.database.entity.HealthRecordEntity
 import com.example.babyfood.data.local.database.entity.PlanEntity
 import com.example.babyfood.data.local.database.entity.RecipeEntity
+import com.example.babyfood.data.local.database.entity.UserEntity
 
 // 数据库迁移：从版本 1 到版本 2
 val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -234,15 +236,75 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
     }
 }
 
+// 数据库迁移：从版本 7 到版本 8
+// 添加用户表，支持登录功能
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // 创建 users 表（不使用索引，因为 Room 实体类中没有定义索引）
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                phone TEXT,
+                email TEXT,
+                nickname TEXT NOT NULL,
+                avatar TEXT,
+                createdAt TEXT NOT NULL,
+                updatedAt TEXT NOT NULL,
+                isEmailVerified INTEGER NOT NULL,
+                isPhoneVerified INTEGER NOT NULL,
+                isLoggedIn INTEGER NOT NULL,
+                lastLoginTime TEXT
+            )
+        """.trimIndent())
+    }
+}
+
+// 数据库迁移：从版本 8 到版本 9
+// 修复 users 表的结构问题（删除索引，重建表以匹配 UserEntity 定义）
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // 1. 创建新的 users 表（不带索引）
+        database.execSQL("""
+            CREATE TABLE users_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                phone TEXT,
+                email TEXT,
+                nickname TEXT NOT NULL,
+                avatar TEXT,
+                createdAt TEXT NOT NULL,
+                updatedAt TEXT NOT NULL,
+                isEmailVerified INTEGER NOT NULL,
+                isPhoneVerified INTEGER NOT NULL,
+                isLoggedIn INTEGER NOT NULL,
+                lastLoginTime TEXT
+            )
+        """.trimIndent())
+
+        // 2. 迁移数据
+        database.execSQL("""
+            INSERT INTO users_new (id, phone, email, nickname, avatar, createdAt, updatedAt, isEmailVerified, isPhoneVerified, isLoggedIn, lastLoginTime)
+            SELECT id, phone, email, nickname, avatar, createdAt, updatedAt, isEmailVerified, isPhoneVerified, isLoggedIn, lastLoginTime
+            FROM users
+        """.trimIndent())
+
+        // 3. 删除旧表
+        database.execSQL("DROP TABLE users")
+
+        // 4. 重命名新表
+        database.execSQL("ALTER TABLE users_new RENAME TO users")
+    }
+}
+
 @Database(
     entities = [
         BabyEntity::class,
         RecipeEntity::class,
         PlanEntity::class,
         HealthRecordEntity::class,
-        GrowthRecordEntity::class
+        GrowthRecordEntity::class,
+        UserEntity::class
     ],
-    version = 7,  // 升级到版本 7（添加宝宝头像）
+    version = 9,  // 升级到版本 9（修复 users 表结构）
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -252,4 +314,5 @@ abstract class BabyFoodDatabase : RoomDatabase() {
     abstract fun planDao(): PlanDao
     abstract fun healthRecordDao(): HealthRecordDao
     abstract fun growthRecordDao(): GrowthRecordDao
+    abstract fun userDao(): UserDao
 }
