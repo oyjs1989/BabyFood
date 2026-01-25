@@ -9,6 +9,7 @@ import kotlinx.serialization.Serializable
 data class LoginResponse(
     val success: Boolean,
     val errorMessage: String? = null,
+    val errorCode: String? = null, // 错误代码
     val token: String? = null,
     val refreshToken: String? = null,
     val user: User? = null,

@@ -158,33 +158,59 @@ class LoginViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
-            _authState.value = AuthState.Loading
-            val result = authRepository.login(account, password, rememberMe)
+            try {
+                _authState.value = AuthState.Loading
+                val result = authRepository.login(account, password, rememberMe)
 
-            when (result) {
-                is AuthState.LoggedIn -> {
-                    Log.d(TAG, "✓ 登录成功，导航到首页")
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        isLoginSuccess = true
-                    )
-                    _authState.value = result
+                when (result) {
+                    is AuthState.LoggedIn -> {
+                        Log.d(TAG, "✓ 登录成功，导航到首页")
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            isLoginSuccess = true
+                        )
+                        _authState.value = result
+                    }
+                    is AuthState.Error -> {
+                        Log.e(TAG, "❌ 登录失败: ${result.message}")
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            error = result.message
+                        )
+                        _authState.value = result
+                    }
+                    else -> {
+                        Log.e(TAG, "❌ 未知的登录状态: $result")
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            error = "登录失败，请重试"
+                        )
+                    }
                 }
-                is AuthState.Error -> {
-                    Log.e(TAG, "❌ 登录失败: ${result.message}")
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = result.message
-                    )
-                    _authState.value = result
-                }
-                else -> {
-                    Log.e(TAG, "❌ 未知的登录状态: $result")
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = "登录失败，请重试"
-                    )
-                }
+            } catch (e: java.net.SocketTimeoutException) {
+                Log.e(TAG, "❌ 连接超时: ${e.message}")
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "请求超时，请检查网络后重试"
+                )
+            } catch (e: java.util.concurrent.TimeoutException) {
+                Log.e(TAG, "❌ 读取超时: ${e.message}")
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "请求超时，请检查网络后重试"
+                )
+            } catch (e: java.io.IOException) {
+                Log.e(TAG, "❌ 网络错误: ${e.message}")
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "网络错误，请检查网络连接"
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ 未知错误: ${e.message}", e)
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "登录失败，请稍后重试"
+                )
             }
         }
     }
@@ -215,6 +241,15 @@ class LoginViewModel @Inject constructor(
      */
     fun clearLoginSuccessFlag() {
         _uiState.value = _uiState.value.copy(isLoginSuccess = false)
+    }
+
+    /**
+     * 取消登录请求
+     */
+    fun cancelLogin() {
+        Log.d(TAG, "========== 取消登录请求 ==========")
+        _uiState.value = _uiState.value.copy(isLoading = false)
+        // TODO: 如果需要，可以在这里取消实际的协程任务
     }
 
     /**

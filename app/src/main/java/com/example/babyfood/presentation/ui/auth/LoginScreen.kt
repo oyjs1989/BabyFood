@@ -32,6 +32,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -101,6 +104,11 @@ fun LoginScreen(
     // 监听表单状态变化
     LaunchedEffect(uiState.isFormValid) {
         Log.d("LoginScreen", "表单有效状态变化: ${uiState.isFormValid}")
+    }
+
+    // 拦截返回键（仅在加载状态下）
+    BackHandler(enabled = uiState.isLoading) {
+        viewModel.cancelLogin()
     }
 
     Box(
@@ -358,7 +366,11 @@ fun LoginScreen(
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier
+                            .size(24.dp)
+                            .semantics {
+                                contentDescription = "登录中"
+                            },
                         color = Color.White,
                         strokeWidth = 2.dp
                     )

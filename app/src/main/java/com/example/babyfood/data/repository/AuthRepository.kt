@@ -12,6 +12,10 @@ import com.example.babyfood.domain.model.User
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
+import kotlinx.serialization.json.Json
+import retrofit2.HttpException
+import java.io.IOException
+import java.net.SocketTimeoutException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -76,10 +80,39 @@ class AuthRepository @Inject constructor(
                 Log.e(TAG, "❌ 登录失败: ${response.errorMessage}")
                 AuthState.Error(response.errorMessage ?: "登录失败")
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ 登录异常: ${e.message}")
+        } catch (e: HttpException) {
+            // 处理 HTTP 错误（4xx, 5xx）
+            Log.e(TAG, "❌ HTTP错误: ${e.code()} - ${e.message()}")
             Log.e(TAG, "异常堆栈: ", e)
+
+            // 尝试从响应体中提取错误信息
+            val errorBody = e.response()?.errorBody()?.string()
+            if (errorBody != null) {
+                try {
+                    val errorResponse = Json.decodeFromString<LoginResponse>(errorBody)
+                    val errorMessage = getFriendlyErrorMessage(errorResponse.errorCode, errorResponse.errorMessage)
+                    Log.e(TAG, "❌ 登录失败: $errorMessage (errorCode: ${errorResponse.errorCode})")
+                    AuthState.Error(errorMessage)
+                } catch (parseException: Exception) {
+                    Log.e(TAG, "❌ 解析错误响应失败: ${parseException.message}")
+                    AuthState.Error("登录失败，请稍后重试")
+                }
+            } else {
+                AuthState.Error("登录失败，请稍后重试")
+            }
+        } catch (e: SocketTimeoutException) {
+            // 处理连接超时
+            Log.e(TAG, "❌ 连接超时: ${e.message}")
+            AuthState.Error("请求超时，请检查网络后重试")
+        } catch (e: IOException) {
+            // 处理网络错误
+            Log.e(TAG, "❌ 网络错误: ${e.message}")
             AuthState.Error("网络错误，请检查网络连接")
+        } catch (e: Exception) {
+            // 处理其他未知错误
+            Log.e(TAG, "❌ 未知错误: ${e.message}")
+            Log.e(TAG, "异常堆栈: ", e)
+            AuthState.Error("登录失败，请稍后重试")
         }
     }
 
@@ -117,10 +150,39 @@ class AuthRepository @Inject constructor(
                 Log.e(TAG, "❌ 注册失败: ${response.errorMessage}")
                 AuthState.Error(response.errorMessage ?: "注册失败")
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ 注册异常: ${e.message}")
+        } catch (e: HttpException) {
+            // 处理 HTTP 错误（4xx, 5xx）
+            Log.e(TAG, "❌ HTTP错误: ${e.code()} - ${e.message()}")
             Log.e(TAG, "异常堆栈: ", e)
+
+            // 尝试从响应体中提取错误信息
+            val errorBody = e.response()?.errorBody()?.string()
+            if (errorBody != null) {
+                try {
+                    val errorResponse = Json.decodeFromString<LoginResponse>(errorBody)
+                    val errorMessage = errorResponse.errorMessage ?: "注册失败，请稍后重试"
+                    Log.e(TAG, "❌ 注册失败: $errorMessage (errorCode: ${errorResponse.errorCode})")
+                    AuthState.Error(errorMessage)
+                } catch (parseException: Exception) {
+                    Log.e(TAG, "❌ 解析错误响应失败: ${parseException.message}")
+                    AuthState.Error("注册失败，请稍后重试")
+                }
+            } else {
+                AuthState.Error("注册失败，请稍后重试")
+            }
+        } catch (e: SocketTimeoutException) {
+            // 处理连接超时
+            Log.e(TAG, "❌ 连接超时: ${e.message}")
+            AuthState.Error("请求超时，请检查网络后重试")
+        } catch (e: IOException) {
+            // 处理网络错误
+            Log.e(TAG, "❌ 网络错误: ${e.message}")
             AuthState.Error("网络错误，请检查网络连接")
+        } catch (e: Exception) {
+            // 处理其他未知错误
+            Log.e(TAG, "❌ 未知错误: ${e.message}")
+            Log.e(TAG, "异常堆栈: ", e)
+            AuthState.Error("注册失败，请稍后重试")
         }
     }
 
@@ -171,10 +233,39 @@ class AuthRepository @Inject constructor(
                 Log.e(TAG, "❌ Token刷新失败: ${response.errorMessage}")
                 AuthState.Error(response.errorMessage ?: "Token刷新失败")
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Token刷新异常: ${e.message}")
+        } catch (e: HttpException) {
+            // 处理 HTTP 错误（4xx, 5xx）
+            Log.e(TAG, "❌ HTTP错误: ${e.code()} - ${e.message()}")
             Log.e(TAG, "异常堆栈: ", e)
+
+            // 尝试从响应体中提取错误信息
+            val errorBody = e.response()?.errorBody()?.string()
+            if (errorBody != null) {
+                try {
+                    val errorResponse = Json.decodeFromString<LoginResponse>(errorBody)
+                    val errorMessage = errorResponse.errorMessage ?: "Token刷新失败，请稍后重试"
+                    Log.e(TAG, "❌ Token刷新失败: $errorMessage (errorCode: ${errorResponse.errorCode})")
+                    AuthState.Error(errorMessage)
+                } catch (parseException: Exception) {
+                    Log.e(TAG, "❌ 解析错误响应失败: ${parseException.message}")
+                    AuthState.Error("Token刷新失败，请稍后重试")
+                }
+            } else {
+                AuthState.Error("Token刷新失败，请稍后重试")
+            }
+        } catch (e: SocketTimeoutException) {
+            // 处理连接超时
+            Log.e(TAG, "❌ 连接超时: ${e.message}")
+            AuthState.Error("请求超时，请检查网络后重试")
+        } catch (e: IOException) {
+            // 处理网络错误
+            Log.e(TAG, "❌ 网络错误: ${e.message}")
             AuthState.Error("网络错误，请检查网络连接")
+        } catch (e: Exception) {
+            // 处理其他未知错误
+            Log.e(TAG, "❌ 未知错误: ${e.message}")
+            Log.e(TAG, "异常堆栈: ", e)
+            AuthState.Error("Token刷新失败，请稍后重试")
         }
     }
 
@@ -208,6 +299,22 @@ class AuthRepository @Inject constructor(
     }
 
     // ========== 私有方法 ==========
+
+    /**
+     * 根据错误代码获取友好的错误提示
+     * @param errorCode 错误代码
+     * @param errorMessage 后端返回的错误消息
+     * @return 友好的错误提示
+     */
+    private fun getFriendlyErrorMessage(errorCode: String?, errorMessage: String?): String {
+        return when (errorCode) {
+            "4011" -> "账号或密码错误，请检查后重试"
+            "4012" -> "账号已被锁定，请30分钟后再试"
+            "4001" -> "账号格式不正确"
+            "4002" -> "密码格式不正确"
+            else -> errorMessage ?: "登录失败，请稍后重试"
+        }
+    }
 
     private fun saveToken(token: String?, refreshToken: String?) {
         // TODO: 实现安全的Token存储（使用Android Keystore或EncryptedSharedPreferences）
