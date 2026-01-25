@@ -122,10 +122,10 @@ fun GrowthCurveScreen(
                                 .padding(top = 8.dp),
                             horizontalArrangement = Arrangement.SpaceAround
                         ) {
-                            LegendItem(color = Color(0xFF4CAF50), text = "P3 (下界)")
-                            LegendItem(color = Color(0xFFFF9800), text = "P50 (中位)")
-                            LegendItem(color = Color(0xFFF44336), text = "P97 (上界)")
-                            LegendItem(color = Color(0xFF2196F3), text = "实际数据")
+                            LegendItem(color = com.example.babyfood.presentation.theme.NutritionCalcium, text = "P3 (下界)")
+                            LegendItem(color = com.example.babyfood.presentation.theme.NutritionCalories, text = "P50 (中位)")
+                            LegendItem(color = com.example.babyfood.presentation.theme.Error, text = "P97 (上界)")
+                            LegendItem(color = com.example.babyfood.presentation.theme.NutritionProtein, text = "实际数据")
                         }
                         
                         // 如果没有数据，显示提示

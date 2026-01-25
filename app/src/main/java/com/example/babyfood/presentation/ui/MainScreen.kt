@@ -243,12 +243,6 @@ fun MainScreen() {
                     },
                     onNavigateToGrowth = {
                         navController.navigate("baby/growth/$babyId")
-                    },
-                    onNavigateToAiSettings = {
-                        navController.navigate("ai/settings")
-                    },
-                    onNavigateToAiRecommendation = {
-                        navController.navigate("ai/recommendation")
                     }
                 )
             }

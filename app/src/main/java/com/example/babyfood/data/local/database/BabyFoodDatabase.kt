@@ -147,10 +147,10 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
         """.trimIndent())
         database.execSQL("""
             INSERT INTO babies_new (id, name, birthDate, allergies, weight, height, preferences, nutrition_goal, cloudId, syncStatus, lastSyncTime, version, isDeleted)
-            SELECT id, name, birthDate, allergies, weight, height, preferences, nutrition_goal, cloudId, 
-                   COALESCE(syncStatus, 'LOCAL_ONLY'), 
-                   lastSyncTime, 
-                   COALESCE(version, 1), 
+            SELECT id, name, birthDate, allergies, weight, height, preferences, nutrition_goal, cloudId,
+                   COALESCE(syncStatus, 'LOCAL_ONLY'),
+                   lastSyncTime,
+                   COALESCE(version, 1),
                    COALESCE(isDeleted, 0)
             FROM babies
         """.trimIndent())
@@ -179,10 +179,10 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
         """.trimIndent())
         database.execSQL("""
             INSERT INTO plans_new (id, babyId, recipeId, plannedDate, meal_period, status, notes, cloudId, cloudBabyId, cloudRecipeId, syncStatus, lastSyncTime, version, isDeleted)
-            SELECT id, babyId, recipeId, plannedDate, meal_period, status, notes, cloudId, cloudBabyId, cloudRecipeId, 
-                   COALESCE(syncStatus, 'PENDING_UPLOAD'), 
-                   lastSyncTime, 
-                   COALESCE(version, 1), 
+            SELECT id, babyId, recipeId, plannedDate, meal_period, status, notes, cloudId, cloudBabyId, cloudRecipeId,
+                   COALESCE(syncStatus, 'PENDING_UPLOAD'),
+                   lastSyncTime,
+                   COALESCE(version, 1),
                    COALESCE(isDeleted, 0)
             FROM plans
         """.trimIndent())
@@ -212,16 +212,25 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
         """.trimIndent())
         database.execSQL("""
             INSERT INTO recipes_new (id, name, minAgeMonths, maxAgeMonths, ingredients, steps, nutrition, category, isBuiltIn, imageUrl, cloudId, syncStatus, lastSyncTime, version, isDeleted)
-            SELECT id, name, minAgeMonths, maxAgeMonths, ingredients, steps, nutrition, category, isBuiltIn, imageUrl, cloudId, 
-                   COALESCE(syncStatus, 'PENDING_UPLOAD'), 
-                   lastSyncTime, 
-                   COALESCE(version, 1), 
+            SELECT id, name, minAgeMonths, maxAgeMonths, ingredients, steps, nutrition, category, isBuiltIn, imageUrl, cloudId,
+                   COALESCE(syncStatus, 'PENDING_UPLOAD'),
+                   lastSyncTime,
+                   COALESCE(version, 1),
                    COALESCE(isDeleted, 0)
             FROM recipes
         """.trimIndent())
         database.execSQL("DROP TABLE recipes")
         database.execSQL("ALTER TABLE recipes_new RENAME TO recipes")
         database.execSQL("CREATE INDEX IF NOT EXISTS index_recipes_cloudId ON recipes(cloudId)")
+    }
+}
+
+// 数据库迁移：从版本 6 到版本 7
+// 添加宝宝头像字段
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // 为 babies 表添加 avatarUrl 字段
+        database.execSQL("ALTER TABLE babies ADD COLUMN avatarUrl TEXT")
     }
 }
 
@@ -233,7 +242,7 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
         HealthRecordEntity::class,
         GrowthRecordEntity::class
     ],
-    version = 6,  // 升级到版本 6（修复同步字段约束）
+    version = 7,  // 升级到版本 7（添加宝宝头像）
     exportSchema = false
 )
 @TypeConverters(Converters::class)

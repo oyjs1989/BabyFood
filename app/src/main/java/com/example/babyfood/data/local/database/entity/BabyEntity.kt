@@ -19,6 +19,7 @@ data class BabyEntity(
     val height: Float?,
     val preferences: List<PreferenceItem>,
     val nutritionGoal: NutritionGoal? = null,
+    val avatarUrl: String? = null,                  // 头像 URL
 
     // 同步元数据字段（向后兼容，默认值）
     val cloudId: String? = null,                    // 云端唯一标识
@@ -35,7 +36,8 @@ data class BabyEntity(
         weight = weight,
         height = height,
         preferences = preferences,
-        nutritionGoal = nutritionGoal
+        nutritionGoal = nutritionGoal,
+        avatarUrl = avatarUrl
     )
 }
 
@@ -47,5 +49,6 @@ fun Baby.toEntity(): BabyEntity = BabyEntity(
     weight = weight,
     height = height,
     preferences = preferences,
-    nutritionGoal = nutritionGoal
+    nutritionGoal = nutritionGoal,
+    avatarUrl = avatarUrl
 )

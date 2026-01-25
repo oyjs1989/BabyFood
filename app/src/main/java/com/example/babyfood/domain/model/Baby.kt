@@ -13,7 +13,8 @@ data class Baby(
     val weight: Float? = null,      // kg
     val height: Float? = null,      // cm
     val preferences: List<PreferenceItem> = emptyList(),  // 偏好食材列表（带有效期）
-    val nutritionGoal: NutritionGoal? = null  // 自定义营养目标（用户可调整）
+    val nutritionGoal: NutritionGoal? = null,  // 自定义营养目标（用户可调整）
+    val avatarUrl: String? = null   // 头像 URL
 ) {
     val ageInMonths: Int
         get() {

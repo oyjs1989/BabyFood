@@ -1,9 +1,15 @@
 package com.example.babyfood.presentation.theme
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,9 +36,12 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -42,12 +51,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// ===== 增强型卡片组件 =====
+// ===== 增强型卡片组件 - Soft UI Evolution 风格 =====
 
 /**
- * 基础应用卡片
+ * 基础应用卡片 - 增强版
  * @param modifier 修饰符
  * @param backgroundColor 背景颜色
+ * @param elevation 阴影高度
  * @param content 内容
  */
 @Composable
@@ -75,7 +85,63 @@ fun AppCard(
 }
 
 /**
- * 渐变卡片
+ * 可交互卡片 - Soft UI Evolution 风格
+ * 添加悬停和点击效果
+ * @param modifier 修饰符
+ * @param onClick 点击事件
+ * @param backgroundColor 背景颜色
+ * @param content 内容
+ */
+@Composable
+fun InteractiveCard(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
+    backgroundColor: Color = MaterialTheme.colorScheme.surface,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.98f else 1f,
+        animationSpec = spring(
+            dampingRatio = 0.8f,
+            stiffness = 300f
+        ),
+        label = "card_scale"
+    )
+    
+    val elevation by animateDpAsState(
+        targetValue = if (isPressed) 1.dp else 2.dp,
+        animationSpec = tween(durationMillis = 150),
+        label = "card_elevation"
+    )
+
+    Card(
+        modifier = modifier
+            .scale(scale)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            ),
+        shape = LargeRoundedCornerShape,
+        colors = CardDefaults.cardColors(
+            containerColor = backgroundColor
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = elevation
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            content = content
+        )
+    }
+}
+
+/**
+ * 渐变卡片 - Soft UI Evolution 风格
  * @param modifier 修饰符
  * @param gradientColors 渐变色列表
  * @param content 内容
@@ -111,7 +177,7 @@ fun GradientCard(
 }
 
 /**
- * 信息提示卡片
+ * 信息提示卡片 - Soft UI Evolution 风格
  * @param title 标题
  * @param message 消息内容
  * @param type 提示类型
@@ -195,7 +261,7 @@ enum class InfoCardType {
 // ===== 营养数据项 =====
 
 /**
- * 营养数据显示项
+ * 营养数据显示项 - Soft UI Evolution 风格
  * @param label 标签
  * @param value 数值
  * @param unit 单位
@@ -237,7 +303,7 @@ fun NutritionItem(
 }
 
 /**
- * 圆形营养数据项
+ * 圆形营养数据项 - Soft UI Evolution 风格
  * @param label 标签
  * @param value 数值
  * @param unit 单位
@@ -293,10 +359,10 @@ fun CircularNutritionItem(
     }
 }
 
-// ===== 按钮组件 =====
+// ===== 按钮组件 - Soft UI Evolution 风格 =====
 
 /**
- * 主要按钮
+ * 主要按钮 - Soft UI Evolution 风格
  * @param text 按钮文本
  * @param onClick 点击事件
  * @param modifier 修饰符
@@ -309,13 +375,27 @@ fun PrimaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.96f else 1f,
+        animationSpec = spring(
+            dampingRatio = 0.8f,
+            stiffness = 300f
+        ),
+        label = "button_scale"
+    )
+
     androidx.compose.material3.Button(
         onClick = onClick,
         modifier = modifier
             .height(48.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .scale(scale),
         enabled = enabled,
-        shape = MediumRoundedCornerShape,
+        interactionSource = interactionSource,
+        shape = ButtonShape,
         colors = androidx.compose.material3.ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary
@@ -329,7 +409,7 @@ fun PrimaryButton(
 }
 
 /**
- * 次要按钮（轮廓按钮）
+ * 次要按钮（轮廓按钮）- Soft UI Evolution 风格
  * @param text 按钮文本
  * @param onClick 点击事件
  * @param modifier 修饰符
@@ -342,13 +422,27 @@ fun SecondaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.96f else 1f,
+        animationSpec = spring(
+            dampingRatio = 0.8f,
+            stiffness = 300f
+        ),
+        label = "button_scale"
+    )
+
     OutlinedButton(
         onClick = onClick,
         modifier = modifier
             .height(48.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .scale(scale),
         enabled = enabled,
-        shape = MediumRoundedCornerShape,
+        interactionSource = interactionSource,
+        shape = ButtonShape,
         border = BorderStroke(
             1.dp,
             if (enabled) MaterialTheme.colorScheme.primary
@@ -365,7 +459,7 @@ fun SecondaryButton(
 }
 
 /**
- * 文本按钮
+ * 文本按钮 - Soft UI Evolution 风格
  * @param text 按钮文本
  * @param onClick 点击事件
  * @param modifier 修饰符
@@ -378,11 +472,24 @@ fun TextOnlyButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.96f else 1f,
+        animationSpec = spring(
+            dampingRatio = 0.8f,
+            stiffness = 300f
+        ),
+        label = "button_scale"
+    )
+
     TextButton(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.scale(scale),
         enabled = enabled,
-        shape = MediumRoundedCornerShape
+        interactionSource = interactionSource,
+        shape = ButtonShape
     ) {
         Text(
             text = text,
@@ -396,7 +503,7 @@ fun TextOnlyButton(
 // ===== 标签组件 =====
 
 /**
- * 基础标签
+ * 基础标签 - Soft UI Evolution 风格
  * @param text 标签文本
  * @param color 标签颜色
  * @param modifier 修饰符
@@ -425,7 +532,7 @@ fun AppLabel(
 }
 
 /**
- * 状态标签
+ * 状态标签 - Soft UI Evolution 风格
  * @param text 标签文本
  * @param status 状态类型
  * @param modifier 修饰符
@@ -463,7 +570,7 @@ enum class LabelStatus {
 // ===== 空状态组件 =====
 
 /**
- * 空状态提示
+ * 空状态提示 - Soft UI Evolution 风格
  * @param icon 图标
  * @param title 标题
  * @param description 描述文本
@@ -521,7 +628,7 @@ fun EmptyState(
 // ===== 分隔线组件 =====
 
 /**
- * 水平分隔线
+ * 水平分隔线 - Soft UI Evolution 风格
  * @param modifier 修饰符
  * @param thickness 厚度
  * @param color 颜色

@@ -3,7 +3,9 @@ package com.example.babyfood.presentation.ui.baby
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.babyfood.data.repository.BabyRepository
+import com.example.babyfood.data.repository.HealthRecordRepository
 import com.example.babyfood.domain.model.Baby
+import com.example.babyfood.domain.model.HealthRecord
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,7 +15,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class BabyViewModel @Inject constructor(
-    private val babyRepository: BabyRepository
+    private val babyRepository: BabyRepository,
+    private val healthRecordRepository: HealthRecordRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BabyUiState())
@@ -78,6 +81,14 @@ class BabyViewModel @Inject constructor(
         viewModelScope.launch {
             val baby = babyRepository.getBabyById(babyId)
             _uiState.value = _uiState.value.copy(selectedBaby = baby)
+            loadLatestHealthRecord(babyId)
+        }
+    }
+
+    fun loadLatestHealthRecord(babyId: Long) {
+        viewModelScope.launch {
+            val latestRecord = healthRecordRepository.getLatestHealthRecord(babyId)
+            _uiState.value = _uiState.value.copy(latestHealthRecord = latestRecord)
         }
     }
 }
@@ -87,5 +98,6 @@ data class BabyUiState(
     val isLoading: Boolean = true,
     val isSaved: Boolean = false,
     val error: String? = null,
-    val selectedBaby: Baby? = null
+    val selectedBaby: Baby? = null,
+    val latestHealthRecord: HealthRecord? = null
 )
