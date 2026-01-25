@@ -89,3 +89,8 @@ lint-baseline.xml
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+nul
+
+# python
+.pyc
+__pycache__
