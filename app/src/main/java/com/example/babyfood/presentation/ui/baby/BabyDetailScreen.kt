@@ -1,6 +1,7 @@
 package com.example.babyfood.presentation.ui.baby
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -24,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.babyfood.domain.model.NutritionGoal
+import com.example.babyfood.presentation.ui.home.components.NutritionGoalEditDialog
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -38,14 +41,24 @@ fun BabyDetailScreen(
     onManagePreferences: () -> Unit,
     onNavigateToHealthRecords: () -> Unit,
     onNavigateToGrowth: () -> Unit,
+    onEditNutritionGoal: (NutritionGoal) -> Unit = {},
+    onGenerateNutritionRecommendation: suspend () -> NutritionGoal? = { null },
     viewModel: BabyViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val baby = uiState.babies.find { it.id == babyId }
     val latestHealthRecord = uiState.latestHealthRecord
+    var showNutritionGoalEdit by remember { mutableStateOf(false) }
+    var nutritionRecommendation by remember { mutableStateOf<NutritionGoal?>(null) }
 
     LaunchedEffect(babyId) {
         viewModel.loadLatestHealthRecord(babyId)
+    }
+
+    LaunchedEffect(showNutritionGoalEdit) {
+        if (showNutritionGoalEdit && baby != null) {
+            nutritionRecommendation = onGenerateNutritionRecommendation()
+        }
     }
 
     Scaffold(
@@ -297,7 +310,8 @@ fun BabyDetailScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = 16.dp)
+                        .clickable { showNutritionGoalEdit = true },
                     colors = CardDefaults.cardColors(
                         containerColor = Color.White
                     ),
@@ -306,11 +320,23 @@ fun BabyDetailScreen(
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
-                        Text(
-                            text = "营养目标",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "营养目标",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "编辑",
+                                tint = Color(0xFF999999),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                         Spacer(modifier = Modifier.height(12.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -464,6 +490,22 @@ fun BabyDetailScreen(
                 Text("宝宝信息不存在")
             }
         }
+    }
+
+    // 营养目标编辑对话框
+    if (showNutritionGoalEdit && baby != null) {
+        NutritionGoalEditDialog(
+            currentGoal = baby.getEffectiveNutritionGoal(),
+            ageInMonths = baby.ageInMonths,
+            onDismiss = { showNutritionGoalEdit = false },
+            onSave = { newGoal ->
+                onEditNutritionGoal(newGoal)
+                showNutritionGoalEdit = false
+            },
+            onRecommend = {
+                nutritionRecommendation
+            }
+        )
     }
 }
 

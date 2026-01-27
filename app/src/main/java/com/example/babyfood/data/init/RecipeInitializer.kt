@@ -74,6 +74,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 0.5f
                 ),
                 category = "主食",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -101,6 +102,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 0.4f
                 ),
                 category = "蔬菜",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -126,6 +128,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 0.1f
                 ),
                 category = "水果",
+                cookingTime = 10,
                 isBuiltIn = true
             ),
             Recipe(
@@ -151,6 +154,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 0.3f
                 ),
                 category = "水果",
+                cookingTime = 5,
                 isBuiltIn = true
             ),
             Recipe(
@@ -178,6 +182,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 0.9f
                 ),
                 category = "蛋白质",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
 
@@ -208,6 +213,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 1.5f
                 ),
                 category = "主食",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -236,6 +242,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 0.8f
                 ),
                 category = "蔬菜",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -263,6 +270,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 0.4f
                 ),
                 category = "蛋白质",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -289,6 +297,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 1.2f
                 ),
                 category = "蛋白质",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
 
@@ -321,6 +330,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 1.5f
                 ),
                 category = "蛋白质",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -351,6 +361,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 2.0f
                 ),
                 category = "主食",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -381,6 +392,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 1.2f
                 ),
                 category = "蛋白质",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -409,6 +421,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 0.3f
                 ),
                 category = "水果",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -439,6 +452,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 2.5f
                 ),
                 category = "主食",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             // 12-24个月 - 午餐晚餐食谱
@@ -470,6 +484,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 2.0f
                 ),
                 category = "主食",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -500,6 +515,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 2.5f
                 ),
                 category = "主食",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -529,6 +545,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 0.8f
                 ),
                 category = "蛋白质",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -558,6 +575,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 2.0f
                 ),
                 category = "蛋白质",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -588,6 +606,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 2.2f
                 ),
                 category = "主食",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -618,6 +637,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 2.5f
                 ),
                 category = "主食",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -648,6 +668,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 2.0f
                 ),
                 category = "蛋白质",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -679,6 +700,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 2.0f
                 ),
                 category = "主食",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -709,6 +731,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 2.0f
                 ),
                 category = "主食",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -739,6 +762,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 1.8f
                 ),
                 category = "蛋白质",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -767,6 +791,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 1.8f
                 ),
                 category = "主食",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -796,6 +821,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 1.5f
                 ),
                 category = "蛋白质",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -826,6 +852,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 2.0f
                 ),
                 category = "主食",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -856,6 +883,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 3.0f
                 ),
                 category = "主食",
+                cookingTime = 15,
                 isBuiltIn = true
             ),
             Recipe(
@@ -885,6 +913,7 @@ class RecipeInitializer @Inject constructor(
                     iron = 0.8f
                 ),
                 category = "蛋白质",
+                cookingTime = 15,
                 isBuiltIn = true
             )
         )
