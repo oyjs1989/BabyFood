@@ -20,6 +20,8 @@ data class PlanEntity(
     val status: PlanStatus = PlanStatus.PLANNED,
     val notes: String? = null,
     val mealTime: String? = null,  // 用户自定义的用餐时间（格式：HH:mm）
+    val feedbackStatus: String? = null,  // 反馈状态（FINISHED、HALF、REJECTED、ALLERGY）
+    val feedbackTime: String? = null,  // 反馈时间（ISO 8601 格式）
 
     // 同步元数据字段（向后兼容，默认值）
     val cloudId: String? = null,                    // 云端唯一标识
@@ -38,7 +40,9 @@ data class PlanEntity(
         mealPeriod = mealPeriod.name,
         status = status,
         notes = notes,
-        mealTime = mealTime
+        mealTime = mealTime,
+        feedbackStatus = feedbackStatus,
+        feedbackTime = feedbackTime
     )
 }
 
@@ -54,5 +58,7 @@ fun Plan.toEntity(): PlanEntity = PlanEntity(
     },
     status = status,
     notes = notes,
-    mealTime = mealTime
+    mealTime = mealTime,
+    feedbackStatus = feedbackStatus,
+    feedbackTime = feedbackTime
 )

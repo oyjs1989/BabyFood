@@ -313,6 +313,31 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
     }
 }
 
+// 数据库迁移：从版本 11 到版本 12
+// 为 plans 表添加反馈相关字段（feedbackStatus 和 feedbackTime）
+val MIGRATION_11_12 = object : Migration(11, 12) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // 为 plans 表添加 feedbackStatus 字段
+        database.execSQL("ALTER TABLE plans ADD COLUMN feedbackStatus TEXT")
+
+        // 为 plans 表添加 feedbackTime 字段
+        database.execSQL("ALTER TABLE plans ADD COLUMN feedbackTime TEXT")
+    }
+}
+
+// 数据库迁移：从版本 12 到版本 13
+// 更新 babies 表的 allergies 和 preferences 字段结构（由于使用了 JSON 序列化，这个迁移是版本升级标记）
+// 实际数据结构变化通过 TypeConverters 处理，addedDate 字段在新的 AllergyItem 和 PreferenceItem 中
+val MIGRATION_12_13 = object : Migration(12, 13) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // 由于 allergies 和 preferences 字段使用 JSON 序列化存储，
+        // 数据结构的变化由 TypeConverters 在读写时自动处理
+        // 新的 AllergyItem 和 PreferenceItem 添加了 addedDate 字段，
+        // 旧数据反序列化时 addedDate 会为 null，新数据会有值
+        // 这里不需要修改数据库结构，只是版本升级
+    }
+}
+
 @Database(
     entities = [
         BabyEntity::class,
@@ -322,7 +347,7 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
         GrowthRecordEntity::class,
         UserEntity::class
     ],
-    version = 11,  // 升级到版本 11（添加 mealTime 字段）
+    version = 13,  // 升级到版本 13（更新过敏和偏好数据结构）
     exportSchema = false
 )
 @TypeConverters(Converters::class)

@@ -71,6 +71,40 @@ class BabyRepository @Inject constructor(
         }
     }
 
+    /**
+     * 添加过敏食材到宝宝档案
+     */
+    suspend fun addAllergies(babyId: Long, newAllergies: List<com.example.babyfood.domain.model.AllergyItem>) {
+        val baby = getBabyById(babyId)
+        if (baby != null) {
+            // 合并现有的过敏列表和新的过敏列表
+            val existingIngredientNames = baby.allergies.map { it.ingredient }.toSet()
+            val uniqueNewAllergies = newAllergies.filterNot { it.ingredient in existingIngredientNames }
+
+            if (uniqueNewAllergies.isNotEmpty()) {
+                val updatedAllergies = baby.allergies + uniqueNewAllergies
+                updateBaby(baby.copy(allergies = updatedAllergies))
+            }
+        }
+    }
+
+    /**
+     * 添加偏好食材到宝宝档案
+     */
+    suspend fun addPreferences(babyId: Long, newPreferences: List<com.example.babyfood.domain.model.PreferenceItem>) {
+        val baby = getBabyById(babyId)
+        if (baby != null) {
+            // 合并现有的偏好列表和新的偏好列表
+            val existingIngredientNames = baby.preferences.map { it.ingredient }.toSet()
+            val uniqueNewPreferences = newPreferences.filterNot { it.ingredient in existingIngredientNames }
+
+            if (uniqueNewPreferences.isNotEmpty()) {
+                val updatedPreferences = baby.preferences + uniqueNewPreferences
+                updateBaby(baby.copy(preferences = updatedPreferences))
+            }
+        }
+    }
+
     private fun BabyEntity.toDomainModel(): Baby = Baby(
         id = id,
         name = name,

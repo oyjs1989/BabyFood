@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.babyfood.domain.model.NutritionGoal
+import com.example.babyfood.domain.model.NutritionIntake
 import com.example.babyfood.presentation.theme.NutritionCalories
 import com.example.babyfood.presentation.theme.NutritionCalcium
 import com.example.babyfood.presentation.theme.NutritionIron
@@ -36,6 +37,7 @@ import com.example.babyfood.presentation.theme.NutritionProtein
 @Composable
 fun NutritionGoalCard(
     nutritionGoal: NutritionGoal,
+    nutritionIntake: NutritionIntake = NutritionIntake.empty(),
     onEdit: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -88,34 +90,45 @@ fun NutritionGoalCard(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // 营养数据网格
+            // 计算营养进度
+            val nutritionProgress = nutritionIntake.calculateProgress(nutritionGoal)
+
+            // 营养数据网格（修改为环形进度条）
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                NutritionItem(
+                NutritionProgressItem(
                     label = "热量",
-                    value = "${nutritionGoal.calories.toInt()}",
+                    targetValue = nutritionGoal.calories.toInt(),
+                    currentValue = nutritionIntake.calories.toInt(),
                     unit = "kcal",
-                    color = NutritionCalories
+                    color = NutritionCalories,
+                    progress = nutritionProgress.caloriesProgress
                 )
-                NutritionItem(
+                NutritionProgressItem(
                     label = "蛋白质",
-                    value = "${nutritionGoal.protein.toInt()}",
+                    targetValue = nutritionGoal.protein.toInt(),
+                    currentValue = nutritionIntake.protein.toInt(),
                     unit = "g",
-                    color = NutritionProtein
+                    color = NutritionProtein,
+                    progress = nutritionProgress.proteinProgress
                 )
-                NutritionItem(
+                NutritionProgressItem(
                     label = "钙",
-                    value = "${nutritionGoal.calcium.toInt()}",
+                    targetValue = nutritionGoal.calcium.toInt(),
+                    currentValue = nutritionIntake.calcium.toInt(),
                     unit = "mg",
-                    color = NutritionCalcium
+                    color = NutritionCalcium,
+                    progress = nutritionProgress.calciumProgress
                 )
-                NutritionItem(
+                NutritionProgressItem(
                     label = "铁",
-                    value = "${nutritionGoal.iron.toInt()}",
+                    targetValue = nutritionGoal.iron.toInt(),
+                    currentValue = nutritionIntake.iron.toInt(),
                     unit = "mg",
-                    color = NutritionIron
+                    color = NutritionIron,
+                    progress = nutritionProgress.ironProgress
                 )
             }
         }
@@ -123,49 +136,21 @@ fun NutritionGoalCard(
 }
 
 @Composable
-private fun NutritionItem(
+private fun NutritionProgressItem(
     label: String,
-    value: String,
+    targetValue: Int,
+    currentValue: Int,
     unit: String,
-    color: androidx.compose.ui.graphics.Color
+    color: androidx.compose.ui.graphics.Color,
+    progress: Float
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // 数值背景圆圈
-        Box(
-            modifier = Modifier
-                .size(56.dp)
-                .background(
-                    color = color.copy(alpha = 0.15f),
-                    shape = CircleShape
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                color = color
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = unit,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-        )
-
-        Spacer(modifier = Modifier.height(2.dp))
-
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onPrimaryContainer
-        )
-    }
+    CircularProgressWithValue(
+        progress = progress,
+        value = "$currentValue/$targetValue",
+        unit = unit,
+        label = label,
+        size = 80.dp,
+        strokeWidth = 8.dp,
+        progressColor = color
+    )
 }

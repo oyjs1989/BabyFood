@@ -6,6 +6,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.outlined.BreakfastDining
 import androidx.compose.material.icons.outlined.LunchDining
 import androidx.compose.material.icons.outlined.DinnerDining
@@ -33,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,6 +54,7 @@ fun MealTimeline(
     onSelectRecipe: (MealPeriod) -> Unit,
     onViewRecipeDetail: (Long) -> Unit = {},
     onEditMealTime: (MealPeriod, String) -> Unit = { _, _ -> },
+    onFeedback: (MealPeriod) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -64,7 +69,8 @@ fun MealTimeline(
                 onShuffle = { onShuffle(period) },
                 onSelectRecipe = { onSelectRecipe(period) },
                 onViewRecipeDetail = onViewRecipeDetail,
-                onEditMealTime = { _, _ -> onEditMealTime(period, currentMealTime) }
+                onEditMealTime = { _, _ -> onEditMealTime(period, currentMealTime) },
+                onFeedback = { onFeedback(period) }
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
@@ -78,9 +84,12 @@ private fun MealPeriodCard(
     onShuffle: () -> Unit,
     onSelectRecipe: () -> Unit,
     onViewRecipeDetail: (Long) -> Unit,
-    onEditMealTime: (MealPeriod, String) -> Unit
+    onEditMealTime: (MealPeriod, String) -> Unit,
+    onFeedback: () -> Unit
 ) {
     val hasRecipe = planWithRecipe != null && planWithRecipe.recipe != null
+    val feedbackStatus = planWithRecipe?.plan?.feedbackStatus
+    val hasFeedback = feedbackStatus != null
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -125,9 +134,9 @@ private fun MealPeriodCard(
                                 shape = CircleShape
                             )
                     )
-                    
+
                     Spacer(modifier = Modifier.height(4.dp))
-                    
+
                     // 时间文字（可点击编辑）
                     val mealTime = if (hasRecipe) {
                         planWithRecipe?.plan?.mealTime ?: getMealTime(period)
@@ -141,9 +150,9 @@ private fun MealPeriodCard(
                         color = if (hasRecipe) Color(0xFFFF8C42) else Color(0xFF333333),
                         modifier = Modifier.clickable { onEditMealTime(period, mealTime) }
                     )
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     // 灰色竖线
                     Box(
                         modifier = Modifier
@@ -162,7 +171,7 @@ private fun MealPeriodCard(
             ) {
                 if (hasRecipe) {
                     val recipe = planWithRecipe!!.recipe!!
-                    
+
                     Row(
                         modifier = Modifier.clickable { onViewRecipeDetail(recipe.id) },
                         verticalAlignment = Alignment.CenterVertically
@@ -189,9 +198,9 @@ private fun MealPeriodCard(
                                 modifier = Modifier.size(32.dp)
                             )
                         }
-                        
+
                         Spacer(modifier = Modifier.width(12.dp))
-                        
+
                         Column {
                             // 食谱标题
                             Text(
@@ -200,9 +209,9 @@ private fun MealPeriodCard(
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF222222)
                             )
-                            
+
                             Spacer(modifier = Modifier.height(4.dp))
-                            
+
                             // 烹饪时长
                             Row(
                                 verticalAlignment = Alignment.CenterVertically
@@ -220,9 +229,9 @@ private fun MealPeriodCard(
                                     color = Color(0xFF666666)
                                 )
                             }
-                            
+
                             Spacer(modifier = Modifier.height(6.dp))
-                            
+
                             // 标签
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -271,9 +280,9 @@ private fun MealPeriodCard(
                                 modifier = Modifier.size(32.dp)
                             )
                         }
-                        
+
                         Spacer(modifier = Modifier.width(12.dp))
-                        
+
                         Text(
                             text = "点击添加${period.displayName}食谱",
                             style = MaterialTheme.typography.bodyMedium,
@@ -287,10 +296,13 @@ private fun MealPeriodCard(
             Spacer(modifier = Modifier.width(12.dp))
 
             // 右侧操作区域
-            Column {
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 // 换一换按钮
                 Row(
-                    modifier = Modifier.clickable { onShuffle() },
+                    modifier = Modifier.clickable(enabled = hasRecipe) { if (hasRecipe) onShuffle() },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
@@ -314,8 +326,82 @@ private fun MealPeriodCard(
                         }
                     )
                 }
+
+                // 反馈按钮
+                if (hasRecipe) {
+                    if (hasFeedback) {
+                        // 已反馈状态
+                        val feedbackText = getFeedbackDisplayName(feedbackStatus)
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val isPressed by interactionSource.collectIsPressedAsState()
+                        val feedbackColor = getFeedbackBackgroundColor(feedbackStatus)
+                        val backgroundColor = if (isPressed) feedbackColor.copy(alpha = 0.7f) else feedbackColor
+
+                        Box(
+                            modifier = Modifier
+                                .clickable(
+                                    interactionSource = interactionSource,
+                                    indication = null
+                                ) { onFeedback() }
+                                .background(
+                                    color = backgroundColor,
+                                    shape = RoundedCornerShape(6.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = feedbackText,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.White
+                            )
+                        }
+                    } else {
+                        // 未反馈状态
+                        Row(
+                            modifier = Modifier.clickable { onFeedback() },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ThumbUp,
+                                contentDescription = "反馈",
+                                tint = Color(0xFF666666),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "反馈",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF666666)
+                            )
+                        }
+                    }
+                }
             }
         }
+    }
+}
+
+// 获取反馈显示名称
+private fun getFeedbackDisplayName(feedbackStatus: String): String {
+    return when (feedbackStatus) {
+        "FINISHED" -> "光盘"
+        "HALF" -> "吃了一半"
+        "DISLIKED" -> "吐了/不爱吃"
+        "ALLERGY" -> "出现过敏"
+        else -> "已反馈"
+    }
+}
+
+// 获取反馈背景颜色
+private fun getFeedbackBackgroundColor(feedbackStatus: String): Color {
+    return when (feedbackStatus) {
+        "FINISHED" -> Color(0xFF2EC77C)  // 绿色
+        "HALF" -> Color(0xFFFFB347)      // 橙色
+        "DISLIKED" -> Color(0xFFFFB347)  // 橙色
+        "ALLERGY" -> Color(0xFFE74C3C)   // 红色
+        else -> Color(0xFF666666)        // 灰色
     }
 }
 

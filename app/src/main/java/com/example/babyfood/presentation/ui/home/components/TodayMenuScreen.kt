@@ -90,6 +90,7 @@ fun TodayMenuScreen(
             uiState.nutritionGoal?.let { goal ->
                 NutritionGoalCard(
                     nutritionGoal = goal,
+                    nutritionIntake = uiState.nutritionIntake,
                     onEdit = { showNutritionGoalEdit = true }
                 )
             }
@@ -112,7 +113,8 @@ fun TodayMenuScreen(
                 onViewRecipeDetail = onViewRecipeDetail,
                 onEditMealTime = { period, currentTime ->
                     viewModel.showMealTimePicker(period)
-                }
+                },
+                onFeedback = { period -> viewModel.showFeedbackDialog(period) }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -175,6 +177,36 @@ fun TodayMenuScreen(
                 }
             )
         }
+    }
+
+    // 反馈对话框
+    if (uiState.showFeedbackDialog) {
+        // 将领域模型的反馈选项转换为 UI 枚举
+        val uiFeedbackOption = uiState.selectedFeedback?.let { domainOption ->
+            when (domainOption) {
+                com.example.babyfood.domain.model.MealFeedbackOption.FINISHED ->
+                    MealFeedbackOption.FINISHED
+                com.example.babyfood.domain.model.MealFeedbackOption.HALF ->
+                    MealFeedbackOption.HALF
+                com.example.babyfood.domain.model.MealFeedbackOption.DISLIKED ->
+                    MealFeedbackOption.DISLIKED
+                com.example.babyfood.domain.model.MealFeedbackOption.ALLERGY ->
+                    MealFeedbackOption.ALLERGY
+            }
+        }
+
+        MealFeedbackDialog(
+            selectedFeedback = uiFeedbackOption,
+            onDismiss = { viewModel.hideFeedbackDialog() },
+            onFeedbackSelected = { uiOption ->
+                viewModel.selectFeedback(uiOption)
+            },
+            onConfirm = { viewModel.submitFeedback() },
+            onConfirmWithIngredients = { ingredients ->
+                viewModel.submitFeedbackWithIngredients(ingredients)
+            },
+            recipeIngredients = uiState.recipeIngredients
+        )
     }
 }
 
