@@ -30,6 +30,8 @@ class AuthRepository @Inject constructor(
 ) {
     companion object {
         private const val TAG = "AuthRepository"
+        private val PHONE_REGEX = Regex("^1[3-9]\\d{9}$")
+        private val EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
     }
 
     /**
@@ -49,71 +51,32 @@ class AuthRepository @Inject constructor(
         Log.d(TAG, "账号: $account")
         Log.d(TAG, "记住我: $rememberMe")
 
-        return try {
-            // 调用API登录
-            val request = LoginRequest(
+        return handleApiCall(
+            operationName = "登录",
+            request = LoginRequest(
                 account = account,
                 password = password,
                 rememberMe = rememberMe
-            )
-            val response = authApiService.login(request)
-
-            if (response.success && response.user != null) {
-                Log.d(TAG, "✓ 登录成功")
-                Log.d(TAG, "用户ID: ${response.user.id}")
-                Log.d(TAG, "用户昵称: ${response.user.nickname}")
-
-                // 保存用户信息到本地数据库
-                val userEntity = response.user.toEntity()
-                userDao.insertUser(userEntity)
-
-                // 设置登录状态
-                val loginTime = Clock.System.now().toString()
-                userDao.setLoggedIn(userEntity.id, loginTime)
-
-                // 保存Token到SharedPreferences（这里简化处理，实际应使用加密存储）
-                saveToken(response.token, response.refreshToken)
-
-                Log.d(TAG, "========== 登录完成 ==========")
-                AuthState.LoggedIn(response.user)
-            } else {
-                Log.e(TAG, "❌ 登录失败: ${response.errorMessage}")
-                AuthState.Error(response.errorMessage ?: "登录失败")
-            }
-        } catch (e: HttpException) {
-            // 处理 HTTP 错误（4xx, 5xx）
-            Log.e(TAG, "❌ HTTP错误: ${e.code()} - ${e.message()}")
-            Log.e(TAG, "异常堆栈: ", e)
-
-            // 尝试从响应体中提取错误信息
-            val errorBody = e.response()?.errorBody()?.string()
-            if (errorBody != null) {
-                try {
-                    val errorResponse = Json.decodeFromString<LoginResponse>(errorBody)
-                    val errorMessage = getFriendlyErrorMessage(errorResponse.errorCode, errorResponse.errorMessage)
-                    Log.e(TAG, "❌ 登录失败: $errorMessage (errorCode: ${errorResponse.errorCode})")
-                    AuthState.Error(errorMessage)
-                } catch (parseException: Exception) {
-                    Log.e(TAG, "❌ 解析错误响应失败: ${parseException.message}")
-                    AuthState.Error("登录失败，请稍后重试")
+            ),
+            apiCall = { authApiService.login(it) },
+            successAction = { response ->
+                if (response.success && response.user != null) {
+                    val userEntity = response.user.toEntity()
+                    userDao.insertUser(userEntity)
+                    val loginTime = Clock.System.now().toString()
+                    userDao.setLoggedIn(userEntity.id, loginTime)
+                    saveToken(response.token, response.refreshToken)
+                    Log.d(TAG, "✓ 登录成功")
+                    Log.d(TAG, "用户ID: ${response.user.id}")
+                    Log.d(TAG, "用户昵称: ${response.user.nickname}")
+                    Log.d(TAG, "========== 登录完成 ==========")
+                    AuthState.LoggedIn(response.user)
+                } else {
+                    Log.e(TAG, "❌ 登录失败: ${response.errorMessage}")
+                    AuthState.Error(response.errorMessage ?: "登录失败")
                 }
-            } else {
-                AuthState.Error("登录失败，请稍后重试")
             }
-        } catch (e: SocketTimeoutException) {
-            // 处理连接超时
-            Log.e(TAG, "❌ 连接超时: ${e.message}")
-            AuthState.Error("请求超时，请检查网络后重试")
-        } catch (e: IOException) {
-            // 处理网络错误
-            Log.e(TAG, "❌ 网络错误: ${e.message}")
-            AuthState.Error("网络错误，请检查网络连接")
-        } catch (e: Exception) {
-            // 处理其他未知错误
-            Log.e(TAG, "❌ 未知错误: ${e.message}")
-            Log.e(TAG, "异常堆栈: ", e)
-            AuthState.Error("登录失败，请稍后重试")
-        }
+        )
     }
 
     /**
@@ -125,74 +88,54 @@ class AuthRepository @Inject constructor(
         Log.d(TAG, "手机号: ${request.phone}")
         Log.d(TAG, "邮箱: ${request.email}")
 
-        return try {
-            // 调用API注册
-            val response = authApiService.register(request)
-
-            if (response.success && response.user != null) {
-                Log.d(TAG, "✓ 注册成功")
-                Log.d(TAG, "用户ID: ${response.user.id}")
-
-                // 保存用户信息到本地数据库
-                val userEntity = response.user.toEntity()
-                userDao.insertUser(userEntity)
-
-                // 设置登录状态
-                val loginTime = Clock.System.now().toString()
-                userDao.setLoggedIn(userEntity.id, loginTime)
-
-                // 保存Token
-                saveToken(response.token, response.refreshToken)
-
-                Log.d(TAG, "========== 注册完成 ==========")
-                AuthState.LoggedIn(response.user)
-            } else {
-                Log.e(TAG, "❌ 注册失败: ${response.errorMessage}")
-                AuthState.Error(response.errorMessage ?: "注册失败")
-            }
-        } catch (e: HttpException) {
-            // 处理 HTTP 错误（4xx, 5xx）
-            Log.e(TAG, "❌ HTTP错误: ${e.code()} - ${e.message()}")
-            Log.e(TAG, "异常堆栈: ", e)
-
-            // 尝试从响应体中提取错误信息
-            val errorBody = e.response()?.errorBody()?.string()
-            if (errorBody != null) {
-                try {
-                    val errorResponse = Json.decodeFromString<LoginResponse>(errorBody)
-                    val errorMessage = errorResponse.errorMessage ?: "注册失败，请稍后重试"
-                    Log.e(TAG, "❌ 注册失败: $errorMessage (errorCode: ${errorResponse.errorCode})")
-                    AuthState.Error(errorMessage)
-                } catch (parseException: Exception) {
-                    Log.e(TAG, "❌ 解析错误响应失败: ${parseException.message}")
-                    AuthState.Error("注册失败，请稍后重试")
+        return handleApiCall(
+            operationName = "注册",
+            request = request,
+            apiCall = { authApiService.register(it) },
+            successAction = { response ->
+                if (response.success && response.user != null) {
+                    val userEntity = response.user.toEntity()
+                    userDao.insertUser(userEntity)
+                    val loginTime = Clock.System.now().toString()
+                    userDao.setLoggedIn(userEntity.id, loginTime)
+                    saveToken(response.token, response.refreshToken)
+                    Log.d(TAG, "✓ 注册成功")
+                    Log.d(TAG, "用户ID: ${response.user.id}")
+                    Log.d(TAG, "========== 注册完成 ==========")
+                    AuthState.LoggedIn(response.user)
+                } else {
+                    Log.e(TAG, "❌ 注册失败: ${response.errorMessage}")
+                    AuthState.Error(response.errorMessage ?: "注册失败")
                 }
-            } else {
-                AuthState.Error("注册失败，请稍后重试")
             }
-        } catch (e: SocketTimeoutException) {
-            // 处理连接超时
-            Log.e(TAG, "❌ 连接超时: ${e.message}")
-            AuthState.Error("请求超时，请检查网络后重试")
-        } catch (e: IOException) {
-            // 处理网络错误
-            Log.e(TAG, "❌ 网络错误: ${e.message}")
-            AuthState.Error("网络错误，请检查网络连接")
-        } catch (e: Exception) {
-            // 处理其他未知错误
-            Log.e(TAG, "❌ 未知错误: ${e.message}")
-            Log.e(TAG, "异常堆栈: ", e)
-            AuthState.Error("注册失败，请稍后重试")
-        }
+        )
     }
 
     /**
      * 用户登出
      */
-    suspend fun logout() {
+    suspend fun logout(): Boolean {
         Log.d(TAG, "========== 开始登出 ==========")
 
-        try {
+        return try {
+            // 获取当前 Token
+            val token = getToken()
+            Log.d(TAG, "当前Token: ${token?.take(10)}...")
+
+            // 调用后端登出 API
+            if (token != null) {
+                val request = com.example.babyfood.domain.model.LogoutRequest(token = token)
+                val response = authApiService.logout(request)
+
+                if (response.success) {
+                    Log.d(TAG, "✓ 后端登出成功")
+                } else {
+                    Log.w(TAG, "⚠️ 后端登出失败: ${response.errorMessage}")
+                }
+            } else {
+                Log.w(TAG, "⚠️ 未找到 Token，仅清除本地状态")
+            }
+
             // 清除所有用户的登录状态
             userDao.logoutAll()
 
@@ -201,9 +144,20 @@ class AuthRepository @Inject constructor(
 
             Log.d(TAG, "✓ 登出成功")
             Log.d(TAG, "========== 登出完成 ==========")
+            true
         } catch (e: Exception) {
             Log.e(TAG, "❌ 登出异常: ${e.message}")
             Log.e(TAG, "异常堆栈: ", e)
+
+            // 即使 API 调用失败，也清除本地状态
+            try {
+                userDao.logoutAll()
+                clearToken()
+            } catch (clearException: Exception) {
+                Log.e(TAG, "❌ 清除本地状态失败: ${clearException.message}")
+            }
+
+            false
         }
     }
 
@@ -213,60 +167,27 @@ class AuthRepository @Inject constructor(
     suspend fun refreshToken(): AuthState {
         Log.d(TAG, "========== 开始刷新Token ==========")
 
-        return try {
-            val refreshToken = getRefreshToken()
-            if (refreshToken == null) {
-                Log.e(TAG, "❌ 未找到刷新令牌")
-                return AuthState.Error("未找到刷新令牌")
-            }
-
-            val response = authApiService.refreshToken(refreshToken)
-
-            if (response.success && response.user != null) {
-                Log.d(TAG, "✓ Token刷新成功")
-
-                // 保存新的Token
-                saveToken(response.token, response.refreshToken)
-
-                AuthState.LoggedIn(response.user)
-            } else {
-                Log.e(TAG, "❌ Token刷新失败: ${response.errorMessage}")
-                AuthState.Error(response.errorMessage ?: "Token刷新失败")
-            }
-        } catch (e: HttpException) {
-            // 处理 HTTP 错误（4xx, 5xx）
-            Log.e(TAG, "❌ HTTP错误: ${e.code()} - ${e.message()}")
-            Log.e(TAG, "异常堆栈: ", e)
-
-            // 尝试从响应体中提取错误信息
-            val errorBody = e.response()?.errorBody()?.string()
-            if (errorBody != null) {
-                try {
-                    val errorResponse = Json.decodeFromString<LoginResponse>(errorBody)
-                    val errorMessage = errorResponse.errorMessage ?: "Token刷新失败，请稍后重试"
-                    Log.e(TAG, "❌ Token刷新失败: $errorMessage (errorCode: ${errorResponse.errorCode})")
-                    AuthState.Error(errorMessage)
-                } catch (parseException: Exception) {
-                    Log.e(TAG, "❌ 解析错误响应失败: ${parseException.message}")
-                    AuthState.Error("Token刷新失败，请稍后重试")
-                }
-            } else {
-                AuthState.Error("Token刷新失败，请稍后重试")
-            }
-        } catch (e: SocketTimeoutException) {
-            // 处理连接超时
-            Log.e(TAG, "❌ 连接超时: ${e.message}")
-            AuthState.Error("请求超时，请检查网络后重试")
-        } catch (e: IOException) {
-            // 处理网络错误
-            Log.e(TAG, "❌ 网络错误: ${e.message}")
-            AuthState.Error("网络错误，请检查网络连接")
-        } catch (e: Exception) {
-            // 处理其他未知错误
-            Log.e(TAG, "❌ 未知错误: ${e.message}")
-            Log.e(TAG, "异常堆栈: ", e)
-            AuthState.Error("Token刷新失败，请稍后重试")
+        val refreshToken = getRefreshToken()
+        if (refreshToken == null) {
+            Log.e(TAG, "❌ 未找到刷新令牌")
+            return AuthState.Error("未找到刷新令牌")
         }
+
+        return handleApiCall(
+            operationName = "Token刷新",
+            request = refreshToken,
+            apiCall = { authApiService.refreshToken(it) },
+            successAction = { response ->
+                if (response.success && response.user != null) {
+                    saveToken(response.token, response.refreshToken)
+                    Log.d(TAG, "✓ Token刷新成功")
+                    AuthState.LoggedIn(response.user)
+                } else {
+                    Log.e(TAG, "❌ Token刷新失败: ${response.errorMessage}")
+                    AuthState.Error(response.errorMessage ?: "Token刷新失败")
+                }
+            }
+        )
     }
 
     /**
@@ -283,9 +204,7 @@ class AuthRepository @Inject constructor(
      * @return 是否为有效格式
      */
     fun validateAccount(account: String): Boolean {
-        val phoneRegex = Regex("^1[3-9]\\d{9}$")
-        val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
-        return phoneRegex.matches(account) || emailRegex.matches(account)
+        return PHONE_REGEX.matches(account) || EMAIL_REGEX.matches(account)
     }
 
     /**
@@ -295,7 +214,13 @@ class AuthRepository @Inject constructor(
      */
     fun validatePassword(password: String): Boolean {
         // 密码至少6位
-        return password.length >= 6
+        if (password.length < 6) return false
+        
+        // 密码不能超过72字节（bcrypt算法限制）
+        // 注意：UTF-8编码下，中文字符占3字节，英文字符占1字节
+        if (password.toByteArray(Charsets.UTF_8).size > 72) return false
+        
+        return true
     }
 
     // ========== 私有方法 ==========
@@ -311,9 +236,65 @@ class AuthRepository @Inject constructor(
             "4011" -> "账号或密码错误，请检查后重试"
             "4012" -> "账号已被锁定，请30分钟后再试"
             "4001" -> "账号格式不正确"
-            "4002" -> "密码格式不正确"
+            "4002" -> "密码格式不正确（密码长度需在6-72字节之间）"
             else -> errorMessage ?: "登录失败，请稍后重试"
         }
+    }
+
+    /**
+     * 统一的API调用处理
+     * @param operationName 操作名称（用于日志）
+     * @param request API请求
+     * @param apiCall API调用函数
+     * @param successAction 成功回调
+     * @return 认证状态
+     */
+    private suspend fun <T, R> handleApiCall(
+        operationName: String,
+        request: T,
+        apiCall: suspend (T) -> R,
+        successAction: suspend (R) -> AuthState
+    ): AuthState {
+        return try {
+            val response = apiCall(request)
+            successAction(response)
+        } catch (e: HttpException) {
+            handleHttpException(e, operationName)
+        } catch (e: SocketTimeoutException) {
+            Log.e(TAG, "❌ 连接超时: ${e.message}")
+            AuthState.Error("请求超时，请检查网络后重试")
+        } catch (e: IOException) {
+            Log.e(TAG, "❌ 网络错误: ${e.message}")
+            AuthState.Error("网络错误，请检查网络连接")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ 未知错误: ${e.message}")
+            Log.e(TAG, "异常堆栈: ", e)
+            AuthState.Error("${operationName}失败，请稍后重试")
+        }
+    }
+
+    /**
+     * 处理HTTP异常
+     * @param e HTTP异常
+     * @param operationName 操作名称
+     * @return 认证状态
+     */
+    private fun handleHttpException(e: HttpException, operationName: String): AuthState {
+        Log.e(TAG, "❌ HTTP错误: ${e.code()} - ${e.message()}")
+        Log.e(TAG, "异常堆栈: ", e)
+
+        val errorBody = e.response()?.errorBody()?.string()
+        if (errorBody != null) {
+            try {
+                val errorResponse = Json.decodeFromString<LoginResponse>(errorBody)
+                val errorMessage = getFriendlyErrorMessage(errorResponse.errorCode, errorResponse.errorMessage)
+                Log.e(TAG, "❌ ${operationName}失败: $errorMessage (errorCode: ${errorResponse.errorCode})")
+                return AuthState.Error(errorMessage)
+            } catch (parseException: Exception) {
+                Log.e(TAG, "❌ 解析错误响应失败: ${parseException.message}")
+            }
+        }
+        return AuthState.Error("${operationName}失败，请稍后重试")
     }
 
     private fun saveToken(token: String?, refreshToken: String?) {
@@ -324,6 +305,11 @@ class AuthRepository @Inject constructor(
     private fun clearToken() {
         // TODO: 清除存储的Token
         Log.d(TAG, "清除Token")
+    }
+
+    private fun getToken(): String? {
+        // TODO: 从安全存储获取访问令牌
+        return null
     }
 
     private fun getRefreshToken(): String? {

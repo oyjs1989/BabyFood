@@ -22,6 +22,8 @@ class LoginViewModel @Inject constructor(
 
     companion object {
         private const val TAG = "LoginViewModel"
+        private val PHONE_REGEX = Regex("^1[3-9]\\d{9}$")
+        private val EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
     }
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -120,7 +122,7 @@ class LoginViewModel @Inject constructor(
         }
 
         val isAccountValid = authRepository.validateAccount(account)
-        Log.d(TAG, "账号验证结果: $isAccountValid (手机号格式: ${Regex("^1[3-9]\\d{9}$").matches(account)}, 邮箱格式: ${Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$").matches(account)})")
+        Log.d(TAG, "账号验证结果: $isAccountValid (手机号格式: ${PHONE_REGEX.matches(account)}, 邮箱格式: ${EMAIL_REGEX.matches(account)})")
 
         if (!isAccountValid) {
             Log.e(TAG, "❌ 账号格式无效")
@@ -139,12 +141,13 @@ class LoginViewModel @Inject constructor(
         }
 
         val isPasswordValid = authRepository.validatePassword(password)
-        Log.d(TAG, "密码验证结果: $isPasswordValid (长度: ${password.length}, 要求: >=6)")
+        val passwordBytes = password.toByteArray(Charsets.UTF_8).size
+        Log.d(TAG, "密码验证结果: $isPasswordValid (字符长度: ${password.length}, 字节长度: $passwordBytes, 要求: 6-72字节)")
 
         if (!isPasswordValid) {
             Log.e(TAG, "❌ 密码格式无效")
             _uiState.value = _uiState.value.copy(
-                passwordError = "密码至少6位"
+                passwordError = if (password.length < 6) "密码至少6位" else "密码过长，请缩短密码（不超过72字节）"
             )
             return
         }

@@ -234,7 +234,7 @@ class RegisterViewModel @Inject constructor(
 
         if (!authRepository.validatePassword(password)) {
             _uiState.value = _uiState.value.copy(
-                passwordError = "密码至少6位"
+                passwordError = if (password.length < 6) "密码至少6位" else "密码过长，请缩短密码（不超过72字节）"
             )
             return
         }

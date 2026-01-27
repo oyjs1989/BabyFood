@@ -2,6 +2,8 @@ package com.example.babyfood.data.remote.api
 
 import com.example.babyfood.domain.model.LoginRequest
 import com.example.babyfood.domain.model.LoginResponse
+import com.example.babyfood.domain.model.LogoutRequest
+import com.example.babyfood.domain.model.LogoutResponse
 import com.example.babyfood.domain.model.RegisterRequest
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -44,10 +46,11 @@ interface AuthApiService {
 
     /**
      * 用户登出
-     * @param token 访问令牌
+     * @param request 登出请求
+     * @return 登出响应
      */
     @POST("auth/logout")
     suspend fun logout(
-        @Body token: String
-    )
+        @Body request: LogoutRequest
+    ): LogoutResponse
 }
