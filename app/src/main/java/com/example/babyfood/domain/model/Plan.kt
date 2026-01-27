@@ -11,7 +11,8 @@ data class Plan(
     val plannedDate: LocalDate,
     val mealPeriod: String,  // 序列化为字符串
     val status: PlanStatus = PlanStatus.PLANNED,
-    val notes: String? = null
+    val notes: String? = null,
+    val mealTime: String? = null  // 用户自定义的用餐时间（格式：HH:mm）
 )
 
 @Serializable

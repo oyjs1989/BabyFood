@@ -295,6 +295,24 @@ val MIGRATION_8_9 = object : Migration(8, 9) {
     }
 }
 
+// 数据库迁移：从版本 9 到版本 10
+// 为 recipes 表添加 cookingTime 字段
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // 为 recipes 表添加 cookingTime 字段
+        database.execSQL("ALTER TABLE recipes ADD COLUMN cookingTime INTEGER")
+    }
+}
+
+// 数据库迁移：从版本 10 到版本 11
+// 为 plans 表添加 mealTime 字段
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // 为 plans 表添加 mealTime 字段
+        database.execSQL("ALTER TABLE plans ADD COLUMN mealTime TEXT")
+    }
+}
+
 @Database(
     entities = [
         BabyEntity::class,
@@ -304,7 +322,7 @@ val MIGRATION_8_9 = object : Migration(8, 9) {
         GrowthRecordEntity::class,
         UserEntity::class
     ],
-    version = 9,  // 升级到版本 9（修复 users 表结构）
+    version = 11,  // 升级到版本 11（添加 mealTime 字段）
     exportSchema = false
 )
 @TypeConverters(Converters::class)

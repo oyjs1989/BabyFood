@@ -9,17 +9,21 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import com.example.babyfood.presentation.ui.icons.AppIcons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -27,6 +31,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
+import com.example.babyfood.data.repository.AuthRepository
 import com.example.babyfood.domain.model.PlanConflict
 import com.example.babyfood.domain.model.WeeklyMealPlan
 import com.example.babyfood.presentation.ui.home.components.TodayMenuScreen
@@ -48,12 +53,70 @@ sealed class BottomNavItem(
 }
 
 @Composable
-fun MainScreen() {
+fun MainScreen(
+    mainViewModel: MainViewModel = hiltViewModel()
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    var showUserMenu by remember { mutableStateOf(false) }
 
     Scaffold(
+        topBar = {
+            // 只在已登录页面显示顶部栏
+            if (currentDestination?.route in listOf(
+                    "home",
+                    "recipes",
+                    "plans",
+                    "baby"
+                )
+            ) {
+                TopAppBar(
+                    title = {
+                        Text("BabyFood")
+                    },
+                    actions = {
+                        // 用户菜单按钮
+                        IconButton(onClick = { showUserMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "用户菜单"
+                            )
+                        }
+
+                        // 下拉菜单
+                        DropdownMenu(
+                            expanded = showUserMenu,
+                            onDismissRequest = { showUserMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("注销") },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                                        contentDescription = "注销"
+                                    )
+                                },
+                                onClick = {
+                                    showUserMenu = false
+                                    mainViewModel.logout(
+                                        onSuccess = {
+                                            android.util.Log.d("MainScreen", "✓ 注销成功，导航到登录页面")
+                                            navController.navigate("login") {
+                                                popUpTo(0) { inclusive = true }
+                                            }
+                                        },
+                                        onFailure = {
+                                            android.util.Log.e("MainScreen", "❌ 注销失败")
+                                        }
+                                    )
+                                }
+                            )
+                        }
+                    }
+                )
+            }
+        },
         bottomBar = {
             if (currentDestination?.route in listOf(
                     "home",
@@ -127,7 +190,11 @@ fun MainScreen() {
 
             // 首页 - 今日餐单
             composable("home") {
-                TodayMenuScreen()
+                TodayMenuScreen(
+                    onViewRecipeDetail = { recipeId ->
+                        navController.navigate("recipes/detail/$recipeId")
+                    }
+                )
             }
 
             // 食谱库
@@ -200,13 +267,10 @@ fun MainScreen() {
             composable("plans/form/{babyId}/{planId}") { backStackEntry ->
                 val babyId = backStackEntry.arguments?.getString("babyId")?.toLong() ?: 0L
                 val planId = backStackEntry.arguments?.getString("planId")?.toLong() ?: 0L
-                val selectedDate = if (backStackEntry.arguments?.containsKey("date") == true) {
-                    // 如果有传递日期参数，使用传递的日期
-                    null
-                } else {
-                    null
+                val selectedDate = backStackEntry.arguments?.getString("date")?.let {
+                    kotlinx.datetime.LocalDate.parse(it)
                 }
-                
+
                 PlanFormScreen(
                     babyId = babyId,
                     planId = if (planId > 0) planId else null,
@@ -271,6 +335,13 @@ fun MainScreen() {
                     },
                     onNavigateToGrowth = {
                         navController.navigate("baby/growth/$babyId")
+                    },
+                    onEditNutritionGoal = { goal ->
+                        mainViewModel.updateBabyNutritionGoal(babyId, goal)
+                    },
+                    onGenerateNutritionRecommendation = {
+                        // 返回挂起函数，由调用方在协程中执行
+                        mainViewModel.generateNutritionRecommendation(babyId)
                     }
                 )
             }

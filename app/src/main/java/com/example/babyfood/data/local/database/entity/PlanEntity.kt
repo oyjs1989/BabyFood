@@ -19,6 +19,7 @@ data class PlanEntity(
     val mealPeriod: MealPeriod,
     val status: PlanStatus = PlanStatus.PLANNED,
     val notes: String? = null,
+    val mealTime: String? = null,  // 用户自定义的用餐时间（格式：HH:mm）
 
     // 同步元数据字段（向后兼容，默认值）
     val cloudId: String? = null,                    // 云端唯一标识
@@ -36,7 +37,8 @@ data class PlanEntity(
         plannedDate = plannedDate,
         mealPeriod = mealPeriod.name,
         status = status,
-        notes = notes
+        notes = notes,
+        mealTime = mealTime
     )
 }
 
@@ -51,5 +53,6 @@ fun Plan.toEntity(): PlanEntity = PlanEntity(
         MealPeriod.BREAKFAST  // 默认值
     },
     status = status,
-    notes = notes
+    notes = notes,
+    mealTime = mealTime
 )
