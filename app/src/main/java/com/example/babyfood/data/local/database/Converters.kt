@@ -6,6 +6,7 @@ import com.example.babyfood.domain.model.MealPeriod
 import com.example.babyfood.domain.model.Nutrition
 import com.example.babyfood.domain.model.NutritionGoal
 import com.example.babyfood.domain.model.PlanStatus
+import com.example.babyfood.domain.model.StorageMethod
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -21,7 +22,7 @@ class Converters {
     @TypeConverter
     fun toLocalDate(dateString: String): LocalDate = LocalDate.parse(dateString)
 
-    // List<String> converters
+    // String list converters
     @TypeConverter
     fun fromStringList(list: List<String>): String = json.encodeToString(list)
 
@@ -43,46 +44,45 @@ class Converters {
     @TypeConverter
     fun toNutrition(jsonString: String): Nutrition = json.decodeFromString<NutritionEntity>(jsonString).toDomainModel()
 
-    // PlanStatus converters
+    // Enum converters
     @TypeConverter
     fun fromPlanStatus(status: PlanStatus): String = status.name
 
     @TypeConverter
     fun toPlanStatus(statusString: String): PlanStatus = PlanStatus.valueOf(statusString)
 
-    // NutritionGoal converters - 新增
-    @TypeConverter
-    fun fromNutritionGoal(goal: NutritionGoal?): String =
-        if (goal == null) "" else json.encodeToString(goal.toEntity())
-
-    @TypeConverter
-    fun toNutritionGoal(jsonString: String): NutritionGoal? =
-        if (jsonString.isEmpty()) null else json.decodeFromString<NutritionGoalEntity>(jsonString).toDomainModel()
-
-    // MealPeriod converters - 新增
     @TypeConverter
     fun fromMealPeriod(period: MealPeriod): String = period.name
 
     @TypeConverter
     fun toMealPeriod(periodString: String): MealPeriod = MealPeriod.valueOf(periodString)
 
-    // AllergyItem converters - 新增
     @TypeConverter
-    fun fromAllergyItemList(items: List<com.example.babyfood.domain.model.AllergyItem>): String = 
-        json.encodeToString(items)
+    fun fromStorageMethod(method: StorageMethod): String = method.name
 
     @TypeConverter
-    fun toAllergyItemList(jsonString: String): List<com.example.babyfood.domain.model.AllergyItem> = 
-        json.decodeFromString(jsonString)
+    fun toStorageMethod(methodString: String): StorageMethod = StorageMethod.valueOf(methodString)
 
-    // PreferenceItem converters - 新增
+    // Complex type converters with null handling
     @TypeConverter
-    fun fromPreferenceItemList(items: List<com.example.babyfood.domain.model.PreferenceItem>): String = 
-        json.encodeToString(items)
+    fun fromNutritionGoal(goal: NutritionGoal?): String =
+        if (goal == null) "" else json.encodeToString(goal.toEntity())
 
     @TypeConverter
-    fun toPreferenceItemList(jsonString: String): List<com.example.babyfood.domain.model.PreferenceItem> = 
-        json.decodeFromString(jsonString)
+    fun toNutritionGoal(jsonString: String): NutritionGoal? =
+        jsonString.takeIf { it.isNotEmpty() }?.let { json.decodeFromString<NutritionGoalEntity>(it).toDomainModel() }
+
+    @TypeConverter
+    fun fromAllergyItemList(items: List<com.example.babyfood.domain.model.AllergyItem>): String = json.encodeToString(items)
+
+    @TypeConverter
+    fun toAllergyItemList(jsonString: String): List<com.example.babyfood.domain.model.AllergyItem> = json.decodeFromString(jsonString)
+
+    @TypeConverter
+    fun fromPreferenceItemList(items: List<com.example.babyfood.domain.model.PreferenceItem>): String = json.encodeToString(items)
+
+    @TypeConverter
+    fun toPreferenceItemList(jsonString: String): List<com.example.babyfood.domain.model.PreferenceItem> = json.decodeFromString(jsonString)
 }
 
 // Entity versions for serialization

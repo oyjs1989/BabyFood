@@ -8,12 +8,14 @@ import androidx.room.TypeConverters
 import com.example.babyfood.data.local.database.dao.BabyDao
 import com.example.babyfood.data.local.database.dao.GrowthRecordDao
 import com.example.babyfood.data.local.database.dao.HealthRecordDao
+import com.example.babyfood.data.local.database.dao.InventoryItemDao
 import com.example.babyfood.data.local.database.dao.PlanDao
 import com.example.babyfood.data.local.database.dao.RecipeDao
 import com.example.babyfood.data.local.database.dao.UserDao
 import com.example.babyfood.data.local.database.entity.BabyEntity
 import com.example.babyfood.data.local.database.entity.GrowthRecordEntity
 import com.example.babyfood.data.local.database.entity.HealthRecordEntity
+import com.example.babyfood.data.local.database.entity.InventoryItemEntity
 import com.example.babyfood.data.local.database.entity.PlanEntity
 import com.example.babyfood.data.local.database.entity.RecipeEntity
 import com.example.babyfood.data.local.database.entity.UserEntity
@@ -338,6 +340,39 @@ val MIGRATION_12_13 = object : Migration(12, 13) {
     }
 }
 
+// 数据库迁移：从版本 13 到版本 14
+// 添加 inventory_items 表，支持仓库功能
+val MIGRATION_13_14 = object : Migration(13, 14) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // 创建 inventory_items 表
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS inventory_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                foodId INTEGER NOT NULL,
+                foodName TEXT NOT NULL,
+                foodImageUrl TEXT,
+                productionDate TEXT NOT NULL,
+                expiryDate TEXT NOT NULL,
+                storageMethod TEXT NOT NULL,
+                quantity REAL NOT NULL,
+                unit TEXT NOT NULL,
+                addedAt TEXT NOT NULL,
+                notes TEXT,
+                cloudId TEXT,
+                syncStatus TEXT NOT NULL DEFAULT 'LOCAL_ONLY',
+                lastSyncTime INTEGER,
+                version INTEGER NOT NULL DEFAULT 1,
+                isDeleted INTEGER NOT NULL DEFAULT 0
+            )
+        """.trimIndent())
+
+        // 创建索引
+        database.execSQL("CREATE INDEX IF NOT EXISTS index_inventory_items_foodId ON inventory_items(foodId)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS index_inventory_items_expiryDate ON inventory_items(expiryDate)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS index_inventory_items_cloudId ON inventory_items(cloudId)")
+    }
+}
+
 @Database(
     entities = [
         BabyEntity::class,
@@ -345,9 +380,10 @@ val MIGRATION_12_13 = object : Migration(12, 13) {
         PlanEntity::class,
         HealthRecordEntity::class,
         GrowthRecordEntity::class,
-        UserEntity::class
+        UserEntity::class,
+        InventoryItemEntity::class
     ],
-    version = 13,  // 升级到版本 13（更新过敏和偏好数据结构）
+    version = 14,  // 升级到版本 14（添加仓库功能）
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -358,4 +394,5 @@ abstract class BabyFoodDatabase : RoomDatabase() {
     abstract fun healthRecordDao(): HealthRecordDao
     abstract fun growthRecordDao(): GrowthRecordDao
     abstract fun userDao(): UserDao
+    abstract fun inventoryItemDao(): InventoryItemDao
 }

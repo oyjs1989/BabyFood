@@ -22,11 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -65,12 +62,10 @@ import coil.compose.AsyncImage
 fun RecipeDetailScreen(
     recipeId: Long,
     onBack: () -> Unit = {},
-    onNavigateToEdit: (Long) -> Unit = {},
     viewModel: RecipesViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var recipe by remember { mutableStateOf<com.example.babyfood.domain.model.Recipe?>(null) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
     var showAiTip by remember { mutableStateOf(true) }
     var showAllergyTip by remember { mutableStateOf(true) }
     var portions by remember { mutableStateOf(1f) }
@@ -86,29 +81,6 @@ fun RecipeDetailScreen(
         }
     }
 
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("删除食谱") },
-            text = { Text("确定要删除这个食谱吗？此操作无法撤销。") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.deleteRecipe(recipeId)
-                        showDeleteDialog = false
-                    }
-                ) {
-                    Text("删除", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("取消")
-                }
-            }
-        )
-    }
-
     val currentRecipe = recipe
     val primaryColor = Color(0xFFFF8C42)
     val warningBgColor = Color(0xFFFFF4E6)
@@ -120,20 +92,6 @@ fun RecipeDetailScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "返回")
-                    }
-                },
-                actions = {
-                    if (currentRecipe != null && !currentRecipe.isBuiltIn) {
-                        IconButton(onClick = { onNavigateToEdit(recipeId) }) {
-                            Icon(Icons.Default.Edit, contentDescription = "编辑")
-                        }
-                        IconButton(onClick = { showDeleteDialog = true }) {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = "删除",
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

@@ -49,6 +49,7 @@ sealed class BottomNavItem(
     object Home : BottomNavItem("home", AppIcons.Home, "首页")
     object Recipes : BottomNavItem("recipes", AppIcons.Recipes, "食谱")
     object Plans : BottomNavItem("plans", AppIcons.Plans, "计划")
+    object Inventory : BottomNavItem("inventory", AppIcons.Inventory, "仓库")
     object Baby : BottomNavItem("baby", AppIcons.Baby, "宝宝")
 }
 
@@ -63,92 +64,32 @@ fun MainScreen(
 
     Scaffold(
         topBar = {
-            // 只在已登录页面显示顶部栏
-            if (currentDestination?.route in listOf(
-                    "home",
-                    "recipes",
-                    "plans",
-                    "baby"
-                )
-            ) {
-                TopAppBar(
-                    title = {
-                        Text("BabyFood")
-                    },
-                    actions = {
-                        // 用户菜单按钮
-                        IconButton(onClick = { showUserMenu = true }) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "用户菜单"
-                            )
-                        }
-
-                        // 下拉菜单
-                        DropdownMenu(
-                            expanded = showUserMenu,
-                            onDismissRequest = { showUserMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("注销") },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                                        contentDescription = "注销"
-                                    )
-                                },
-                                onClick = {
-                                    showUserMenu = false
-                                    mainViewModel.logout(
-                                        onSuccess = {
-                                            android.util.Log.d("MainScreen", "✓ 注销成功，导航到登录页面")
-                                            navController.navigate("login") {
-                                                popUpTo(0) { inclusive = true }
-                                            }
-                                        },
-                                        onFailure = {
-                                            android.util.Log.e("MainScreen", "❌ 注销失败")
-                                        }
-                                    )
+            if (currentDestination?.route in listOf("home", "recipes", "plans", "baby")) {
+                AppTopBar(
+                    showUserMenu = showUserMenu,
+                    onMenuToggle = { showUserMenu = it },
+                    onLogout = {
+                        mainViewModel.logout(
+                            onSuccess = {
+                                android.util.Log.d("MainScreen", "✓ 注销成功，导航到登录页面")
+                                navController.navigate("login") {
+                                    popUpTo(0) { inclusive = true }
                                 }
-                            )
-                        }
+                            },
+                            onFailure = {
+                                android.util.Log.e("MainScreen", "❌ 注销失败")
+                            }
+                        )
                     }
                 )
             }
         },
         bottomBar = {
-            if (currentDestination?.route in listOf(
-                    "home",
-                    "recipes",
-                    "plans",
-                    "baby"
+            if (currentDestination?.route in listOf("home", "recipes", "plans", "inventory", "baby")) {
+                AppBottomBar(
+                    currentDestination = currentDestination,
+                    navController = navController
                 )
-            ) {
-                NavigationBar {
-                    val items = listOf(
-                        BottomNavItem.Home,
-                        BottomNavItem.Recipes,
-                        BottomNavItem.Plans,
-                        BottomNavItem.Baby
-                    )
-                    items.forEach { item ->
-                        NavigationBarItem(
-                            icon = { Icon(item.icon, contentDescription = item.label) },
-                            label = { Text(item.label) },
-                            selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
-                            onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        )
-                    }
-                }
             }
         }
     ) { paddingValues ->
@@ -202,9 +143,6 @@ fun MainScreen(
                 com.example.babyfood.presentation.ui.recipes.RecipesListScreen(
                     onNavigateToDetail = { recipeId ->
                         navController.navigate("recipes/detail/$recipeId")
-                    },
-                    onNavigateToAdd = {
-                        navController.navigate("recipes/form/0")
                     }
                 )
             }
@@ -213,20 +151,6 @@ fun MainScreen(
             composable("recipes/detail/{recipeId}") { backStackEntry ->
                 val recipeId = backStackEntry.arguments?.getString("recipeId")?.toLong() ?: 0L
                 com.example.babyfood.presentation.ui.recipes.RecipeDetailScreen(
-                    recipeId = recipeId,
-                    onBack = {
-                        navController.popBackStack()
-                    },
-                    onNavigateToEdit = { id ->
-                        navController.navigate("recipes/form/$id")
-                    }
-                )
-            }
-
-            // 添加/编辑食谱
-            composable("recipes/form/{recipeId}") { backStackEntry ->
-                val recipeId = backStackEntry.arguments?.getString("recipeId")?.toLongOrNull()
-                com.example.babyfood.presentation.ui.recipes.RecipeFormScreen(
                     recipeId = recipeId,
                     onBack = {
                         navController.popBackStack()
@@ -283,6 +207,32 @@ fun MainScreen(
                     },
                     onNavigateToRecommendationEditor = { babyId ->
                         navController.navigate("plans/recommendation/editor/$babyId")
+                    }
+                )
+            }
+
+            // 仓库页面
+            composable("inventory") {
+                com.example.babyfood.presentation.ui.inventory.InventoryListScreen(
+                    onNavigateToAdd = {
+                        navController.navigate("inventory/form/0")
+                    },
+                    onNavigateToEdit = { itemId ->
+                        navController.navigate("inventory/form/$itemId")
+                    }
+                )
+            }
+
+            // 添加/编辑仓库物品
+            composable("inventory/form/{itemId}") { backStackEntry ->
+                val itemId = backStackEntry.arguments?.getString("itemId")?.toLong() ?: 0L
+                com.example.babyfood.presentation.ui.inventory.InventoryFormScreen(
+                    itemId = itemId,
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onSave = {
+                        navController.popBackStack()
                     }
                 )
             }
@@ -542,6 +492,77 @@ fun MainScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AppTopBar(
+    showUserMenu: Boolean,
+    onMenuToggle: (Boolean) -> Unit,
+    onLogout: () -> Unit
+) {
+    TopAppBar(
+        title = { Text("BabyFood") },
+        actions = {
+            IconButton(onClick = { onMenuToggle(true) }) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "用户菜单"
+                )
+            }
+
+            DropdownMenu(
+                expanded = showUserMenu,
+                onDismissRequest = { onMenuToggle(false) }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("注销") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "注销"
+                        )
+                    },
+                    onClick = {
+                        onMenuToggle(false)
+                        onLogout()
+                    }
+                )
+            }
+        }
+    )
+}
+
+@Composable
+private fun AppBottomBar(
+    currentDestination: androidx.navigation.NavDestination?,
+    navController: androidx.navigation.NavController
+) {
+    val items = listOf(
+        BottomNavItem.Home,
+        BottomNavItem.Recipes,
+        BottomNavItem.Plans,
+        BottomNavItem.Inventory,
+        BottomNavItem.Baby
+    )
+
+    NavigationBar {
+        items.forEach { item ->
+            NavigationBarItem(
+                icon = { Icon(item.icon, contentDescription = item.label) },
+                label = { Text(item.label) },
+                selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
+                onClick = {
+                    navController.navigate(item.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
         }
     }
 }

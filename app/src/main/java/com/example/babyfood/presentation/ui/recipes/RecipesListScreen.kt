@@ -19,19 +19,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -53,7 +50,6 @@ import coil.compose.AsyncImage
 @Composable
 fun RecipesListScreen(
     onNavigateToDetail: (Long) -> Unit = {},
-    onNavigateToAdd: () -> Unit = {},
     viewModel: RecipesViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -78,149 +74,148 @@ fun RecipesListScreen(
         "蛋白质" to "蛋白质"
     )
 
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToAdd
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "添加食谱")
-            }
-        }
-    ) { paddingValues ->
-        Column(
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Text(
+            text = "食谱库",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(16.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 搜索框
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { query ->
+                searchQuery = query
+                viewModel.searchRecipes(query)
+            },
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            placeholder = { Text("搜索食谱名称、食材...") },
+            leadingIcon = {
+                Icon(Icons.Default.Search, contentDescription = "搜索")
+            },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = {
+                        searchQuery = ""
+                        viewModel.searchRecipes("")
+                    }) {
+                        Icon(Icons.Default.Clear, contentDescription = "清除")
+                    }
+                }
+            },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(
+                onSearch = { /* 隐藏键盘 */ }
+            )
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 月龄筛选
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp)
         ) {
             Text(
-                text = "食谱库",
-                style = MaterialTheme.typography.headlineMedium
+                text = "月龄",
+                style = MaterialTheme.typography.bodyMedium
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 搜索框
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { query ->
-                    searchQuery = query
-                    viewModel.searchRecipes(query)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("搜索食谱名称、食材...") },
-                leadingIcon = {
-                    Icon(Icons.Default.Search, contentDescription = "搜索")
-                },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = {
-                            searchQuery = ""
-                            viewModel.searchRecipes("")
-                        }) {
-                            Icon(Icons.Default.Clear, contentDescription = "清除")
-                        }
-                    }
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(
-                    onSearch = { /* 隐藏键盘 */ }
-                )
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 月龄筛选
-            Column {
-                Text(
-                    text = "月龄",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    state = rememberLazyListState()
-                ) {
-                    items(ageFilterOptions) { (label, age) ->
-                        FilterChip(
-                            selected = uiState.selectedAge == age,
-                            onClick = {
-                                if (age != null) {
-                                    viewModel.filterByAge(age)
-                                } else {
-                                    viewModel.clearFilters()
-                                }
-                            },
-                            label = { Text(label) }
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 分类筛选
-            Column {
-                Text(
-                    text = "分类",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    state = rememberLazyListState()
-                ) {
-                    items(categoryFilterOptions) { (label, category) ->
-                        FilterChip(
-                            selected = uiState.selectedCategory == category,
-                            onClick = {
-                                if (category != null) {
-                                    viewModel.filterByCategory(category)
-                                } else {
-                                    viewModel.clearFilters()
-                                }
-                            },
-                            label = { Text(label) }
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (uiState.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = "加载中...")
-                }
-            } else if (uiState.filteredRecipes.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = if (searchQuery.isNotEmpty() || uiState.selectedAge != null || uiState.selectedCategory != null) {
-                            "没有找到符合条件的食谱"
-                        } else {
-                            "还没有食谱数据"
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                state = rememberLazyListState()
+            ) {
+                items(ageFilterOptions) { (label, age) ->
+                    FilterChip(
+                        selected = uiState.selectedAge == age,
+                        onClick = {
+                            if (age != null) {
+                                viewModel.filterByAge(age)
+                            } else {
+                                viewModel.clearFilters()
+                            }
                         },
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        label = { Text(label) }
                     )
                 }
-            } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(uiState.filteredRecipes) { recipe ->
-                        RecipeCard(
-                            recipe = recipe,
-                            onClick = { onNavigateToDetail(recipe.id) }
-                        )
-                    }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 分类筛选
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp)
+        ) {
+            Text(
+                text = "分类",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                state = rememberLazyListState()
+            ) {
+                items(categoryFilterOptions) { (label, category) ->
+                    FilterChip(
+                        selected = uiState.selectedCategory == category,
+                        onClick = {
+                            if (category != null) {
+                                viewModel.filterByCategory(category)
+                            } else {
+                                viewModel.clearFilters()
+                            }
+                        },
+                        label = { Text(label) }
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (uiState.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "加载中...")
+            }
+        } else if (uiState.filteredRecipes.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (searchQuery.isNotEmpty() || uiState.selectedAge != null || uiState.selectedCategory != null) {
+                        "没有找到符合条件的食谱"
+                    } else {
+                        "还没有食谱数据"
+                    },
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(uiState.filteredRecipes) { recipe ->
+                    RecipeCard(
+                        recipe = recipe,
+                        onClick = { onNavigateToDetail(recipe.id) }
+                    )
                 }
             }
         }

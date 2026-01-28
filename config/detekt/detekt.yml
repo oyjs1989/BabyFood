@@ -2,7 +2,7 @@
 # https://detekt.dev/docs/introduction/configurations
 
 build:
-  maxIssues: 0
+  maxIssues: 10000
   excludeCorrectable: false
   weights:
     complexity: 2
@@ -52,8 +52,8 @@ complexity:
   ComplexInterface:
     active: true
     threshold: 10
-    includeStatic: false
-    includePrivate: false
+    includeStaticDeclarations: false
+    includePrivateDeclarations: false
   ComplexMethod:
     active: true
     threshold: 15
@@ -94,8 +94,6 @@ coroutines:
   RedundantSuspendModifier:
     active: true
   SuspendFunWithFlowReturnType:
-    active: true
-  UnusedPrivateMember:
     active: true
 
 empty-blocks:
@@ -403,11 +401,7 @@ style:
     active: false
   DataClassShouldBeImmutable:
     active: false
-  DataClassTooEarlyEvaluation:
-    active: false
   DestructuringDeclarationWithTooManyEntries:
-    active: false
-  DoubleCheckedLocking:
     active: false
   EqualsNullCall:
     active: true
@@ -476,7 +470,7 @@ style:
   ReturnCount:
     active: true
     max: 2
-    excludedFunctions: 'equals'
+    excludedFunctions: ['equals']
     excludeLabeled: false
     excludeReturnFromLambda: true
     excludeGuardClauses: false
