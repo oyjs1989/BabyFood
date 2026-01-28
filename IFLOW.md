@@ -13,6 +13,7 @@ BabyFood 是一个使用 Kotlin 开发的 Android 应用程序，专注于婴幼
 - **黑白名单**：管理过敏食材和偏好食材，支持有效期设置
 - **营养目标**：根据月龄自动计算营养目标，支持手动调整
 - **AI 智能推荐**：基于 AI 的智能食谱推荐和周计划生成，支持本地规则引擎和远程 LLM API
+- **仓库管理**：管理辅食食材库存，追踪过期日期，支持添加、编辑、删除库存物品
 
 - **项目名称**：BabyFood
 - **项目类型**：Android 应用
@@ -83,13 +84,17 @@ BabyFood/
 │   │       │   │   │       │   ├── PlanDao.kt
 │   │       │   │   │       │   ├── RecipeDao.kt
 │   │       │   │   │       │   ├── HealthRecordDao.kt
-│   │       │   │   │       │   └── GrowthRecordDao.kt
+│   │       │   │   │       │   ├── GrowthRecordDao.kt
+│   │       │   │   │       │   ├── UserDao.kt
+│   │       │   │   │       │   └── InventoryItemDao.kt
 │   │       │   │   │       └── entity/    # 数据库实体
 │   │       │   │   │           ├── BabyEntity.kt
 │   │       │   │   │           ├── PlanEntity.kt
 │   │       │   │   │           ├── RecipeEntity.kt
 │   │       │   │   │           ├── HealthRecordEntity.kt
-│   │       │   │   │           └── GrowthRecordEntity.kt
+│   │       │   │   │           ├── GrowthRecordEntity.kt
+│   │       │   │   │           ├── UserEntity.kt
+│   │       │   │   │           └── InventoryItemEntity.kt
 │   │       │   │   ├── remote/            # 远程数据
 │   │       │   │   │   ├── api/           # REST API 接口
 │   │       │   │   │   │   ├── RecipeApiService.kt
@@ -129,7 +134,9 @@ BabyFood/
 │   │       │   │       ├── PlanRepository.kt
 │   │       │   │       ├── RecipeRepository.kt
 │   │       │   │       ├── HealthRecordRepository.kt
-│   │       │   │       └── GrowthRecordRepository.kt
+│   │       │   │       ├── GrowthRecordRepository.kt
+│   │       │   │       ├── AuthRepository.kt
+│   │       │   │       └── InventoryRepository.kt
 │   │       │   ├── init/                 # 数据初始化
 │   │       │   │   └── RecipeInitializer.kt
 │   │       │   ├── di/                     # 依赖注入
@@ -151,7 +158,12 @@ BabyFood/
 │   │       │   │       ├── RecommendationRequest.kt
 │   │       │   │       ├── RecommendationResponse.kt
 │   │       │   │       ├── PlanConflict.kt
-│   │       │   │       └── ConflictResolution.kt
+│   │       │   │       ├── ConflictResolution.kt
+│   │       │   │       ├── User.kt
+│   │       │   │       ├── AuthState.kt
+│   │       │   │       ├── InventoryItem.kt
+│   │       │   │       ├── StorageMethod.kt
+│   │       │   │       └── ExpiryStatus.kt
 │   │       │   └── presentation/          # 表现层
 │   │       │       ├── theme/             # 主题配置
 │   │       │       │   ├── Color.kt
@@ -200,6 +212,15 @@ BabyFood/
 │   │       │               ├── RecommendationViewModel.kt
 │   │       │               ├── AiSettingsScreen.kt
 │   │       │               └── RecommendationScreen.kt
+│   │       │           ├── auth/           # 认证功能
+│   │       │               ├── LoginViewModel.kt
+│   │       │               ├── RegisterViewModel.kt
+│   │       │               ├── LoginScreen.kt
+│   │       │               └── RegisterScreen.kt
+│   │       │           ├── inventory/      # 仓库管理
+│   │       │               ├── InventoryViewModel.kt
+│   │       │               ├── InventoryListScreen.kt
+│   │       │               └── InventoryFormScreen.kt
 │   │       ├── res/                          # 资源文件
 │   │       │   ├── drawable/                 # 图片资源
 │   │       │   ├── layout/                   # 布局文件
@@ -389,7 +410,7 @@ Database (Room SQLite) / Cloud DB
 - **非传递性 R 类**：已启用（`android.nonTransitiveRClass=true`）
 - **JVM 目标**：Java 17
 - **Gradle 配置缓存**：已禁用（`org.gradle.configuration-cache=false`）
-- **数据库版本**：6（支持迁移 v1→v2→v3→v4→v5→v6）
+- **数据库版本**：14（支持迁移 v1→v2→v3→v4→v5→v6→v7→v8→v9→v10→v11→v12→v13→v14）
 - **Kotlin 版本**：2.0.21
 - **Compose 编译器**：使用 Kotlin 2.0.21 内置编译器
 - **Kotlin 序列化**：已配置编译器插件，支持 `@Serializable` 注解
@@ -400,8 +421,8 @@ Database (Room SQLite) / Cloud DB
 项目已完成基础架构搭建和核心功能开发，采用 MVVM 架构模式。
 
 ### 构建状态
-- ✅ **最新构建**：BUILD SUCCESSFUL（2026-01-24）
-- ✅ **数据库版本**：6（支持迁移 v1→v2→v3→v4→v5→v6）
+- ✅ **最新构建**：BUILD SUCCESSFUL（2026-01-28）
+- ✅ **数据库版本**：14（支持迁移 v1→v2→v3→v4→v5→v6→v7→v8→v9→v10→v11→v12→v13→v14）
 - ✅ **所有 UI 页面**：已实现并通过编译验证
 - ✅ **导航路由**：完整配置并可用
 - ✅ **Kotlin 序列化**：已配置并支持服务器数据同步
@@ -412,6 +433,7 @@ Database (Room SQLite) / Cloud DB
 - ✅ **内置食谱库**：30 个辅食食谱（6-24个月），覆盖早餐、午餐、晚餐、点心
 - ✅ **AI 推荐日志**：详细日志输出，便于调试和问题定位
 - ✅ **AI 推荐原则**：遵循奥卡姆剃刀原则，AI 优先，本地仅作兜底
+- ✅ **代码优化**：已完成代码结构优化，提高可维护性
 
 ### 已实现功能
 
@@ -482,17 +504,30 @@ Database (Room SQLite) / Cloud DB
 - ✅ RecommendationResponse - AI 推荐响应模型
 - ✅ PlanConflict - 计划冲突模型
 - ✅ ConflictResolution - 冲突解决模型
+- ✅ User - 用户模型（认证相关）
+- ✅ AuthState - 认证状态
+- ✅ InventoryItem - 库存物品模型
+- ✅ StorageMethod - 存储方式枚举（冷藏、冷冻、常温）
+- ✅ ExpiryStatus - 过期状态枚举
 
 #### 7. 数据库
-- ✅ Room 数据库（当前版本：6）
+- ✅ Room 数据库（当前版本：14）
 - ✅ 数据库迁移策略
   - MIGRATION_1_2：添加 mealPeriod 字段到 plans 表
   - MIGRATION_2_3：创建 health_records 和 growth_records 表
   - MIGRATION_3_4：无操作迁移（版本号递增）
   - MIGRATION_4_5：添加同步元数据字段（cloudId、syncStatus、lastSyncTime、version、isDeleted）
   - MIGRATION_5_6：修复同步元数据字段约束（重建表）
-- ✅ 完整的 DAO 接口（BabyDao、PlanDao、RecipeDao、HealthRecordDao、GrowthRecordDao）
-- ✅ TypeConverters 支持复杂类型（AllergyItem、PreferenceItem、LocalDate 等）
+  - MIGRATION_6_7：添加宝宝头像字段（avatarUrl）
+  - MIGRATION_7_8：添加用户表（users），支持登录功能
+  - MIGRATION_8_9：修复 users 表结构问题（删除索引，重建表）
+  - MIGRATION_9_10：添加 recipes 表 cookingTime 字段
+  - MIGRATION_10_11：添加 plans 表 mealTime 字段
+  - MIGRATION_11_12：添加 plans 表反馈相关字段（feedbackStatus、feedbackTime）
+  - MIGRATION_12_13：更新 babies 表的 allergies 和 preferences 字段结构（支持 addedDate）
+  - MIGRATION_13_14：添加 inventory_items 表，支持仓库功能
+- ✅ 完整的 DAO 接口（BabyDao、PlanDao、RecipeDao、HealthRecordDao、GrowthRecordDao、UserDao、InventoryItemDao）
+- ✅ TypeConverters 支持复杂类型（AllergyItem、PreferenceItem、LocalDate、StorageMethod 等）
 - ✅ 数据库索引优化
 
 #### 8. 业务逻辑层
@@ -520,7 +555,7 @@ Database (Room SQLite) / Cloud DB
 - ✅ 完整的导航路由
 
 #### 10. 云同步架构
-- ✅ REST API 接口（Recipe、Plan、Baby、Sync、HealthAnalysis）
+- ✅ REST API 接口（Recipe、Plan、Baby、Sync、HealthAnalysis、Auth）
 - ✅ RemoteDataSource 接口和实现
 - ✅ SyncManager 同步管理器（拉取、推送、冲突解决）
 - ✅ 数据映射器（Entity ↔ Cloud 转换）
@@ -528,6 +563,7 @@ Database (Room SQLite) / Cloud DB
 - ✅ 软删除支持（isDeleted 字段）
 - ✅ 版本控制（version 字段）
 - ✅ DTOs（SyncPullResponse、SyncPushRequest、SyncPushResponse）
+- ✅ AuthRepository 用户认证管理
 
 #### 11. AI 分析架构
 - ✅ HealthAnalysisService 接口
@@ -561,6 +597,8 @@ Database (Room SQLite) / Cloud DB
 #### 17. 导航路由配置
 完整的导航路由配置，支持以下路由：
 
+- `login` - 登录页面
+- `register` - 注册页面
 - `home` - 今日餐单首页
 - `recipes` - 食谱列表
 - `recipes/detail/{recipeId}` - 食谱详情
@@ -569,6 +607,8 @@ Database (Room SQLite) / Cloud DB
 - `plans/detail/{planId}` - 计划详情
 - `plans/form/{babyId}/{planId}` - 添加/编辑计划
 - `plans/recommendation/editor/{babyId}` - AI 推荐编辑器
+- `inventory` - 仓库列表
+- `inventory/form/{itemId}` - 添加/编辑仓库物品
 - `baby` - 宝宝列表
 - `baby/form/{babyId}` - 添加/编辑宝宝
 - `baby/detail/{babyId}` - 宝宝详情
@@ -595,6 +635,23 @@ Database (Room SQLite) / Cloud DB
 - ✅ 支持体重、身高、头围曲线绘制
 - ✅ 对比 WHO/中国标准生长曲线
 - ✅ 数据点标注和交互
+
+#### 17. 用户认证功能
+- ✅ 登录页面（LoginScreen，支持手机号/邮箱登录）
+- ✅ 注册页面（RegisterScreen，支持手机号/邮箱注册）
+- ✅ LoginViewModel 和 RegisterViewModel 完整实现
+- ✅ 用户状态管理（AuthState）
+- ✅ 注销功能
+
+#### 18. 仓库管理功能
+- ✅ 仓库列表页面（InventoryListScreen）
+- ✅ 仓库物品表单（InventoryFormScreen）
+- ✅ InventoryViewModel 完整实现
+- ✅ InventoryRepository 数据访问
+- ✅ 库存物品追踪（生产日期、过期日期、存储方式）
+- ✅ 过期状态计算（ExpiryStatus）
+- ✅ 存储方式枚举（StorageMethod：冷藏、冷冻、常温）
+- ✅ 库存数据库表（inventory_items）
 
 ### 待完善功能
 
@@ -944,14 +1001,20 @@ AI 调用工具的本质是一个"回合制游戏"，AI 不直接执行代码，
    - 完善同步状态显示
    - 添加同步日志和错误处理
 
-2. 用户体验优化
+2. 仓库功能完善
+   - 添加库存提醒功能（过期预警、库存不足）
+   - 实现库存自动扣减（与餐单计划关联）
+   - 添加食材购买清单生成
+   - 支持批量导入库存数据
+
+3. 用户体验优化
    - 搜索历史记录
    - 热门推荐功能
    - 收藏功能
    - 分享功能
    - 数据导出功能（PDF/Excel）
 
-3. 图片支持
+4. 图片支持
    - 食谱图片上传
    - 食谱图片展示
    - 图片压缩和优化
@@ -964,6 +1027,7 @@ AI 调用工具的本质是一个"回合制游戏"，AI 不直接执行代码，
    - AI 食谱生成
    - AI 生长发育评估
    - 协同过滤推荐算法优化
+   - AI 库存管理建议（基于消费历史预测需求）
 
 2. 社区功能
    - 用户分享
