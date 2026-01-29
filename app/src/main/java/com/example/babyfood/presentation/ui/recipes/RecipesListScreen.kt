@@ -230,7 +230,11 @@ private fun RecipeCard(
     Card(
         modifier = Modifier
             .fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            0.5.dp,
+            MaterialTheme.colorScheme.outline
+        ),
         onClick = onClick
     ) {
         Row(
@@ -242,22 +246,22 @@ private fun RecipeCard(
         ) {
             // 食谱略图
             Box(
-                modifier = Modifier.size(80.dp)
+                modifier = Modifier.size(88.dp)
             ) {
                 if (recipe.imageUrl != null) {
                     AsyncImage(
                         model = recipe.imageUrl,
                         contentDescription = "食谱图片",
                         modifier = Modifier
-                            .size(80.dp)
-                            .clip(RoundedCornerShape(8.dp)),
+                            .size(88.dp)
+                            .clip(RoundedCornerShape(12.dp)),
                         contentScale = ContentScale.Crop
                     )
                 } else {
                     Box(
                         modifier = Modifier
-                            .size(80.dp)
-                            .clip(RoundedCornerShape(8.dp)),
+                            .size(88.dp)
+                            .clip(RoundedCornerShape(12.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(

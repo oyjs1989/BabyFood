@@ -445,7 +445,10 @@ private fun AppBottomBar(
         BottomNavItem.Baby
     )
 
-    NavigationBar {
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        tonalElevation = 0.dp
+    ) {
         items.forEach { item ->
             NavigationBarItem(
                 icon = { Icon(item.icon, contentDescription = item.label) },

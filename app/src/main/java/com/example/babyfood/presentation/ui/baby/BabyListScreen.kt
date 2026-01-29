@@ -130,13 +130,21 @@ private fun BabyCard(
                     Modifier.border(
                         width = 2.dp,
                         color = MaterialTheme.colorScheme.primary,
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(12.dp)
                     )
                 } else {
                     Modifier
                 }
             ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = if (isSelected) {
+            null
+        } else {
+            androidx.compose.foundation.BorderStroke(
+                0.5.dp,
+                MaterialTheme.colorScheme.outline
+            )
+        },
         onClick = onClick
     ) {
         Row(

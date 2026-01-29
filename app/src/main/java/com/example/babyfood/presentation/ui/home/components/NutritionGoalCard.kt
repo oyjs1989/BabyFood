@@ -45,14 +45,18 @@ fun NutritionGoalCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onEdit() },
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outline
+        )
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(24.dp)
         ) {
             // 标题栏
             Row(

@@ -101,7 +101,7 @@ private fun MealPeriodCard(
                 SecondaryContainer
             }
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = if (hasRecipe) {
             null
         } else {
@@ -114,7 +114,7 @@ private fun MealPeriodCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 左侧时间轴区域
@@ -125,12 +125,12 @@ private fun MealPeriodCard(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // 橙色圆点
+                    // 圆点（使用主色调）
                     Box(
                         modifier = Modifier
-                            .size(8.dp)
+                            .size(6.dp)
                             .background(
-                                color = Color(0xFFFF7A3D),
+                                color = MaterialTheme.colorScheme.primary,
                                 shape = CircleShape
                             )
                     )
@@ -179,7 +179,7 @@ private fun MealPeriodCard(
                         // 圆形缩略图背景
                         Box(
                             modifier = Modifier
-                                .size(64.dp)
+                                .size(72.dp)
                                 .background(
                                     color = Color(0xFFF8F8F8),
                                     shape = CircleShape
@@ -195,7 +195,7 @@ private fun MealPeriodCard(
                                 imageVector = getMealIcon(period),
                                 contentDescription = null,
                                 tint = Color(0xFF999999),
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(36.dp)
                             )
                         }
 
@@ -243,7 +243,7 @@ private fun MealPeriodCard(
                                         modifier = Modifier
                                             .background(
                                                 color = tag.color,
-                                                shape = RoundedCornerShape(6.dp)
+                                                shape = RoundedCornerShape(4.dp)
                                             )
                                             .padding(horizontal = 8.dp, vertical = 4.dp)
                                     ) {

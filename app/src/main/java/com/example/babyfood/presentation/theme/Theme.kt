@@ -97,20 +97,20 @@ private val DarkColorScheme = darkColorScheme(
     onErrorContainer = DarkOnBackground
 )
 
-// ===== 动画配置 - Soft UI Evolution 风格 =====
+// ===== 动画配置 - Apple 风格 =====
 
-// 标准动画持续时间（毫秒）- 优化为更流畅的体验
-const val AnimationDurationFast = 150      // 快速动画（按钮点击等）
-const val AnimationDurationNormal = 250    // 标准动画（卡片展开等）
-const val AnimationDurationSlow = 400      // 慢速动画（页面切换等）
+// 标准动画持续时间（毫秒）- Apple 风格更流畅
+const val AnimationDurationFast = 200      // 快速动画（按钮点击等）
+const val AnimationDurationNormal = 300    // 标准动画（卡片展开等）
+const val AnimationDurationSlow = 500      // 慢速动画（页面切换等）
 const val AnimationDurationVerySlow = 600  // 非常慢速动画（复杂过渡）
 
-// 缓动函数 - Soft UI Evolution 风格
+// 缓动函数 - Apple 风格
 // 使用更自然的缓动曲线，提升用户体验
-val AnimationEasing = EaseInOut           // 标准缓动（进入和退出）
-val AnimationEasingIn = EaseIn             // 进入缓动（用于进入动画）
-val AnimationEasingOut = EaseOut           // 退出缓动（用于退出动画）
-val AnimationEasingSpring = FastOutSlowInEasing  // 弹簧缓动（用于弹性效果）
+val AnimationEasing = androidx.compose.animation.core.CubicBezierEasing(0.25f, 0.1f, 0.25f, 1.0f)  // ease-in-out
+val AnimationEasingIn = androidx.compose.animation.core.CubicBezierEasing(0.42f, 0.0f, 1.0f, 1.0f)  // ease-in
+val AnimationEasingOut = androidx.compose.animation.core.CubicBezierEasing(0.0f, 0.0f, 0.58f, 1.0f)  // ease-out
+val AnimationEasingSpring = androidx.compose.animation.core.FastOutSlowInEasing  // 弹簧缓动（用于弹性效果）
 
 // 预定义动画规格 - Soft UI Evolution 风格
 @Composable

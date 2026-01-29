@@ -342,7 +342,11 @@ fun InventoryItemCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            0.5.dp,
+            MaterialTheme.colorScheme.outline
+        )
     ) {
         Row(
             modifier = Modifier
@@ -353,7 +357,7 @@ fun InventoryItemCard(
         ) {
             // 食材图片
             Box(
-                modifier = Modifier.size(80.dp)
+                modifier = Modifier.size(88.dp)
             ) {
                 if (item.foodImageUrl != null) {
                     AsyncImage(
@@ -361,14 +365,14 @@ fun InventoryItemCard(
                         contentDescription = "食材图片",
                         modifier = Modifier
                             .fillMaxSize()
-                            .clip(RoundedCornerShape(8.dp)),
+                            .clip(RoundedCornerShape(12.dp)),
                         contentScale = ContentScale.Crop
                     )
                 } else {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center
                     ) {

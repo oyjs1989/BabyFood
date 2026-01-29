@@ -425,7 +425,11 @@ private fun PlanItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            0.5.dp,
+            MaterialTheme.colorScheme.outline
+        )
     ) {
         Row(
             modifier = Modifier
