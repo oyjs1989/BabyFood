@@ -114,7 +114,8 @@ fun InventoryFormScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface
+                    containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
+                    titleContentColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                 )
             )
         }
