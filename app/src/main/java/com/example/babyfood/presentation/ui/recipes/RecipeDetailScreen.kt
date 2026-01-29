@@ -82,8 +82,6 @@ fun RecipeDetailScreen(
     }
 
     val currentRecipe = recipe
-    val primaryColor = Color(0xFFFF8C42)
-    val warningBgColor = Color(0xFFFFF4E6)
 
     Scaffold(
         topBar = {
@@ -102,7 +100,7 @@ fun RecipeDetailScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { },
-                containerColor = primaryColor,
+                containerColor = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(60.dp),
                 shape = CircleShape
             ) {
@@ -113,12 +111,12 @@ fun RecipeDetailScreen(
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
                         text = "开始烹饪",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -148,11 +146,14 @@ fun RecipeDetailScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(240.dp)
+                            .padding(horizontal = 16.dp)
                     ) {
                         AsyncImage(
                             model = currentRecipe.imageUrl,
                             contentDescription = "食谱图片",
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(12.dp)),
                             contentScale = ContentScale.Crop
                         )
                     }
@@ -164,7 +165,7 @@ fun RecipeDetailScreen(
                         text = currentRecipe.name,
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF333333),
+                        color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.padding(top = 24.dp),
                         textAlign = TextAlign.Center
                     )
@@ -189,7 +190,7 @@ fun RecipeDetailScreen(
                     Text(
                         text = "此食谱富含DHA和多种维生素，适合添加辅食中后期的宝宝。",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF666666),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 24.dp),
                         textAlign = TextAlign.Center
                     )
@@ -205,7 +206,6 @@ fun RecipeDetailScreen(
                             index = "①",
                             label = "AI修正",
                             message = "AI已自动移除食谱中的盐和糖，以符合10月龄宝宝需求。",
-                            backgroundColor = warningBgColor,
                             onDismiss = { showAiTip = false }
                         )
                     }
@@ -223,7 +223,6 @@ fun RecipeDetailScreen(
                                 index = "②",
                                 label = "过敏提示",
                                 message = "包含${allergens.joinToString("、") { it.name }}（根据您的设置，请注意排敏）。",
-                                backgroundColor = warningBgColor,
                                 onDismiss = { showAllergyTip = false }
                             )
                         }
@@ -237,7 +236,8 @@ fun RecipeDetailScreen(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA))
+                        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp)
@@ -254,7 +254,7 @@ fun RecipeDetailScreen(
                                     Icon(
                                         imageVector = Icons.Default.ShoppingCart,
                                         contentDescription = null,
-                                        tint = primaryColor
+                                        tint = MaterialTheme.colorScheme.primary
                                     )
                                     Text(
                                         text = "食材清单",
@@ -265,7 +265,7 @@ fun RecipeDetailScreen(
                                 TextButton(onClick = { }) {
                                     Text(
                                         text = "加入冰箱",
-                                        color = primaryColor,
+                                        color = MaterialTheme.colorScheme.primary,
                                         fontWeight = FontWeight.Medium
                                     )
                                 }
@@ -278,7 +278,7 @@ fun RecipeDetailScreen(
                                 Text(
                                     text = "做几顿？",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color(0xFF666666)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Row(
@@ -288,7 +288,7 @@ fun RecipeDetailScreen(
                                     Text(
                                         text = "1份",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = Color(0xFF999999)
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Slider(
                                         value = portions,
@@ -297,22 +297,22 @@ fun RecipeDetailScreen(
                                         steps = 3,
                                         modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
                                         colors = SliderDefaults.colors(
-                                            thumbColor = primaryColor,
-                                            activeTrackColor = primaryColor,
-                                            inactiveTrackColor = Color(0xFFE0E0E0)
+                                            thumbColor = MaterialTheme.colorScheme.primary,
+                                            activeTrackColor = MaterialTheme.colorScheme.primary,
+                                            inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant
                                         )
                                     )
                                     Text(
                                         text = "5份",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = Color(0xFF999999)
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text = "${portions.toInt()}份",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = primaryColor,
+                                    color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Medium,
                                     modifier = Modifier.fillMaxWidth(),
                                     textAlign = TextAlign.Center
@@ -345,7 +345,7 @@ fun RecipeDetailScreen(
                                     Text(
                                         text = "${(ingredient.amount.toFloatOrNull() ?: 1f) * portions}${ingredient.amount.filter { it.isLetter() }}",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = Color(0xFF666666)
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                                 if (index < currentRecipe.ingredients.size - 1) {
@@ -363,7 +363,8 @@ fun RecipeDetailScreen(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 16.dp),
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA))
+                        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp)
@@ -382,12 +383,12 @@ fun RecipeDetailScreen(
                                     Box(
                                         modifier = Modifier
                                             .size(24.dp)
-                                            .background(primaryColor, CircleShape),
+                                            .background(MaterialTheme.colorScheme.primary, CircleShape),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
                                             text = "${index + 1}",
-                                            color = Color.White,
+                                            color = MaterialTheme.colorScheme.onPrimary,
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -414,7 +415,8 @@ fun RecipeDetailScreen(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA))
+                        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp)
@@ -478,7 +480,7 @@ private fun InfoItemWithIcon(label: String, value: String) {
         Text(
             text = value,
             style = MaterialTheme.typography.bodySmall,
-            color = Color(0xFF666666)
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -488,16 +490,15 @@ private fun WarningCard(
     index: String,
     label: String,
     message: String,
-    backgroundColor: Color,
     onDismiss: () -> Unit
 ) {
-    val primaryColor = Color(0xFFFF8C42)
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -509,12 +510,12 @@ private fun WarningCard(
             Box(
                 modifier = Modifier
                     .size(24.dp)
-                    .background(primaryColor, CircleShape),
+                    .background(MaterialTheme.colorScheme.primary, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = index,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -523,13 +524,13 @@ private fun WarningCard(
                 text = label,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
-                color = primaryColor,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(top = 2.dp)
             )
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f)
             )
             IconButton(
@@ -539,7 +540,7 @@ private fun WarningCard(
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "关闭",
-                    tint = Color(0xFF999999),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -556,13 +557,13 @@ private fun NutritionRow(label: String, value: String) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = Color(0xFF666666)
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFFFF8C42)
+            color = MaterialTheme.colorScheme.primary
         )
     }
     Spacer(modifier = Modifier.height(8.dp))
