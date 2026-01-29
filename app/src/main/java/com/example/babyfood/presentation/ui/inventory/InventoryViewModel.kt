@@ -118,15 +118,15 @@ class InventoryViewModel @Inject constructor(
             try {
                 Log.d(TAG, "========== 保存仓库物品 ==========")
                 Log.d(TAG, "物品名称: ${item.foodName}")
-                
+
                 if (item.id == 0L) {
-                    inventoryRepository.insertInventoryItem(item)
+                    inventoryRepository.insert(item)
                     Log.d(TAG, "✓ 新增物品成功")
                 } else {
-                    inventoryRepository.updateInventoryItem(item)
+                    inventoryRepository.update(item)
                     Log.d(TAG, "✓ 更新物品成功")
                 }
-                
+
                 _uiState.value = _uiState.value.copy(
                     isSaved = true,
                     error = null
@@ -146,7 +146,7 @@ class InventoryViewModel @Inject constructor(
             try {
                 Log.d(TAG, "========== 删除仓库物品 ==========")
                 Log.d(TAG, "物品名称: ${item.foodName}")
-                inventoryRepository.deleteInventoryItem(item)
+                inventoryRepository.delete(item)
                 Log.d(TAG, "✓ 删除物品成功")
                 Log.d(TAG, "========== 删除完成 ==========")
             } catch (e: Exception) {
@@ -160,7 +160,7 @@ class InventoryViewModel @Inject constructor(
 
     fun loadInventoryItem(itemId: Long) {
         viewModelScope.launch {
-            val item = inventoryRepository.getInventoryItemById(itemId)
+            val item = inventoryRepository.getById(itemId)
             _uiState.value = _uiState.value.copy(selectedItem = item)
         }
     }

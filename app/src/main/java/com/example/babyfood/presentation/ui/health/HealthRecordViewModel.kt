@@ -40,7 +40,7 @@ class HealthRecordViewModel @Inject constructor(
                 if (record.id == 0L) {
                     healthRecordRepository.insertHealthRecord(record)
                 } else {
-                    healthRecordRepository.updateHealthRecord(record)
+                    healthRecordRepository.update(record)
                 }
                 _uiState.clearErrorAndSaved { error, isSaved -> copy(error = error, isSaved = isSaved) }
             } catch (e: Exception) {
@@ -52,7 +52,7 @@ class HealthRecordViewModel @Inject constructor(
     fun deleteHealthRecord(record: HealthRecord) {
         viewModelScope.launch {
             try {
-                healthRecordRepository.deleteHealthRecord(record)
+                healthRecordRepository.delete(record)
             } catch (e: Exception) {
                 _uiState.setError(e.message) { error -> copy(error = error) }
             }

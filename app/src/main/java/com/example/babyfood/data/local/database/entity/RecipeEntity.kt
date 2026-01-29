@@ -22,12 +22,12 @@ data class RecipeEntity(
     val imageUrl: String? = null,
 
     // 同步元数据字段（向后兼容，默认值）
-    val cloudId: String? = null,                    // 云端唯一标识
-    val syncStatus: String = "PENDING_UPLOAD",      // 同步状态（默认待上传）
-    val lastSyncTime: Long? = null,                 // 最后同步时间戳（毫秒）
-    val version: Int = 1,                           // 版本号（用于冲突检测）
-    val isDeleted: Boolean = false                  // 软删除标记
-) {
+    override val cloudId: String? = null,           // 云端唯一标识
+    override val syncStatus: String = "PENDING_UPLOAD", // 同步状态（默认待上传）
+    override val lastSyncTime: Long? = null,        // 最后同步时间戳（毫秒）
+    override val version: Int = 1,                  // 版本号（用于冲突检测）
+    override val isDeleted: Boolean = false         // 软删除标记
+) : SyncableEntity {
     fun toDomainModel(): Recipe = Recipe(
         id = id,
         name = name,

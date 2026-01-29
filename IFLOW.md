@@ -87,14 +87,15 @@ BabyFood/
 │   │       │   │   │       │   ├── GrowthRecordDao.kt
 │   │       │   │   │       │   ├── UserDao.kt
 │   │       │   │   │       │   └── InventoryItemDao.kt
-│   │       │   │   │       └── entity/    # 数据库实体
-│   │       │   │   │           ├── BabyEntity.kt
-│   │       │   │   │           ├── PlanEntity.kt
-│   │       │   │   │           ├── RecipeEntity.kt
-│   │       │   │   │           ├── HealthRecordEntity.kt
-│   │       │   │   │           ├── GrowthRecordEntity.kt
-│   │       │   │   │           ├── UserEntity.kt
-│   │       │   │   │           └── InventoryItemEntity.kt
+│   │       │   │       │       └── entity/    # 数据库实体
+│   │       │   │       │           ├── SyncableEntity.kt       # 同步实体接口
+│   │       │   │       │           ├── BabyEntity.kt
+│   │       │   │       │           ├── PlanEntity.kt
+│   │       │   │       │           ├── RecipeEntity.kt
+│   │       │   │       │           ├── HealthRecordEntity.kt
+│   │       │   │       │           ├── GrowthRecordEntity.kt
+│   │       │   │       │           ├── UserEntity.kt
+│   │       │   │       │           └── InventoryItemEntity.kt
 │   │       │   │   ├── remote/            # 远程数据
 │   │       │   │   │   ├── api/           # REST API 接口
 │   │       │   │   │   │   ├── RecipeApiService.kt
@@ -130,6 +131,9 @@ BabyFood/
 │   │       │   │   ├── strategy/          # 策略管理
 │   │       │   │   │   └── StrategyManager.kt
 │   │       │   │   └── repository/         # 数据仓库
+│   │       │   │       ├── BaseRepository.kt         # 泛型基础仓库类
+│   │       │   │       ├── SyncableRepository.kt     # 同步实体基础仓库
+│   │       │   │       ├── SyncMetadata.kt          # 实体准备工具
 │   │       │   │       ├── BabyRepository.kt
 │   │       │   │       ├── PlanRepository.kt
 │   │       │   │       ├── RecipeRepository.kt
@@ -375,7 +379,24 @@ UI (Jetpack Compose)
 ViewModel (StateFlow/LiveData)
     ↓ 调用 Repository 方法
 Repository (Flow)
-    ↓ 调用 DAO/Strategy 方法
+    │
+    ├── BaseRepository<T, E, ID>
+    │   ├── toDomainModel(): E → T
+    │   ├── toEntity(): T → E
+    │   └── toDomainModels(): Flow 辅助方法
+    │
+    ├── SyncableRepository<T, E, ID>
+    │   └── extends BaseRepository
+    │
+    └── 具体仓库（7个）
+        ├── GrowthRecordRepository (extends BaseRepository)
+        ├── BabyRepository (extends SyncableRepository)
+        ├── PlanRepository (extends SyncableRepository)
+        ├── RecipeRepository (extends SyncableRepository)
+        ├── InventoryRepository (extends SyncableRepository)
+        ├── HealthRecordRepository (extends BaseRepository)
+        └── AuthRepository (独立实现)
+    ↓
 ┌─────────────────────────────────┐
 │  Service Layer (策略管理)       │
 │  - StrategyManager              │
@@ -434,6 +455,13 @@ Database (Room SQLite) / Cloud DB
 - ✅ **AI 推荐日志**：详细日志输出，便于调试和问题定位
 - ✅ **AI 推荐原则**：遵循奥卡姆剃刀原则，AI 优先，本地仅作兜底
 - ✅ **代码优化**：已完成代码结构优化，提高可维护性
+- ✅ **Repository 层重构**（2026-01-29）
+  - 引入 BaseRepository 和 SyncableRepository 泛型基类
+  - 消除约 200 行重复的 CRUD 和 Flow 映射代码
+  - 统一同步元数据处理（prepareForInsert/prepareForUpdate）
+  - 每个仓库减少 30-50 行代码
+  - 添加 SyncableEntity 接口，标准化云同步元数据
+  - 提高代码可维护性和一致性
 
 ### 已实现功能
 
@@ -486,9 +514,10 @@ Database (Room SQLite) / Cloud DB
 - ✅ 数据点标注和交互
 
 #### 6. 数据模型
-- ✅ Baby - 宝宝信息（含过敏、偏好、营养目标）
-- ✅ Plan - 餐单计划（含餐段时间段）
-- ✅ Recipe - 食谱信息（含营养成分）
+- ✅ **SyncableEntity** - 同步实体接口（定义云同步元数据字段：cloudId、syncStatus、lastSyncTime、version、isDeleted）
+- ✅ Baby - 宝宝信息（含过敏、偏好、营养目标，实现 SyncableEntity）
+- ✅ Plan - 餐单计划（含餐段时间段，实现 SyncableEntity）
+- ✅ Recipe - 食谱信息（含营养成分，实现 SyncableEntity）
 - ✅ MealPeriod - 餐段时间段枚举
 - ✅ NutritionGoal - 营养目标（含月龄自动计算）
 - ✅ AllergyItem - 过敏食材项（带有效期）
@@ -506,7 +535,7 @@ Database (Room SQLite) / Cloud DB
 - ✅ ConflictResolution - 冲突解决模型
 - ✅ User - 用户模型（认证相关）
 - ✅ AuthState - 认证状态
-- ✅ InventoryItem - 库存物品模型
+- ✅ InventoryItem - 库存物品模型（实现 SyncableEntity）
 - ✅ StorageMethod - 存储方式枚举（冷藏、冷冻、常温）
 - ✅ ExpiryStatus - 过期状态枚举
 
@@ -719,6 +748,42 @@ Database (Room SQLite) / Cloud DB
 - 本地规则仅作为安全网和兜底方案
 - 避免过度工程化
 
+#### 代码简化原则
+在代码设计和实现中，遵循代码简化原则："消除重复，抽象通用模式"。
+
+**应用场景：**
+
+1. **Repository 层**
+   - **原则**：使用泛型消除重复代码
+   - **实现**：
+     - BaseRepository 提供通用的 Flow 映射方法 `.toDomainModels()`
+     - SyncableRepository 提供同步元数据处理工具
+     - 所有具体仓库继承基类，实现自己的 CRUD 操作
+   - **避免**：在每个仓库中重复相同的 Flow 映射逻辑
+   - **效果**：减少约 200 行重复代码，每个仓库减少 30-50 行
+
+2. **实体映射**
+   - **原则**：通过扩展函数简化常见操作
+   - **实现**：
+     - `SyncMetadata.kt` 提供 `prepareForInsert()` 和 `prepareForUpdate()` 扩展函数
+     - 统一处理同步元数据设置（cloudId、syncStatus、lastSyncTime、version、isDeleted）
+   - **避免**：在每个 Repository 中重复编写实体准备逻辑
+   - **效果**：集中管理通用逻辑，提高一致性
+
+3. **接口设计**
+   - **原则**：定义清晰的接口契约
+   - **实现**：
+     - SyncableEntity 接口定义云同步元数据字段
+     - BaseDao 和 SyncableDao 接口定义 CRUD 方法签名
+   - **避免**：缺乏类型约束和明确的接口定义
+   - **效果**：编译时类型检查，减少运行时错误
+
+**核心思想：**
+- 使用泛型消除重复代码（BaseRepository 模式）
+- 通过扩展函数简化常见操作
+- 集中管理通用逻辑
+- 提高代码可维护性和一致性
+
 #### AI Function Calling（工具调用）原则
 在 AI 功能扩展中，遵循工具调用原则，使 AI 能够通过结构化接口调用应用功能。
 
@@ -824,6 +889,219 @@ AI 调用工具的本质是一个"回合制游戏"，AI 不直接执行代码，
 - 通过结构化接口实现 AI 与应用的交互
 - 参数准确性依赖于 JSON Schema 的严格定义
 - 工具调用扩展了 AI 的能力边界，使其能够操作真实数据
+
+## 重构复盘记录（2026-01-29）
+
+### Repository 层重构事故
+
+#### 背景
+2026-01-29 对 Repository 层进行了大规模重构，引入 `BaseRepository` 和 `SyncableRepository` 泛型基类，试图通过抽象减少重复代码。
+
+#### 结果
+- **影响范围**：17+ 个文件需要修复
+- **修复耗时**：约 2 小时
+- **Bug 数量**：50+ 个编译错误
+- **最终状态**：✅ 构建成功
+
+#### 根本原因分析
+
+##### 1. 破坏了现有的 API 契约
+- **问题**：移除了 `override val dao` 属性声明，但没有提供替代的实现方式
+- **原因**：试图通过泛型和抽象方法统一 CRUD 操作，但实际 DAO 层接口设计不统一
+- **影响**：所有 Repository 的 CRUD 方法调用都失效
+
+##### 2. Room DAO 的技术限制
+- **问题**：Room 的 DAO 接口**不能继承**其他接口
+- **原因**：虽然定义了 `BaseDao` 和 `SyncableDao` 接口作为文档，但实际 DAO 无法继承它们
+- **影响**：编译器无法识别 DAO 是否实现了期望的方法，导致类型检查失败
+
+##### 3. 方法名不一致
+- **问题**：不同的 DAO 使用了不同的方法命名约定
+  - 有些用 `insertXxx`、`updateXxx`、`deleteXxx`（如 `insertRecipe`、`updatePlan`）
+  - 有些用标准方法名 `insert`、`update`、`delete`
+- **原因**：历史代码演进过程中缺乏统一规范
+- **影响**：大量引用失效，需要逐个修复
+
+##### 4. 缺少充分的重构策略
+- **问题**：试图一次性重构整个 Repository 层
+- **原因**：没有采用渐进式重构，没有先在一个 Repository 上验证方案
+- **影响**：影响范围失控，17+ 个文件需要修改
+
+##### 5. 实体类型转换的复杂性
+- **问题**：Domain 模型和 Entity 模型之间的字段类型不完全匹配
+  - `InventoryItem` 中 `productionDate` 是 `LocalDate`，但 `InventoryItemEntity` 中是 `String`
+  - `Plan` 中 `mealPeriod` 是 `String`，但 `PlanEntity` 中是 `MealPeriod` 枚举
+- **原因**：重构时简化了映射逻辑，但没有正确处理这些类型转换
+- **影响**：类型不匹配错误
+
+##### 6. `prepareForUpdate` 的签名变化
+- **问题**：重构后 `prepareForUpdate` 需要传入 `existing` 实体参数
+- **原因**：为了正确处理同步元数据（保留 cloudId、递增 version）
+- **影响**：很多调用方没有提供这个参数，导致编译错误
+
+##### 7. 影响范围估计不足
+- **问题**：Repository 层的重构影响了大量调用方
+- **影响范围**：
+  - 所有 ViewModel（8+ 个文件）
+  - SyncManager
+  - 数据初始化器
+  - AI 服务
+  - 总计 17+ 个文件需要修改
+- **原因**：没有使用 "Find Usages" 功能提前识别所有影响点
+
+#### 修复的文件列表
+
+1. `BabyRepository.kt` - 移除 dao 属性，实现 CRUD 方法
+2. `PlanRepository.kt` - 移除 dao 属性，实现 CRUD 方法
+3. `RecipeRepository.kt` - 移除 dao 属性，实现 CRUD 方法
+4. `InventoryRepository.kt` - 移除 dao 属性，实现 CRUD 方法
+5. `HealthRecordRepository.kt` - 添加 update 和 delete 方法
+6. `GrowthRecordRepository.kt` - 修复方法名引用
+7. `SyncManager.kt` - 修复 DAO 方法引用
+8. `MainViewModel.kt` - 修复 Repository 方法引用
+9. `BabyViewModel.kt` - 修复 Repository 方法引用
+10. `HealthRecordViewModel.kt` - 修复 Repository 方法引用
+11. `HomeViewModel.kt` - 修复 Repository 方法引用
+12. `InventoryViewModel.kt` - 修复 Repository 方法引用
+13. `PlansViewModel.kt` - 修复 Repository 方法引用
+14. `RecipesViewModel.kt` - 修复 Repository 方法引用
+15. `DataMigration.kt` - 修复 DAO 方法引用
+16. `RecipeInitializer.kt` - 修复 DAO 方法引用
+17. `RecommendationService.kt` - 修复 Repository 方法引用
+
+#### 经验教训
+
+##### 应该采用的重构策略
+
+1. **渐进式重构**
+   - ✅ 先在一个 Repository 上验证方案
+   - ✅ 确保可行后再推广到其他 Repository
+   - ❌ 不要一次性重构整个层
+
+2. **保持 API 向后兼容**
+   - ✅ 保留旧方法名，添加 `@Deprecated` 注解
+   - ✅ 逐步迁移调用方，而不是一次性全部修改
+   - ❌ 不要直接移除或修改现有 API
+
+3. **先运行完整测试**
+   - ✅ 在重构前确保所有测试通过
+   - ✅ 重构后立即运行测试验证
+   - ❌ 不要在没有测试的情况下进行大规模重构
+
+4. **使用 IDE 重构工具**
+   - ✅ 使用 IDE 的 "Rename Symbol" 功能批量重命名
+   - ✅ 使用 "Find Usages" 查找所有引用
+   - ❌ 避免手动修改导致的遗漏
+
+5. **充分的影响分析**
+   - ✅ 使用 IDE 的 "Find Usages" 功能查找所有引用
+   - ✅ 提前列出所有需要修改的文件
+   - ✅ 评估影响范围和风险
+   - ❌ 不要在没有充分分析的情况下开始重构
+
+6. **小步提交**
+   - ✅ 每次只重构一个 Repository
+   - ✅ 每次重构后立即验证编译和测试
+   - ✅ 提交清晰的提交信息
+   - ❌ 不要在一个 commit 中包含大量修改
+
+##### 更好的设计方案
+
+```kotlin
+// ❌ 不要试图抽象所有 CRUD 方法
+abstract class BaseRepository<T, E, ID> {
+    abstract val dao: BaseDao<E, ID>  // Room 不支持继承
+    abstract fun E.toDomainModel(): T
+    abstract fun T.toEntity(): E
+    
+    // 这些方法无法真正抽象，因为 DAO 方法名不统一
+    abstract suspend fun getById(id: ID): T?
+    abstract suspend fun insert(item: T): ID
+    abstract suspend fun update(item: T)
+    abstract suspend fun delete(item: T)
+}
+
+// ✅ 保持简单，直接实现
+@Singleton
+class BabyRepository @Inject constructor(
+    private val babyDao: BabyDao
+) {
+    // 直接使用 DAO 的方法
+    suspend fun getById(id: Long): Baby? = 
+        babyDao.getById(id)?.toDomainModel()
+    
+    suspend fun insert(baby: Baby): Long = 
+        babyDao.insert(baby.toEntity().prepareForInsert())
+    
+    suspend fun update(baby: Baby) {
+        val existing = babyDao.getById(baby.id)
+            ?: throw IllegalArgumentException("Baby not found")
+        babyDao.update(baby.toEntity().prepareForUpdate(existing))
+    }
+    
+    suspend fun delete(baby: Baby) {
+        val existing = babyDao.getById(baby.id)
+            ?: throw IllegalArgumentException("Baby not found")
+        babyDao.update(baby.toEntity().prepareForUpdate(existing, isDeleted = true))
+    }
+    
+    // 业务逻辑方法
+    fun getAllBabies(): Flow<List<Baby>> =
+        babyDao.getAllBabies().map { entities ->
+            entities.map { it.toDomainModel() }
+        }
+}
+```
+
+#### 重构原则总结
+
+1. **不要过度设计抽象层**
+   - Room DAO 的限制和 Kotlin 泛型的复杂性使得抽象 Repository 层变得困难
+   - 简单直接的实现往往比过度抽象更好
+
+2. **渐进式重构**
+   - 每次只修改一个小模块
+   - 立即验证编译和测试
+   - 确保每一步都是可回滚的
+
+3. **保持 API 向后兼容**
+   - 优先添加新方法，而不是修改现有方法
+   - 使用 `@Deprecated` 标记旧方法
+   - 给调用方足够的迁移时间
+
+4. **充分测试**
+   - 在重构前确保所有测试通过
+   - 重构后立即运行测试验证
+   - 添加回归测试防止问题再次发生
+
+5. **使用工具辅助**
+   - 使用 IDE 的重构工具
+   - 使用 "Find Usages" 查找所有引用
+   - 避免手动修改导致的遗漏
+
+#### 未来改进建议
+
+1. **统一 DAO 方法命名**
+   - 制定 DAO 方法命名规范
+   - 逐步统一所有 DAO 的方法名
+   - 使用代码检查工具强制执行
+
+2. **添加单元测试**
+   - 为每个 Repository 添加单元测试
+   - 测试所有 CRUD 操作
+   - 测试实体映射逻辑
+
+3. **代码审查流程**
+   - 大规模重构需要代码审查
+   - 提前评估影响范围
+   - 制定回滚计划
+
+4. **文档化重构过程**
+   - 记录重构原因和目标
+   - 记录影响范围和风险
+   - 记录遇到的问题和解决方案
+
+---
 
 ## 常见问题
 

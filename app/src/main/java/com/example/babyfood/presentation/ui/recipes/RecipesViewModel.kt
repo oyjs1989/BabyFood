@@ -89,19 +89,19 @@ class RecipesViewModel @Inject constructor(
     fun getRecipeById(recipeId: Long): Recipe? {
         var recipe: Recipe? = null
         viewModelScope.launch {
-            recipe = recipeRepository.getRecipeById(recipeId)
+            recipe = recipeRepository.getById(recipeId)
         }
         return recipe
     }
 
     suspend fun getRecipeByIdAsync(recipeId: Long): Recipe? {
-        return recipeRepository.getRecipeById(recipeId)
+        return recipeRepository.getById(recipeId)
     }
 
     fun addRecipe(recipe: Recipe) {
         viewModelScope.launch {
             try {
-                recipeRepository.insertRecipe(recipe)
+                recipeRepository.insert(recipe)
                 _uiState.clearErrorAndSaved { error, isSaved -> copy(error = error, isSaved = isSaved) }
             } catch (e: Exception) {
                 _uiState.setError("添加食谱失败: ${e.message}") { error -> copy(error = error) }
@@ -112,7 +112,7 @@ class RecipesViewModel @Inject constructor(
     fun updateRecipe(recipe: Recipe) {
         viewModelScope.launch {
             try {
-                recipeRepository.updateRecipe(recipe)
+                recipeRepository.update(recipe)
                 _uiState.clearErrorAndSaved { error, isSaved -> copy(error = error, isSaved = isSaved) }
             } catch (e: Exception) {
                 _uiState.setError("更新食谱失败: ${e.message}") { error -> copy(error = error) }

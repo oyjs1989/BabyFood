@@ -55,9 +55,9 @@ class BabyViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 if (baby.id == 0L) {
-                    babyRepository.insertBaby(baby)
+                    babyRepository.insert(baby)
                 } else {
-                    babyRepository.updateBaby(baby)
+                    babyRepository.update(baby)
                 }
                 _uiState.value = _uiState.value.copy(
                     isSaved = true,
@@ -74,7 +74,7 @@ class BabyViewModel @Inject constructor(
     fun deleteBaby(baby: Baby) {
         viewModelScope.launch {
             try {
-                babyRepository.deleteBaby(baby)
+                babyRepository.delete(baby)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     error = e.message
@@ -93,7 +93,7 @@ class BabyViewModel @Inject constructor(
 
     fun loadBaby(babyId: Long) {
         viewModelScope.launch {
-            val baby = babyRepository.getBabyById(babyId)
+            val baby = babyRepository.getById(babyId)
             _uiState.value = _uiState.value.copy(selectedBaby = baby)
             loadLatestHealthRecord(babyId)
         }

@@ -71,7 +71,7 @@ class MainViewModel @Inject constructor(
         Log.d(TAG, "========== 生成营养目标推荐 ==========")
         Log.d(TAG, "宝宝 ID: $babyId")
         return try {
-            val baby = babyRepository.getBabyById(babyId)
+            val baby = babyRepository.getById(babyId)
             if (baby == null) {
                 Log.e(TAG, "❌ 宝宝不存在")
                 return null

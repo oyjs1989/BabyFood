@@ -133,7 +133,7 @@ class RecommendationService @Inject constructor(
      * 根据宝宝年龄返回推荐的约束条件
      */
     suspend fun getRecommendedConstraints(babyId: Long): com.example.babyfood.domain.model.RecommendationConstraints {
-        val baby = babyRepository.getBabyById(babyId)
+        val baby = babyRepository.getById(babyId)
         val ageInMonths = baby?.ageInMonths ?: 12
 
         return when {

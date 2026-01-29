@@ -42,16 +42,16 @@ data class InventoryItemEntity(
     @ColumnInfo(name = "notes")
     val notes: String?,
     @ColumnInfo(name = "cloudId")
-    val cloudId: String? = null,
+    override val cloudId: String? = null,
     @ColumnInfo(name = "syncStatus", defaultValue = "LOCAL_ONLY")
-    val syncStatus: String = "LOCAL_ONLY",
+    override val syncStatus: String = "LOCAL_ONLY",
     @ColumnInfo(name = "lastSyncTime")
-    val lastSyncTime: Long? = null,
+    override val lastSyncTime: Long? = null,
     @ColumnInfo(name = "version", defaultValue = "1")
-    val version: Int = 1,
+    override val version: Int = 1,
     @ColumnInfo(name = "isDeleted", defaultValue = "0")
-    val isDeleted: Boolean = false
-) {
+    override val isDeleted: Boolean = false
+) : SyncableEntity {
     fun toDomainModel(): InventoryItem = InventoryItem(
         id = id,
         foodId = foodId,

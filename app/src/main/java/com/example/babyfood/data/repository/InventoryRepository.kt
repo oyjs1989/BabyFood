@@ -2,10 +2,10 @@ package com.example.babyfood.data.repository
 
 import com.example.babyfood.data.local.database.dao.InventoryItemDao
 import com.example.babyfood.data.local.database.entity.InventoryItemEntity
-import com.example.babyfood.data.local.database.entity.toEntity
 import com.example.babyfood.domain.model.ExpiryStatus
 import com.example.babyfood.domain.model.InventoryItem
 import com.example.babyfood.domain.model.StorageMethod
+import com.example.babyfood.domain.model.SyncStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
@@ -17,18 +17,47 @@ import javax.inject.Singleton
 @Singleton
 class InventoryRepository @Inject constructor(
     private val inventoryItemDao: InventoryItemDao
-) {
-    private fun Flow<List<InventoryItemEntity>>.toDomainModels(): Flow<List<InventoryItem>> =
-        map { entities -> entities.map { it.toDomainModel() } }
+) : SyncableRepository<InventoryItem, InventoryItemEntity, Long>() {
+
+    // Note: InventoryItemDao implements SyncableDao methods implicitly
+    // but doesn't extend the interface due to Room limitations
+
+    override fun InventoryItemEntity.toDomainModel(): InventoryItem = this.toDomainModel()
+
+    override fun InventoryItem.toEntity(): InventoryItemEntity = this.toEntity()
+
+    override fun getItemId(item: InventoryItem): Long = item.id
+
+    // ============ CRUD Operations ============
+
+    suspend fun getById(id: Long): InventoryItem? =
+        inventoryItemDao.getById(id)?.toDomainModel()
+
+    suspend fun insert(item: InventoryItem): Long {
+        val currentTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        val addedAt = item.addedAt.ifEmpty { currentTime.date.toString() }
+
+        val entity = item.toEntity().copy(
+            addedAt = addedAt
+        ).prepareForInsert()
+        return inventoryItemDao.insert(entity)
+    }
+
+    suspend fun update(item: InventoryItem) {
+        val existing = inventoryItemDao.getById(item.id)
+        if (existing != null) {
+            inventoryItemDao.update(item.toEntity().prepareForUpdate(existing))
+        }
+    }
+
+    suspend fun delete(item: InventoryItem) {
+        inventoryItemDao.delete(item.toEntity())
+    }
+
+    // ============ Domain-Specific Query Methods ============
 
     fun getAllInventoryItems(): Flow<List<InventoryItem>> =
         inventoryItemDao.getAllInventoryItems().toDomainModels()
-
-    suspend fun getInventoryItemById(itemId: Long): InventoryItem? =
-        inventoryItemDao.getInventoryItemById(itemId)?.toDomainModel()
-
-    fun getInventoryItemsByFoodId(foodId: Long): Flow<List<InventoryItem>> =
-        inventoryItemDao.getInventoryItemsByFoodId(foodId).toDomainModels()
 
     fun getExpiredItems(): Flow<List<InventoryItem>> =
         inventoryItemDao.getExpiredItems().toDomainModels()
@@ -44,36 +73,6 @@ class InventoryRepository @Inject constructor(
 
     fun searchInventoryItems(query: String): Flow<List<InventoryItem>> =
         inventoryItemDao.searchInventoryItems(query).toDomainModels()
-
-    suspend fun insertInventoryItem(item: InventoryItem): Long {
-        val currentTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-        val addedAt = item.addedAt.ifEmpty { currentTime.date.toString() }
-
-        val entity = item.toEntity().copy(
-            addedAt = addedAt
-        ).prepareForInsert()
-        return inventoryItemDao.insertInventoryItem(entity)
-    }
-
-    suspend fun updateInventoryItem(item: InventoryItem) {
-        val existing = inventoryItemDao.getInventoryItemById(item.id)
-        if (existing != null) {
-            val entity = item.toEntity().prepareForUpdate(existing)
-            inventoryItemDao.updateInventoryItem(entity)
-        }
-    }
-
-    suspend fun deleteInventoryItem(item: InventoryItem) {
-        val existing = inventoryItemDao.getInventoryItemById(item.id)
-        if (existing != null) {
-            val entity = item.toEntity().prepareForUpdate(existing, isDeleted = true)
-            inventoryItemDao.updateInventoryItem(entity)
-        }
-    }
-
-    suspend fun deleteInventoryItemById(itemId: Long) {
-        getInventoryItemById(itemId)?.let { deleteInventoryItem(it) }
-    }
 
     fun getInventoryItemsByExpiryStatus(status: ExpiryStatus): Flow<List<InventoryItem>> {
         return when (status) {

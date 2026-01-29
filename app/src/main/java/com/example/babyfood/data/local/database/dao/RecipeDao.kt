@@ -18,7 +18,7 @@ interface RecipeDao {
     suspend fun getAllRecipesSync(): List<RecipeEntity>
 
     @Query("SELECT * FROM recipes WHERE id = :recipeId")
-    suspend fun getRecipeById(recipeId: Long): RecipeEntity?
+    suspend fun getById(recipeId: Long): RecipeEntity?
 
     @Query("SELECT * FROM recipes WHERE minAgeMonths <= :ageMonths AND maxAgeMonths >= :ageMonths")
     fun getRecipesByAge(ageMonths: Int): Flow<List<RecipeEntity>>
@@ -33,16 +33,19 @@ interface RecipeDao {
     fun getUserRecipes(): Flow<List<RecipeEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertRecipe(recipe: RecipeEntity): Long
+    suspend fun insert(recipe: RecipeEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertRecipes(recipes: List<RecipeEntity>)
+    suspend fun insertAll(recipes: List<RecipeEntity>): List<Long>
 
     @Update
-    suspend fun updateRecipe(recipe: RecipeEntity)
+    suspend fun update(recipe: RecipeEntity)
+
+    @Update
+    suspend fun updateAll(recipes: List<RecipeEntity>)
 
     @Delete
-    suspend fun deleteRecipe(recipe: RecipeEntity)
+    suspend fun delete(recipe: RecipeEntity)
 
     @Query("DELETE FROM recipes WHERE id = :recipeId")
     suspend fun deleteRecipeById(recipeId: Long)

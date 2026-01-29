@@ -18,7 +18,7 @@ interface InventoryItemDao {
     suspend fun getAllInventoryItemsSync(): List<InventoryItemEntity>
 
     @Query("SELECT * FROM inventory_items WHERE id = :itemId AND isDeleted = 0")
-    suspend fun getInventoryItemById(itemId: Long): InventoryItemEntity?
+    suspend fun getById(itemId: Long): InventoryItemEntity?
 
     @Query("SELECT * FROM inventory_items WHERE foodId = :foodId AND isDeleted = 0")
     fun getInventoryItemsByFoodId(foodId: Long): Flow<List<InventoryItemEntity>>
@@ -68,16 +68,19 @@ interface InventoryItemDao {
     suspend fun getInventoryItemByCloudId(cloudId: String): InventoryItemEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertInventoryItem(item: InventoryItemEntity): Long
+    suspend fun insert(item: InventoryItemEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertInventoryItems(items: List<InventoryItemEntity>)
+    suspend fun insertAll(items: List<InventoryItemEntity>): List<Long>
 
     @Update
-    suspend fun updateInventoryItem(item: InventoryItemEntity)
+    suspend fun update(item: InventoryItemEntity)
+
+    @Update
+    suspend fun updateAll(items: List<InventoryItemEntity>)
 
     @Delete
-    suspend fun deleteInventoryItem(item: InventoryItemEntity)
+    suspend fun delete(item: InventoryItemEntity)
 
     @Query("DELETE FROM inventory_items WHERE id = :itemId")
     suspend fun deleteInventoryItemById(itemId: Long)

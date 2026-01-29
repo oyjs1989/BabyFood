@@ -22,12 +22,12 @@ data class BabyEntity(
     val avatarUrl: String? = null,                  // 头像 URL
 
     // 同步元数据字段（向后兼容，默认值）
-    val cloudId: String? = null,                    // 云端唯一标识
-    val syncStatus: String = "LOCAL_ONLY",          // 同步状态
-    val lastSyncTime: Long? = null,                 // 最后同步时间戳（毫秒）
-    val version: Int = 1,                           // 版本号（用于冲突检测）
-    val isDeleted: Boolean = false                  // 软删除标记
-) {
+    override val cloudId: String? = null,           // 云端唯一标识
+    override val syncStatus: String = "LOCAL_ONLY", // 同步状态
+    override val lastSyncTime: Long? = null,        // 最后同步时间戳（毫秒）
+    override val version: Int = 1,                  // 版本号（用于冲突检测）
+    override val isDeleted: Boolean = false         // 软删除标记
+) : SyncableEntity {
     fun toDomainModel(): Baby = Baby(
         id = id,
         name = name,

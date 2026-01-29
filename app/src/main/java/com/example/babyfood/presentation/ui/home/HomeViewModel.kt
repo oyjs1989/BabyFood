@@ -93,7 +93,7 @@ class HomeViewModel @Inject constructor(
                 planRepository.getPlansByBabyAndDate(selectedBaby.id, today).collect { plans ->
                     // 加载食谱详情
                     val plansWithRecipes = plans.map { plan ->
-                        val recipe = recipeRepository.getRecipeById(plan.recipeId)
+                        val recipe = recipeRepository.getById(plan.recipeId)
                         PlanWithRecipe(plan, recipe)
                     }
 
@@ -129,7 +129,7 @@ class HomeViewModel @Inject constructor(
             val date = startDate.plus(dayOffset, kotlinx.datetime.DateTimeUnit.DAY)
             val plans = planRepository.getPlansByBabyAndDate(babyId, date).first()
             val plansWithRecipes = plans.map { plan ->
-                val recipe = recipeRepository.getRecipeById(plan.recipeId)
+                val recipe = recipeRepository.getById(plan.recipeId)
                 PlanWithRecipe(plan, recipe)
             }
             date to plansWithRecipes
@@ -359,7 +359,7 @@ class HomeViewModel @Inject constructor(
             if (currentPlan != null) {
                 // 更新计划的用餐时间
                 val updatedPlan = currentPlan.copy(mealTime = newTime)
-                planRepository.updatePlan(updatedPlan)
+                planRepository.update(updatedPlan)
 
                 // 重新加载计划
                 loadTodayPlans()
@@ -418,7 +418,7 @@ class HomeViewModel @Inject constructor(
                 }
 
                 // 获取食谱的食材列表
-                val recipe = recipeRepository.getRecipeById(currentPlan.recipeId)
+                val recipe = recipeRepository.getById(currentPlan.recipeId)
                 val ingredients = recipe?.ingredients ?: emptyList()
 
                 _uiState.value = _uiState.value.copy(
@@ -457,7 +457,7 @@ class HomeViewModel @Inject constructor(
 
         viewModelScope.launch {
             // 获取当前计划
-            val currentPlan = planRepository.getPlanById(planId)
+            val currentPlan = planRepository.getById(planId)
 
             if (currentPlan != null) {
                 // 生成反馈时间
@@ -471,7 +471,7 @@ class HomeViewModel @Inject constructor(
                     status = com.example.babyfood.domain.model.PlanStatus.TRIED
                 )
 
-                planRepository.updatePlan(updatedPlan)
+                planRepository.update(updatedPlan)
 
                 // 重新加载计划
                 loadTodayPlans()
@@ -495,7 +495,7 @@ class HomeViewModel @Inject constructor(
 
         viewModelScope.launch {
             // 获取当前计划
-            val currentPlan = planRepository.getPlanById(planId)
+            val currentPlan = planRepository.getById(planId)
 
             if (currentPlan != null) {
                 // 生成反馈时间
@@ -509,7 +509,7 @@ class HomeViewModel @Inject constructor(
                     status = com.example.babyfood.domain.model.PlanStatus.TRIED
                 )
 
-                planRepository.updatePlan(updatedPlan)
+                planRepository.update(updatedPlan)
 
                 // 根据反馈类型添加到过敏或偏好列表
                 when (feedback) {

@@ -60,7 +60,7 @@ class DataMigration @Inject constructor(
                                 headCircumference = healthRecord.headCircumference,
                                 notes = "从体检记录迁移"
                             )
-                            growthRecordDao.insertGrowthRecord(growthRecord)
+                            growthRecordDao.insert(growthRecord)
                             migratedCount++
                         }
                     }
@@ -98,8 +98,8 @@ class DataMigration @Inject constructor(
                             babyId = healthRecord.babyId,
                             recordDate = healthRecord.recordDate
                         )
-                        
-                        growthRecordDao.insertGrowthRecord(growthRecord)
+
+                        growthRecordDao.insert(growthRecord)
                         migratedCount++
                     }
                 }

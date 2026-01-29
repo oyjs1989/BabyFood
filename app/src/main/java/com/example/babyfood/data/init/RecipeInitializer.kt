@@ -40,7 +40,7 @@ class RecipeInitializer @Inject constructor(
                     imageUrl = recipe.imageUrl
                 )
             }
-            recipeDao.insertRecipes(builtInEntities)
+            recipeDao.insertAll(builtInEntities)
         }
     }
 
