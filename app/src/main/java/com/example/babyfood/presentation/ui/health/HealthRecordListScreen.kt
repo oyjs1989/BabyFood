@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.MedicalInformation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -89,17 +90,12 @@ fun HealthRecordListScreen(
                 }
 
                 if (filteredRecords.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = androidx.compose.ui.Alignment.Center
-                    ) {
-                        Text(
-                            text = if (showExpiredRecords) "暂无体检记录" else "暂无有效体检记录\n\n开启\"显示过期记录\"查看所有记录",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                    }
-                } else {
+                com.example.babyfood.presentation.theme.EmptyState(
+                    icon = Icons.Default.MedicalInformation,
+                    title = if (showExpiredRecords) "暂无体检记录" else "暂无有效体检记录",
+                    description = if (showExpiredRecords) "点击右下角 + 按钮添加体检记录" else "开启\"显示过期记录\"查看所有记录\n\n或点击右下角 + 按钮添加体检记录"
+                )
+            } else {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {

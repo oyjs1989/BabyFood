@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -275,22 +276,13 @@ fun InventoryListScreen(
                     Text("加载中...")
                 }
             } else if (uiState.filteredItems.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = if (searchQuery.isNotEmpty() || uiState.selectedExpiryStatus != null || uiState.selectedStorageMethod != null) {
-                            "没有找到符合条件的食材"
-                        } else {
-                            "还没有添加库存食材"
-                        },
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-            } else {
-                LazyColumn(
+                            val isFiltering = searchQuery.isNotEmpty() || uiState.selectedExpiryStatus != null || uiState.selectedStorageMethod != null
+                            com.example.babyfood.presentation.theme.EmptyState(
+                                icon = if (isFiltering) Icons.Default.Search else Icons.Default.Kitchen,
+                                title = if (isFiltering) "没有找到符合条件的食材" else "还没有添加库存食材",
+                                description = if (isFiltering) "尝试调整搜索条件或筛选器" else "点击右下角 + 按钮添加库存食材"
+                            )
+                        } else {                LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {

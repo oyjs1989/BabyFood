@@ -20,6 +20,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -190,23 +191,13 @@ fun RecipesListScreen(
                 Text(text = "加载中...")
             }
         } else if (uiState.filteredRecipes.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = if (searchQuery.isNotEmpty() || uiState.selectedAge != null || uiState.selectedCategory != null) {
-                        "没有找到符合条件的食谱"
-                    } else {
-                        "还没有食谱数据"
-                    },
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                val isFiltering = searchQuery.isNotEmpty() || uiState.selectedAge != null || uiState.selectedCategory != null
+                com.example.babyfood.presentation.theme.EmptyState(
+                    icon = if (isFiltering) Icons.Default.Search else Icons.Default.Restaurant,
+                    title = if (isFiltering) "没有找到符合条件的食谱" else "还没有食谱数据",
+                    description = if (isFiltering) "尝试调整搜索条件或筛选器" else "点击右下角 + 按钮添加食谱"
                 )
-            }
-        } else {
+            } else {
             LazyColumn(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)

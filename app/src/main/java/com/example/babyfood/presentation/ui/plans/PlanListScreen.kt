@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.rememberCoroutineScope
@@ -398,13 +399,12 @@ private fun SelectedDatePlans(
         )
 
         if (plans.isEmpty()) {
-            Text(
-                text = "暂无计划",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(16.dp)
-            )
-        } else {
+                com.example.babyfood.presentation.theme.EmptyState(
+                    icon = Icons.Default.CalendarMonth,
+                    title = "暂无计划",
+                    description = "点击右下角 + 按钮添加辅食计划"
+                )
+            } else {
             plans.sortedBy { try { MealPeriod.valueOf(it.mealPeriod).order } catch (e: Exception) { 0 } }.forEach { plan ->
                 PlanItem(
                     plan = plan,

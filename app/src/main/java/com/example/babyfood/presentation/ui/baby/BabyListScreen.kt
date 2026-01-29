@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChildCare
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -77,16 +78,11 @@ fun BabyListScreen(
                     Text(text = "加载中...")
                 }
             } else if (uiState.babies.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "还没有添加宝宝信息\n\n点击右下角 + 按钮添加宝宝",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
+                com.example.babyfood.presentation.theme.EmptyState(
+                    icon = Icons.Default.ChildCare,
+                    title = "还没有添加宝宝信息",
+                    description = "点击右下角 + 按钮添加宝宝"
+                )
             } else {
                 val context = LocalContext.current
                 LazyColumn(
