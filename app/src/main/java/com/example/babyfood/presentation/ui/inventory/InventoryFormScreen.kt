@@ -15,6 +15,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -65,6 +68,10 @@ fun InventoryFormScreen(
     var unit by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
 
+    // 日期选择器状态
+    var showProductionDatePicker by remember { mutableStateOf(false) }
+    var showExpiryDatePicker by remember { mutableStateOf(false) }
+
     // 编辑模式：加载数据
     LaunchedEffect(itemId) {
         if (isEditing) {
@@ -101,7 +108,7 @@ fun InventoryFormScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            imageVector = Icons.Default.Clear,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "返回"
                         )
                     }
@@ -148,10 +155,7 @@ fun InventoryFormScreen(
                 modifier = Modifier.fillMaxWidth(),
                 readOnly = true,
                 trailingIcon = {
-                    TextButton(onClick = {
-                        // TODO: 实现日期选择器
-                        productionDate = kotlinx.datetime.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).date
-                    }) {
+                    TextButton(onClick = { showProductionDatePicker = true }) {
                         Text("选择")
                     }
                 }
@@ -165,10 +169,7 @@ fun InventoryFormScreen(
                 modifier = Modifier.fillMaxWidth(),
                 readOnly = true,
                 trailingIcon = {
-                    TextButton(onClick = {
-                        // TODO: 实现日期选择器
-                        expiryDate = kotlinx.datetime.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).date
-                    }) {
+                    TextButton(onClick = { showExpiryDatePicker = true }) {
                         Text("选择")
                     }
                 }
@@ -254,6 +255,64 @@ fun InventoryFormScreen(
             ) {
                 Text("保存")
             }
+        }
+    }
+
+    // 生产日期选择器
+    if (showProductionDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = productionDate.toEpochDays().toLong() * 24 * 60 * 60 * 1000
+        )
+        DatePickerDialog(
+            onDismissRequest = { showProductionDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            productionDate = kotlinx.datetime.LocalDate.fromEpochDays((millis / (24 * 60 * 60 * 1000)).toInt())
+                        }
+                        showProductionDatePicker = false
+                    }
+                ) {
+                    Text("确定")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showProductionDatePicker = false }) {
+                    Text("取消")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    // 保质期选择器
+    if (showExpiryDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = expiryDate.toEpochDays().toLong() * 24 * 60 * 60 * 1000
+        )
+        DatePickerDialog(
+            onDismissRequest = { showExpiryDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            expiryDate = kotlinx.datetime.LocalDate.fromEpochDays((millis / (24 * 60 * 60 * 1000)).toInt())
+                        }
+                        showExpiryDatePicker = false
+                    }
+                ) {
+                    Text("确定")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExpiryDatePicker = false }) {
+                    Text("取消")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
         }
     }
 }

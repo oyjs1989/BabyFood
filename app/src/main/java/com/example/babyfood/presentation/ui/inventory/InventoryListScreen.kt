@@ -22,6 +22,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,6 +56,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.babyfood.domain.model.ExpiryStatus
+import com.example.babyfood.domain.model.StorageMethod
+import com.example.babyfood.presentation.theme.Warning
+import com.example.babyfood.presentation.theme.OnWarningContainer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -107,28 +113,18 @@ fun InventoryListScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            text = "库存食材",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "(${uiState.inventoryItems.size})",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                    }
+                    Text("库存食材")
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             )
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNavigateToAdd,
-                containerColor = Color(0xFFFF8C42)
+                containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "添加食材")
             }
@@ -161,6 +157,115 @@ fun InventoryListScreen(
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = ImeAction.Search)
             )
 
+            // 筛选器
+            var showExpiryStatusFilter by remember { mutableStateOf(false) }
+            var showStorageMethodFilter by remember { mutableStateOf(false) }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // 过期状态筛选
+                Box {
+                    FilterChip(
+                        selected = uiState.selectedExpiryStatus != null,
+                        onClick = { showExpiryStatusFilter = true },
+                        label = {
+                            Text(
+                                text = uiState.selectedExpiryStatus?.getDisplayText() ?: "过期状态",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        },
+                        trailingIcon = if (uiState.selectedExpiryStatus != null) {
+                            {
+                                IconButton(onClick = {
+                                    viewModel.filterByExpiryStatus(null)
+                                }) {
+                                    Icon(
+                                        Icons.Default.Clear,
+                                        contentDescription = "清除筛选",
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        } else null
+                    )
+
+                    DropdownMenu(
+                        expanded = showExpiryStatusFilter,
+                        onDismissRequest = { showExpiryStatusFilter = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("全部") },
+                            onClick = {
+                                viewModel.filterByExpiryStatus(null)
+                                showExpiryStatusFilter = false
+                            }
+                        )
+                        ExpiryStatus.values().forEach { status ->
+                            DropdownMenuItem(
+                                text = { Text(status.getDisplayText()) },
+                                onClick = {
+                                    viewModel.filterByExpiryStatus(status)
+                                    showExpiryStatusFilter = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // 保存方式筛选
+                Box {
+                    FilterChip(
+                        selected = uiState.selectedStorageMethod != null,
+                        onClick = { showStorageMethodFilter = true },
+                        label = {
+                            Text(
+                                text = uiState.selectedStorageMethod?.displayName ?: "保存方式",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        },
+                        trailingIcon = if (uiState.selectedStorageMethod != null) {
+                            {
+                                IconButton(onClick = {
+                                    viewModel.filterByStorageMethod(null)
+                                }) {
+                                    Icon(
+                                        Icons.Default.Clear,
+                                        contentDescription = "清除筛选",
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        } else null
+                    )
+
+                    DropdownMenu(
+                        expanded = showStorageMethodFilter,
+                        onDismissRequest = { showStorageMethodFilter = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("全部") },
+                            onClick = {
+                                viewModel.filterByStorageMethod(null)
+                                showStorageMethodFilter = false
+                            }
+                        )
+                        StorageMethod.values().forEach { method ->
+                            DropdownMenuItem(
+                                text = { Text(method.displayName) },
+                                onClick = {
+                                    viewModel.filterByStorageMethod(method)
+                                    showStorageMethodFilter = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
             // 列表
             if (uiState.isLoading) {
                 Box(
@@ -187,7 +292,7 @@ fun InventoryListScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(uiState.filteredItems) { item ->
                         InventoryItemCard(
@@ -213,17 +318,17 @@ fun InventoryItemCard(
 ) {
     val expiryStatus = item.getExpiryStatus()
     val statusColor = when (expiryStatus) {
-        ExpiryStatus.EXPIRED -> Color(0xFFFF4D4F)
-        ExpiryStatus.URGENT -> Color(0xFFFF4D4F)
-        ExpiryStatus.WARNING -> Color(0xFFFF7F2A)
-        ExpiryStatus.NORMAL -> Color(0xFFF5F5F5)
+        ExpiryStatus.EXPIRED -> MaterialTheme.colorScheme.error
+        ExpiryStatus.URGENT -> MaterialTheme.colorScheme.error
+        ExpiryStatus.WARNING -> Warning
+        ExpiryStatus.NORMAL -> MaterialTheme.colorScheme.surfaceVariant
     }
-    
+
     val statusTextColor = when (expiryStatus) {
-        ExpiryStatus.EXPIRED -> Color.White
-        ExpiryStatus.URGENT -> Color.White
-        ExpiryStatus.WARNING -> Color.White
-        ExpiryStatus.NORMAL -> Color(0xFF666666)
+        ExpiryStatus.EXPIRED -> MaterialTheme.colorScheme.onError
+        ExpiryStatus.URGENT -> MaterialTheme.colorScheme.onError
+        ExpiryStatus.WARNING -> OnWarningContainer
+        ExpiryStatus.NORMAL -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     val statusText = when (expiryStatus) {
@@ -242,13 +347,13 @@ fun InventoryItemCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 食材图片
             Box(
-                modifier = Modifier.size(60.dp)
+                modifier = Modifier.size(80.dp)
             ) {
                 if (item.foodImageUrl != null) {
                     AsyncImage(
@@ -264,13 +369,13 @@ fun InventoryItemCard(
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFFF0F0F0)),
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = item.foodName.firstOrNull()?.toString() ?: "?",
                             style = MaterialTheme.typography.headlineMedium,
-                            color = Color(0xFF999999)
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -313,14 +418,14 @@ fun InventoryItemCard(
                     Text(
                         text = "今日到期，请尽快食用！",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFFFF7F2A),
+                        color = Warning,
                         modifier = Modifier.padding(top = 2.dp)
                     )
                 } else if (expiryStatus == ExpiryStatus.URGENT) {
                     Text(
                         text = "3天内食用，建议尽快安排",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFFFF7F2A),
+                        color = Warning,
                         modifier = Modifier.padding(top = 2.dp)
                     )
                 }
@@ -334,14 +439,14 @@ fun InventoryItemCard(
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "编辑",
-                        tint = Color(0xFF999999)
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 }
                 IconButton(onClick = onDelete) {
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "删除",
-                        tint = Color(0xFFFF4D4F)
+                        tint = MaterialTheme.colorScheme.error
                     )
                 }
             }
