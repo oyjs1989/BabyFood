@@ -85,7 +85,7 @@ fun CircularProgressWithValue(
     modifier: Modifier = Modifier,
     size: Dp = 80.dp,
     strokeWidth: Dp = 8.dp,
-    progressColor: Color = Color(0xFF42A5F5),
+    progressColor: Color = MaterialTheme.colorScheme.primary,
     animationDuration: Int = AnimationDurationNormal
 ) {
     val animatedProgress = animateProgress(progress, animationDuration)
@@ -123,7 +123,7 @@ fun CircularProgressWithValue(
                 text = unit,
                 style = MaterialTheme.typography.labelSmall,
                 fontSize = 10.sp,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(2.dp))
@@ -133,7 +133,7 @@ fun CircularProgressWithValue(
                 style = MaterialTheme.typography.labelMedium,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
