@@ -50,23 +50,15 @@ class InventoryRepository @Inject constructor(
         val addedAt = item.addedAt.ifEmpty { currentTime.date.toString() }
 
         val entity = item.toEntity().copy(
-            addedAt = addedAt,
-            syncStatus = "PENDING_UPLOAD",
-            lastSyncTime = null,
-            version = 1
-        )
+            addedAt = addedAt
+        ).prepareForInsert()
         return inventoryItemDao.insertInventoryItem(entity)
     }
 
     suspend fun updateInventoryItem(item: InventoryItem) {
         val existing = inventoryItemDao.getInventoryItemById(item.id)
         if (existing != null) {
-            val entity = item.toEntity().copy(
-                cloudId = existing.cloudId,
-                syncStatus = "PENDING_UPLOAD",
-                lastSyncTime = existing.lastSyncTime,
-                version = existing.version + 1
-            )
+            val entity = item.toEntity().prepareForUpdate(existing)
             inventoryItemDao.updateInventoryItem(entity)
         }
     }
@@ -74,13 +66,7 @@ class InventoryRepository @Inject constructor(
     suspend fun deleteInventoryItem(item: InventoryItem) {
         val existing = inventoryItemDao.getInventoryItemById(item.id)
         if (existing != null) {
-            val entity = item.toEntity().copy(
-                cloudId = existing.cloudId,
-                syncStatus = "PENDING_UPLOAD",
-                lastSyncTime = existing.lastSyncTime,
-                version = existing.version + 1,
-                isDeleted = true
-            )
+            val entity = item.toEntity().prepareForUpdate(existing, isDeleted = true)
             inventoryItemDao.updateInventoryItem(entity)
         }
     }

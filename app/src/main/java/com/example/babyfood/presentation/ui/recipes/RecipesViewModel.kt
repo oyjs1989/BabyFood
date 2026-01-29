@@ -4,6 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.babyfood.data.repository.RecipeRepository
 import com.example.babyfood.domain.model.Recipe
+import com.example.babyfood.presentation.ui.clearError
+import com.example.babyfood.presentation.ui.clearErrorAndSaved
+import com.example.babyfood.presentation.ui.setError
+import com.example.babyfood.presentation.ui.setSaved
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -98,9 +102,9 @@ class RecipesViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 recipeRepository.insertRecipe(recipe)
-                _uiState.value = _uiState.value.copy(isSaved = true, error = null)
+                _uiState.clearErrorAndSaved { error, isSaved -> copy(error = error, isSaved = isSaved) }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = "添加食谱失败: ${e.message}")
+                _uiState.setError("添加食谱失败: ${e.message}") { error -> copy(error = error) }
             }
         }
     }
@@ -109,9 +113,9 @@ class RecipesViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 recipeRepository.updateRecipe(recipe)
-                _uiState.value = _uiState.value.copy(isSaved = true, error = null)
+                _uiState.clearErrorAndSaved { error, isSaved -> copy(error = error, isSaved = isSaved) }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = "更新食谱失败: ${e.message}")
+                _uiState.setError("更新食谱失败: ${e.message}") { error -> copy(error = error) }
             }
         }
     }
@@ -120,19 +124,19 @@ class RecipesViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 recipeRepository.deleteRecipeById(recipeId)
-                _uiState.value = _uiState.value.copy(isSaved = true, error = null)
+                _uiState.clearErrorAndSaved { error, isSaved -> copy(error = error, isSaved = isSaved) }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = "删除食谱失败: ${e.message}")
+                _uiState.setError("删除食谱失败: ${e.message}") { error -> copy(error = error) }
             }
         }
     }
 
     fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
+        _uiState.clearError { error -> copy(error = error) }
     }
 
     fun clearSavedFlag() {
-        _uiState.value = _uiState.value.copy(isSaved = false)
+        _uiState.setSaved(false) { isSaved -> copy(isSaved = isSaved) }
     }
 }
 

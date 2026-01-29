@@ -143,40 +143,37 @@ class HomeViewModel @Inject constructor(
     private fun calculateNutritionIntake(plans: List<PlanWithRecipe>): NutritionIntake {
         Log.d(TAG, "========== 开始计算营养摄入 ==========")
 
-        var totalCalories = 0f
-        var totalProtein = 0f
-        var totalCalcium = 0f
-        var totalIron = 0f
-        var feedbackCount = 0
-
-        plans.forEach { planWithRecipe ->
-            val plan = planWithRecipe.plan
-            val recipe = planWithRecipe.recipe
-
-            // 仅计算已反馈的餐次
-            if (plan.feedbackStatus != null && recipe != null) {
-                val ratio = com.example.babyfood.domain.model.FeedbackRatio.getRatio(plan.feedbackStatus)
-
+        val filteredPlans: List<Pair<com.example.babyfood.domain.model.Nutrition, Float>> = plans
+            .filter { it.plan.feedbackStatus != null && it.recipe != null }
+            .mapNotNull { planWithRecipe ->
+                val ratio = com.example.babyfood.domain.model.FeedbackRatio.getRatio(planWithRecipe.plan.feedbackStatus!!)
                 if (ratio > 0f) {
-                    val nutrition = recipe.nutrition
-
-                    nutrition.calories?.let { totalCalories += it * ratio }
-                    nutrition.protein?.let { totalProtein += it * ratio }
-                    nutrition.calcium?.let { totalCalcium += it * ratio }
-                    nutrition.iron?.let { totalIron += it * ratio }
-
-                    feedbackCount++
-
-                    Log.d(TAG, "餐次: ${plan.mealPeriod}, 食谱: ${recipe.name}, 反馈: ${plan.feedbackStatus}, 比例: ${ratio * 100}%")
+                    Log.d(TAG, "餐次: ${planWithRecipe.plan.mealPeriod}, 食谱: ${planWithRecipe.recipe!!.name}, 反馈: ${planWithRecipe.plan.feedbackStatus}, 比例: ${ratio * 100}%")
+                    Pair(planWithRecipe.recipe!!.nutrition, ratio)
+                } else {
+                    null
                 }
             }
+
+        val (nutritionTotals, feedbackCount) = filteredPlans.fold(
+            Pair(NutritionTotals(), 0)
+        ) { (totals, count), (nutrition, ratio) ->
+            Pair(
+                NutritionTotals(
+                    calories = totals.calories + (nutrition.calories ?: 0f) * ratio,
+                    protein = totals.protein + (nutrition.protein ?: 0f) * ratio,
+                    calcium = totals.calcium + (nutrition.calcium ?: 0f) * ratio,
+                    iron = totals.iron + (nutrition.iron ?: 0f) * ratio
+                ),
+                count + 1
+            )
         }
 
         val intake = NutritionIntake(
-            calories = totalCalories,
-            protein = totalProtein,
-            calcium = totalCalcium,
-            iron = totalIron,
+            calories = nutritionTotals.calories,
+            protein = nutritionTotals.protein,
+            calcium = nutritionTotals.calcium,
+            iron = nutritionTotals.iron,
             feedbackCount = feedbackCount
         )
 
@@ -185,6 +182,16 @@ class HomeViewModel @Inject constructor(
 
         return intake
     }
+
+    /**
+     * 营养总量辅助数据类
+     */
+    private data class NutritionTotals(
+        val calories: Float = 0f,
+        val protein: Float = 0f,
+        val calcium: Float = 0f,
+        val iron: Float = 0f
+    )
 
     fun selectBaby(baby: Baby) {
         Log.d(TAG, "========== 切换宝宝 ==========")

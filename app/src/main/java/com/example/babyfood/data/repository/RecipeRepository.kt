@@ -31,34 +31,19 @@ class RecipeRepository @Inject constructor(
         recipeDao.getUserRecipes().map { entities -> entities.map { entity -> entity.toDomainModel() } }
 
     suspend fun insertRecipe(recipe: Recipe): Long {
-        val entity = recipe.toEntity().copy(
-            syncStatus = "PENDING_UPLOAD",
-            lastSyncTime = null,
-            version = 1
-        )
+        val entity = recipe.toEntity().prepareForInsert()
         return recipeDao.insertRecipe(entity)
     }
 
     suspend fun insertRecipes(recipes: List<Recipe>) {
-        val entities = recipes.map { recipe ->
-            recipe.toEntity().copy(
-                syncStatus = "PENDING_UPLOAD",
-                lastSyncTime = null,
-                version = 1
-            )
-        }
+        val entities = recipes.map { it.toEntity().prepareForInsert() }
         recipeDao.insertRecipes(entities)
     }
 
     suspend fun updateRecipe(recipe: Recipe) {
         val existing = recipeDao.getRecipeById(recipe.id)
         if (existing != null) {
-            val entity = recipe.toEntity().copy(
-                cloudId = existing.cloudId,
-                syncStatus = "PENDING_UPLOAD",
-                lastSyncTime = existing.lastSyncTime,
-                version = existing.version + 1
-            )
+            val entity = recipe.toEntity().prepareForUpdate(existing)
             recipeDao.updateRecipe(entity)
         }
     }
@@ -67,13 +52,7 @@ class RecipeRepository @Inject constructor(
         val existing = recipeDao.getRecipeById(recipe.id)
         if (existing != null) {
             // 软删除
-            val entity = recipe.toEntity().copy(
-                cloudId = existing.cloudId,
-                syncStatus = "PENDING_UPLOAD",
-                lastSyncTime = existing.lastSyncTime,
-                version = existing.version + 1,
-                isDeleted = true
-            )
+            val entity = recipe.toEntity().prepareForUpdate(existing, isDeleted = true)
             recipeDao.updateRecipe(entity)
         }
     }

@@ -40,6 +40,7 @@ import com.example.babyfood.presentation.ui.plans.PlanDetailScreen
 import com.example.babyfood.presentation.ui.plans.PlanFormScreen
 import com.example.babyfood.presentation.ui.plans.PlansViewModel
 import com.example.babyfood.presentation.ui.plans.RecommendationEditorScreen
+import com.example.babyfood.presentation.ui.plans.RecommendationEditorRoute
 
 sealed class BottomNavItem(
     val route: String,
@@ -380,117 +381,14 @@ fun MainScreen(
             // 推荐编辑器
             composable("plans/recommendation/editor/{babyId}") { backStackEntry ->
                 val babyId = backStackEntry.arguments?.getString("babyId")?.toLong() ?: 0L
-                
+
                 // 获取计划列表页面的 ViewModel 实例（共享）
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry("plans")
                 }
                 val viewModel: PlansViewModel = androidx.hilt.navigation.compose.hiltViewModel(parentEntry)
-                
-                val scope = androidx.compose.runtime.rememberCoroutineScope()
-                
-                android.util.Log.d("MainScreen", "========== 推荐编辑器页面加载 ==========")
-                android.util.Log.d("MainScreen", "宝宝ID: $babyId")
-                android.util.Log.d("MainScreen", "当前推荐数据: ${viewModel.uiState.value.recommendation != null}")
-                
-                // 使用 remember 保存推荐数据，确保导航过程中屏幕保持显示
-                var retainedWeeklyPlan by remember { mutableStateOf<WeeklyMealPlan?>(null) }
-                var retainedConflicts by remember { mutableStateOf<List<PlanConflict>>(emptyList()) }
-                var isLoading by remember { mutableStateOf(true) }
-                
-                // 当推荐数据变化时，更新保留的数据
-                // 添加 babyId 到依赖项，确保进入页面时重新触发
-                androidx.compose.runtime.LaunchedEffect(babyId) {
-                    android.util.Log.d("MainScreen", "LaunchedEffect 触发: babyId=$babyId")
-                    
-                    // 先检查当前是否有推荐数据
-                    val currentRecommendation = viewModel.uiState.value.recommendation
-                    if (currentRecommendation != null) {
-                        android.util.Log.d("MainScreen", "✓ 当前推荐数据可用，直接使用")
-                        viewModel.updateConflicts(babyId, currentRecommendation)
-                        retainedWeeklyPlan = currentRecommendation
-                        retainedConflicts = viewModel.uiState.value.conflicts
-                        isLoading = false
-                        android.util.Log.d("MainScreen", "✓ 保留数据已更新: ${retainedWeeklyPlan?.dailyPlans?.size}天")
-                    } else {
-                        android.util.Log.d("MainScreen", "⚠️ 当前推荐数据为 null，尝试从 SavedStateHandle 恢复")
-                        // 尝试从 SavedStateHandle 恢复推荐数据
-                        val restoredPlan = viewModel.restoreRecommendationFromSavedState()
-                        if (restoredPlan != null) {
-                            android.util.Log.d("MainScreen", "✓ 从 SavedStateHandle 恢复推荐成功")
-                            viewModel.updateConflicts(babyId, restoredPlan)
-                            retainedWeeklyPlan = restoredPlan
-                            retainedConflicts = viewModel.uiState.value.conflicts
-                            isLoading = false
-                            android.util.Log.d("MainScreen", "✓ 保留数据已更新: ${retainedWeeklyPlan?.dailyPlans?.size}天")
-                        } else {
-                            android.util.Log.e("MainScreen", "❌ 无法恢复推荐数据")
-                            isLoading = false
-                        }
-                    }
-                }
-                
-                android.util.Log.d("MainScreen", "渲染状态: retainedWeeklyPlan=${retainedWeeklyPlan != null}, isLoading=$isLoading")
-                
-                // 显示加载状态
-                if (isLoading) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                } else if (retainedWeeklyPlan != null) {
-                    android.util.Log.d("MainScreen", "✓ 显示推荐编辑器")
-                    RecommendationEditorScreen(
-                        babyId = babyId,
-                        weeklyPlan = retainedWeeklyPlan!!,
-                        conflicts = retainedConflicts,
-                        onBack = {
-                            navController.popBackStack()
-                            viewModel.clearRecommendation()
-                        },
-                        onSave = { resolution, editedPlans ->
-                            scope.launch {
-                                val result = viewModel.saveRecommendation(babyId, retainedWeeklyPlan!!, resolution, editedPlans)
-                                if (result.success) {
-                                    navController.popBackStack()
-                                    // 不需要延迟清空，因为使用了 retainedWeeklyPlan
-                                }
-                            }
-                        }
-                    )
-                } else {
-                    android.util.Log.e("MainScreen", "❌ 显示错误提示：推荐数据为空")
-                    // 显示错误提示
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = "推荐数据加载失败",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = viewModel.uiState.value.error ?: "请重试或联系客服",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(
-                                onClick = { navController.popBackStack() }
-                            ) {
-                                Text("返回")
-                            }
-                        }
-                    }
-                }
+
+                RecommendationEditorRoute(babyId, navController, viewModel)
             }
         }
     }

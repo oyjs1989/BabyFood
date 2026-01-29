@@ -39,58 +39,39 @@ class PlanRepository @Inject constructor(
         planDao.getPlansByBabyAndDateRange(babyId, startDate, endDate).map { entities -> entities.map { entity -> entity.toDomainModel() } }
 
     suspend fun insertPlan(plan: Plan): Long {
-        val entity = plan.toEntity().copy(
-            syncStatus = "PENDING_UPLOAD",
-            lastSyncTime = null,
-            version = 1
-        )
+        val entity = plan.toEntity().prepareForInsert()
         return planDao.insertPlan(entity)
     }
 
     suspend fun insertPlans(plans: List<Plan>): List<Long> {
-        val entities = plans.map { plan ->
-            plan.toEntity().copy(
-                syncStatus = "PENDING_UPLOAD",
-                lastSyncTime = null,
-                version = 1
-            )
-        }
+        val entities = plans.map { it.toEntity().prepareForInsert() }
         return planDao.insertPlans(entities)
     }
 
     suspend fun updatePlan(plan: Plan) {
         val existing = planDao.getPlanById(plan.id)
         if (existing != null) {
-            val entity = plan.toEntity().copy(
-                cloudId = existing.cloudId,
-                cloudBabyId = existing.cloudBabyId,
-                cloudRecipeId = existing.cloudRecipeId,
-                syncStatus = "PENDING_UPLOAD",
-                lastSyncTime = existing.lastSyncTime,
-                version = existing.version + 1
-            )
+            val entity = plan.toEntity().prepareForUpdate(existing)
             planDao.updatePlan(entity)
         }
     }
 
     suspend fun updatePlans(plans: List<Plan>) {
-        val entities = plans.map { plan ->
+        // 构建现有计划的映射
+        val existingMap = mutableMapOf<Long, PlanEntity>()
+        plans.forEach { plan ->
             val existing = planDao.getPlanById(plan.id)
             if (existing != null) {
-                plan.toEntity().copy(
-                    cloudId = existing.cloudId,
-                    cloudBabyId = existing.cloudBabyId,
-                    cloudRecipeId = existing.cloudRecipeId,
-                    syncStatus = "PENDING_UPLOAD",
-                    lastSyncTime = existing.lastSyncTime,
-                    version = existing.version + 1
-                )
+                existingMap[plan.id] = existing
+            }
+        }
+
+        val entities = plans.map { plan ->
+            val existing = existingMap[plan.id]
+            if (existing != null) {
+                plan.toEntity().prepareForUpdate(existing)
             } else {
-                plan.toEntity().copy(
-                    syncStatus = "PENDING_UPLOAD",
-                    lastSyncTime = null,
-                    version = 1
-                )
+                plan.toEntity().prepareForInsert()
             }
         }
         planDao.updatePlans(entities)
@@ -100,15 +81,7 @@ class PlanRepository @Inject constructor(
         val existing = planDao.getPlanById(plan.id)
         if (existing != null) {
             // 软删除
-            val entity = plan.toEntity().copy(
-                cloudId = existing.cloudId,
-                cloudBabyId = existing.cloudBabyId,
-                cloudRecipeId = existing.cloudRecipeId,
-                syncStatus = "PENDING_UPLOAD",
-                lastSyncTime = existing.lastSyncTime,
-                version = existing.version + 1,
-                isDeleted = true
-            )
+            val entity = plan.toEntity().prepareForUpdate(existing, isDeleted = true)
             planDao.updatePlan(entity)
         }
     }

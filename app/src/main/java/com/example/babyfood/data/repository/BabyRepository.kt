@@ -21,23 +21,14 @@ class BabyRepository @Inject constructor(
         babyDao.getBabyById(babyId)?.toDomainModel()
 
     suspend fun insertBaby(baby: Baby): Long {
-        val entity = baby.toEntity().copy(
-            syncStatus = "PENDING_UPLOAD",
-            lastSyncTime = null,
-            version = 1
-        )
+        val entity = baby.toEntity().prepareForInsert()
         return babyDao.insertBaby(entity)
     }
 
     suspend fun updateBaby(baby: Baby) {
         val existing = babyDao.getBabyById(baby.id)
         if (existing != null) {
-            val entity = baby.toEntity().copy(
-                cloudId = existing.cloudId,
-                syncStatus = "PENDING_UPLOAD",
-                lastSyncTime = existing.lastSyncTime,
-                version = existing.version + 1
-            )
+            val entity = baby.toEntity().prepareForUpdate(existing)
             babyDao.updateBaby(entity)
         }
     }
@@ -46,13 +37,7 @@ class BabyRepository @Inject constructor(
         val existing = babyDao.getBabyById(baby.id)
         if (existing != null) {
             // 软删除
-            val entity = baby.toEntity().copy(
-                cloudId = existing.cloudId,
-                syncStatus = "PENDING_UPLOAD",
-                lastSyncTime = existing.lastSyncTime,
-                version = existing.version + 1,
-                isDeleted = true
-            )
+            val entity = baby.toEntity().prepareForUpdate(existing, isDeleted = true)
             babyDao.updateBaby(entity)
         }
     }

@@ -4,6 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.babyfood.data.repository.GrowthRecordRepository
 import com.example.babyfood.domain.model.GrowthRecord
+import com.example.babyfood.presentation.ui.clearError
+import com.example.babyfood.presentation.ui.clearErrorAndSaved
+import com.example.babyfood.presentation.ui.setError
+import com.example.babyfood.presentation.ui.setSaved
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,12 +42,9 @@ class GrowthRecordViewModel @Inject constructor(
                 } else {
                     growthRecordRepository.updateGrowthRecord(record)
                 }
-                _uiState.value = _uiState.value.copy(
-                    isSaved = true,
-                    error = null
-                )
+                _uiState.clearErrorAndSaved { error, isSaved -> copy(error = error, isSaved = isSaved) }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message)
+                _uiState.setError(e.message) { error -> copy(error = error) }
             }
         }
     }
@@ -53,17 +54,17 @@ class GrowthRecordViewModel @Inject constructor(
             try {
                 growthRecordRepository.deleteGrowthRecord(record)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message)
+                _uiState.setError(e.message) { error -> copy(error = error) }
             }
         }
     }
 
     fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
+        _uiState.clearError { error -> copy(error = error) }
     }
 
     fun clearSavedFlag() {
-        _uiState.value = _uiState.value.copy(isSaved = false)
+        _uiState.setSaved(false) { isSaved -> copy(isSaved = isSaved) }
     }
 }
 
