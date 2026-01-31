@@ -1,26 +1,41 @@
 package com.example.babyfood.presentation.ui.baby
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.QuestionMark
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import coil.compose.AsyncImage
+import com.example.babyfood.presentation.ui.common.AppScaffold
+import com.example.babyfood.presentation.ui.common.AppBottomAction
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import android.net.Uri
+import android.util.Log
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -37,20 +52,42 @@ fun BabyFormScreen(
     var height by remember { mutableStateOf("") }
     var allergyItems by remember { mutableStateOf<List<String>>(emptyList()) }
     var preferenceItems by remember { mutableStateOf<List<String>>(emptyList()) }
+    var avatarUrl by remember { mutableStateOf<String?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showAllergyDialog by remember { mutableStateOf(false) }
     var showPreferenceDialog by remember { mutableStateOf(false) }
+    var showImagePickerDialog by remember { mutableStateOf(false) }
     var newAllergy by remember { mutableStateOf("") }
     var newPreference by remember { mutableStateOf("") }
 
     val scrollState = rememberScrollState()
     val isEditing = babyId > 0
+    val context = LocalContext.current
+
+    // 图片选择启动器（从相册选择）
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            avatarUrl = it.toString()
+            Log.d("BabyFormScreen", "图片已选择: $it")
+        }
+    }
+
+    // 拍照启动器
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            Log.d("BabyFormScreen", "拍照成功")
+        }
+    }
 
     // 监听保存成功状态
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
             viewModel.clearSavedFlag()
-            onBack()
+            onSave()
         }
     }
 
@@ -64,6 +101,7 @@ fun BabyFormScreen(
                 height = it.height?.toString() ?: ""
                 allergyItems = it.getEffectiveAllergies()
                 preferenceItems = it.getEffectivePreferences()
+                avatarUrl = it.avatarUrl
             }
         } else {
             // 默认值为当天
@@ -131,26 +169,156 @@ fun BabyFormScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (isEditing) "编辑宝宝" else "添加宝宝") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
-                    }
-                }
+    AppScaffold(
+        bottomActions = listOf(
+            AppBottomAction(
+                icon = Icons.Default.Check,
+                label = "保存",
+                contentDescription = "保存宝宝信息",
+                onClick = {
+                    val baby = com.example.babyfood.domain.model.Baby(
+                        id = babyId,
+                        name = name,
+                        birthDate = birthDate ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
+                        weight = null,
+                        height = null,
+                        allergies = allergyItems.map { com.example.babyfood.domain.model.AllergyItem(it) },
+                        preferences = preferenceItems.map { com.example.babyfood.domain.model.PreferenceItem(it) },
+                        avatarUrl = avatarUrl
+                    )
+                    viewModel.saveBaby(baby)
+                    onSave()
+                },
+                enabled = name.isNotBlank() && birthDate != null
             )
-        }
-    ) { paddingValues ->
+        )
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(16.dp)
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // 头像上传区域
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier.size(120.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // 头像图片或占位符
+                    if (avatarUrl != null) {
+                        AsyncImage(
+                            model = avatarUrl,
+                            contentDescription = "宝宝头像",
+                            modifier = Modifier
+                                .size(120.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(120.dp)
+                                .clip(CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = name.firstOrNull()?.toString() ?: "?",
+                                style = MaterialTheme.typography.displayLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    // 编辑头像按钮
+                    FloatingActionButton(
+                        onClick = { showImagePickerDialog = true },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .align(Alignment.BottomEnd),
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = "上传头像",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+
+            // 图片选择对话框
+            if (showImagePickerDialog) {
+                AlertDialog(
+                    onDismissRequest = { showImagePickerDialog = false },
+                    title = { Text("选择头像") },
+                    text = {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            // 从相册选择
+                            Button(
+                                onClick = {
+                                    imagePickerLauncher.launch("image/*")
+                                    showImagePickerDialog = false
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Image,
+                                    contentDescription = "从相册选择",
+                                    modifier = Modifier.padding(end = 8.dp)
+                                )
+                                Text("从相册选择")
+                            }
+
+                            // 拍照
+                            Button(
+                                onClick = {
+                                    // TODO: 创建临时文件用于拍照
+                                    showImagePickerDialog = false
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CameraAlt,
+                                    contentDescription = "拍照",
+                                    modifier = Modifier.padding(end = 8.dp)
+                                )
+                                Text("拍照")
+                            }
+
+                            // 帮助信息
+                            TextButton(
+                                onClick = { showImagePickerDialog = false }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.QuestionMark,
+                                    contentDescription = "帮助",
+                                    modifier = Modifier.padding(end = 8.dp)
+                                )
+                                Text("帮助")
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { showImagePickerDialog = false }) {
+                            Text("取消")
+                        }
+                    }
+                )
+            }
+
             // 姓名
             OutlinedTextField(
                 value = name,
@@ -189,26 +357,6 @@ fun BabyFormScreen(
                     }
                 }
             }
-
-            // 体重
-            OutlinedTextField(
-                value = weight,
-                onValueChange = { weight = it },
-                label = { Text("体重 (kg)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-            )
-
-            // 身高
-            OutlinedTextField(
-                value = height,
-                onValueChange = { height = it },
-                label = { Text("身高 (cm)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-            )
 
             // 过敏食材
             Column {
@@ -307,27 +455,6 @@ fun BabyFormScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // 保存按钮
-            Button(
-                onClick = {
-                    val baby = com.example.babyfood.domain.model.Baby(
-                        id = babyId,
-                        name = name,
-                        birthDate = birthDate ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
-                        weight = weight.toFloatOrNull(),
-                        height = height.toFloatOrNull(),
-                        allergies = allergyItems.map { com.example.babyfood.domain.model.AllergyItem(it) },
-                        preferences = preferenceItems.map { com.example.babyfood.domain.model.PreferenceItem(it) }
-                    )
-                    viewModel.saveBaby(baby)
-                    onSave()
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = name.isNotBlank() && birthDate != null
-            ) {
-                Text("保存")
-            }
 
             // 过敏食材添加对话框
             if (showAllergyDialog) {

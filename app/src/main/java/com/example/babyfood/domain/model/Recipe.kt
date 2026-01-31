@@ -11,6 +11,7 @@ data class Recipe(
     val steps: List<String>,
     val nutrition: Nutrition,
     val category: String,
+    val cookingTime: Int? = null,   // 烹饪时间（分钟）
     val isBuiltIn: Boolean = false,   // 是否内置食谱
     val imageUrl: String? = null
 )

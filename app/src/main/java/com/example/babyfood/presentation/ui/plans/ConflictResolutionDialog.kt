@@ -93,6 +93,8 @@ private fun ConflictItem(conflict: PlanConflict) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.errorContainer
         )

@@ -18,16 +18,22 @@ interface BabyDao {
     suspend fun getAllBabiesSync(): List<BabyEntity>
 
     @Query("SELECT * FROM babies WHERE id = :babyId")
-    suspend fun getBabyById(babyId: Long): BabyEntity?
+    suspend fun getById(babyId: Long): BabyEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertBaby(baby: BabyEntity): Long
+    suspend fun insert(baby: BabyEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(babies: List<BabyEntity>): List<Long>
 
     @Update
-    suspend fun updateBaby(baby: BabyEntity)
+    suspend fun update(baby: BabyEntity)
+
+    @Update
+    suspend fun updateAll(babies: List<BabyEntity>)
 
     @Delete
-    suspend fun deleteBaby(baby: BabyEntity)
+    suspend fun delete(baby: BabyEntity)
 
     @Query("DELETE FROM babies WHERE id = :babyId")
     suspend fun deleteBabyById(babyId: Long)

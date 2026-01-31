@@ -14,8 +14,9 @@ import kotlinx.datetime.LocalDate
 interface GrowthRecordDao {
     @Query("SELECT * FROM growth_records WHERE babyId = :babyId ORDER BY recordDate ASC")
     fun getGrowthRecordsByBaby(babyId: Long): Flow<List<GrowthRecordEntity>>
+
     @Query("SELECT * FROM growth_records WHERE id = :recordId")
-    suspend fun getGrowthRecordById(recordId: Long): GrowthRecordEntity?
+    suspend fun getById(recordId: Long): GrowthRecordEntity?
 
     @Query("SELECT * FROM growth_records ORDER BY recordDate ASC")
     suspend fun getAllGrowthRecordsSync(): List<GrowthRecordEntity>
@@ -24,13 +25,13 @@ interface GrowthRecordDao {
     suspend fun getGrowthRecordByDate(babyId: Long, recordDate: LocalDate): GrowthRecordEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertGrowthRecord(record: GrowthRecordEntity): Long
+    suspend fun insert(record: GrowthRecordEntity): Long
 
     @Update
-    suspend fun updateGrowthRecord(record: GrowthRecordEntity)
+    suspend fun update(record: GrowthRecordEntity)
 
     @Delete
-    suspend fun deleteGrowthRecord(record: GrowthRecordEntity)
+    suspend fun delete(record: GrowthRecordEntity)
 
     @Query("DELETE FROM growth_records WHERE id = :recordId")
     suspend fun deleteGrowthRecordById(recordId: Long)

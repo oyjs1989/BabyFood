@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.babyfood.presentation.ui.baby.BabyViewModel
+import com.example.babyfood.presentation.ui.common.AppScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,22 +34,10 @@ fun GrowthCurveScreen(
         babyViewModel.loadBaby(babyId)
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("生长曲线") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+    AppScaffold {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
         ) {
             if (uiState.isLoading) {
                 Box(
@@ -122,10 +111,10 @@ fun GrowthCurveScreen(
                                 .padding(top = 8.dp),
                             horizontalArrangement = Arrangement.SpaceAround
                         ) {
-                            LegendItem(color = Color(0xFF4CAF50), text = "P3 (下界)")
-                            LegendItem(color = Color(0xFFFF9800), text = "P50 (中位)")
-                            LegendItem(color = Color(0xFFF44336), text = "P97 (上界)")
-                            LegendItem(color = Color(0xFF2196F3), text = "实际数据")
+                            LegendItem(color = com.example.babyfood.presentation.theme.NutritionCalcium, text = "P3 (下界)")
+                            LegendItem(color = com.example.babyfood.presentation.theme.NutritionCalories, text = "P50 (中位)")
+                            LegendItem(color = com.example.babyfood.presentation.theme.Error, text = "P97 (上界)")
+                            LegendItem(color = com.example.babyfood.presentation.theme.NutritionProtein, text = "实际数据")
                         }
                         
                         // 如果没有数据，显示提示

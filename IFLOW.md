@@ -13,6 +13,7 @@ BabyFood 是一个使用 Kotlin 开发的 Android 应用程序，专注于婴幼
 - **黑白名单**：管理过敏食材和偏好食材，支持有效期设置
 - **营养目标**：根据月龄自动计算营养目标，支持手动调整
 - **AI 智能推荐**：基于 AI 的智能食谱推荐和周计划生成，支持本地规则引擎和远程 LLM API
+- **仓库管理**：管理辅食食材库存，追踪过期日期，支持添加、编辑、删除库存物品
 
 - **项目名称**：BabyFood
 - **项目类型**：Android 应用
@@ -83,13 +84,18 @@ BabyFood/
 │   │       │   │   │       │   ├── PlanDao.kt
 │   │       │   │   │       │   ├── RecipeDao.kt
 │   │       │   │   │       │   ├── HealthRecordDao.kt
-│   │       │   │   │       │   └── GrowthRecordDao.kt
-│   │       │   │   │       └── entity/    # 数据库实体
-│   │       │   │   │           ├── BabyEntity.kt
-│   │       │   │   │           ├── PlanEntity.kt
-│   │       │   │   │           ├── RecipeEntity.kt
-│   │       │   │   │           ├── HealthRecordEntity.kt
-│   │       │   │   │           └── GrowthRecordEntity.kt
+│   │       │   │   │       │   ├── GrowthRecordDao.kt
+│   │       │   │   │       │   ├── UserDao.kt
+│   │       │   │   │       │   └── InventoryItemDao.kt
+│   │       │   │       │       └── entity/    # 数据库实体
+│   │       │   │       │           ├── SyncableEntity.kt       # 同步实体接口
+│   │       │   │       │           ├── BabyEntity.kt
+│   │       │   │       │           ├── PlanEntity.kt
+│   │       │   │       │           ├── RecipeEntity.kt
+│   │       │   │       │           ├── HealthRecordEntity.kt
+│   │       │   │       │           ├── GrowthRecordEntity.kt
+│   │       │   │       │           ├── UserEntity.kt
+│   │       │   │       │           └── InventoryItemEntity.kt
 │   │       │   │   ├── remote/            # 远程数据
 │   │       │   │   │   ├── api/           # REST API 接口
 │   │       │   │   │   │   ├── RecipeApiService.kt
@@ -125,11 +131,16 @@ BabyFood/
 │   │       │   │   ├── strategy/          # 策略管理
 │   │       │   │   │   └── StrategyManager.kt
 │   │       │   │   └── repository/         # 数据仓库
+│   │       │   │       ├── BaseRepository.kt         # 泛型基础仓库类
+│   │       │   │       ├── SyncableRepository.kt     # 同步实体基础仓库
+│   │       │   │       ├── SyncMetadata.kt          # 实体准备工具
 │   │       │   │       ├── BabyRepository.kt
 │   │       │   │       ├── PlanRepository.kt
 │   │       │   │       ├── RecipeRepository.kt
 │   │       │   │       ├── HealthRecordRepository.kt
-│   │       │   │       └── GrowthRecordRepository.kt
+│   │       │   │       ├── GrowthRecordRepository.kt
+│   │       │   │       ├── AuthRepository.kt
+│   │       │   │       └── InventoryRepository.kt
 │   │       │   ├── init/                 # 数据初始化
 │   │       │   │   └── RecipeInitializer.kt
 │   │       │   ├── di/                     # 依赖注入
@@ -151,7 +162,12 @@ BabyFood/
 │   │       │   │       ├── RecommendationRequest.kt
 │   │       │   │       ├── RecommendationResponse.kt
 │   │       │   │       ├── PlanConflict.kt
-│   │       │   │       └── ConflictResolution.kt
+│   │       │   │       ├── ConflictResolution.kt
+│   │       │   │       ├── User.kt
+│   │       │   │       ├── AuthState.kt
+│   │       │   │       ├── InventoryItem.kt
+│   │       │   │       ├── StorageMethod.kt
+│   │       │   │       └── ExpiryStatus.kt
 │   │       │   └── presentation/          # 表现层
 │   │       │       ├── theme/             # 主题配置
 │   │       │       │   ├── Color.kt
@@ -200,6 +216,15 @@ BabyFood/
 │   │       │               ├── RecommendationViewModel.kt
 │   │       │               ├── AiSettingsScreen.kt
 │   │       │               └── RecommendationScreen.kt
+│   │       │           ├── auth/           # 认证功能
+│   │       │               ├── LoginViewModel.kt
+│   │       │               ├── RegisterViewModel.kt
+│   │       │               ├── LoginScreen.kt
+│   │       │               └── RegisterScreen.kt
+│   │       │           ├── inventory/      # 仓库管理
+│   │       │               ├── InventoryViewModel.kt
+│   │       │               ├── InventoryListScreen.kt
+│   │       │               └── InventoryFormScreen.kt
 │   │       ├── res/                          # 资源文件
 │   │       │   ├── drawable/                 # 图片资源
 │   │       │   ├── layout/                   # 布局文件
@@ -354,7 +379,24 @@ UI (Jetpack Compose)
 ViewModel (StateFlow/LiveData)
     ↓ 调用 Repository 方法
 Repository (Flow)
-    ↓ 调用 DAO/Strategy 方法
+    │
+    ├── BaseRepository<T, E, ID>
+    │   ├── toDomainModel(): E → T
+    │   ├── toEntity(): T → E
+    │   └── toDomainModels(): Flow 辅助方法
+    │
+    ├── SyncableRepository<T, E, ID>
+    │   └── extends BaseRepository
+    │
+    └── 具体仓库（7个）
+        ├── GrowthRecordRepository (extends BaseRepository)
+        ├── BabyRepository (extends SyncableRepository)
+        ├── PlanRepository (extends SyncableRepository)
+        ├── RecipeRepository (extends SyncableRepository)
+        ├── InventoryRepository (extends SyncableRepository)
+        ├── HealthRecordRepository (extends BaseRepository)
+        └── AuthRepository (独立实现)
+    ↓
 ┌─────────────────────────────────┐
 │  Service Layer (策略管理)       │
 │  - StrategyManager              │
@@ -389,7 +431,7 @@ Database (Room SQLite) / Cloud DB
 - **非传递性 R 类**：已启用（`android.nonTransitiveRClass=true`）
 - **JVM 目标**：Java 17
 - **Gradle 配置缓存**：已禁用（`org.gradle.configuration-cache=false`）
-- **数据库版本**：6（支持迁移 v1→v2→v3→v4→v5→v6）
+- **数据库版本**：14（支持迁移 v1→v2→v3→v4→v5→v6→v7→v8→v9→v10→v11→v12→v13→v14）
 - **Kotlin 版本**：2.0.21
 - **Compose 编译器**：使用 Kotlin 2.0.21 内置编译器
 - **Kotlin 序列化**：已配置编译器插件，支持 `@Serializable` 注解
@@ -400,8 +442,8 @@ Database (Room SQLite) / Cloud DB
 项目已完成基础架构搭建和核心功能开发，采用 MVVM 架构模式。
 
 ### 构建状态
-- ✅ **最新构建**：BUILD SUCCESSFUL（2026-01-24）
-- ✅ **数据库版本**：6（支持迁移 v1→v2→v3→v4→v5→v6）
+- ✅ **最新构建**：BUILD SUCCESSFUL（2026-01-28）
+- ✅ **数据库版本**：14（支持迁移 v1→v2→v3→v4→v5→v6→v7→v8→v9→v10→v11→v12→v13→v14）
 - ✅ **所有 UI 页面**：已实现并通过编译验证
 - ✅ **导航路由**：完整配置并可用
 - ✅ **Kotlin 序列化**：已配置并支持服务器数据同步
@@ -412,6 +454,14 @@ Database (Room SQLite) / Cloud DB
 - ✅ **内置食谱库**：30 个辅食食谱（6-24个月），覆盖早餐、午餐、晚餐、点心
 - ✅ **AI 推荐日志**：详细日志输出，便于调试和问题定位
 - ✅ **AI 推荐原则**：遵循奥卡姆剃刀原则，AI 优先，本地仅作兜底
+- ✅ **代码优化**：已完成代码结构优化，提高可维护性
+- ✅ **Repository 层重构**（2026-01-29）
+  - 引入 BaseRepository 和 SyncableRepository 泛型基类
+  - 消除约 200 行重复的 CRUD 和 Flow 映射代码
+  - 统一同步元数据处理（prepareForInsert/prepareForUpdate）
+  - 每个仓库减少 30-50 行代码
+  - 添加 SyncableEntity 接口，标准化云同步元数据
+  - 提高代码可维护性和一致性
 
 ### 已实现功能
 
@@ -464,9 +514,10 @@ Database (Room SQLite) / Cloud DB
 - ✅ 数据点标注和交互
 
 #### 6. 数据模型
-- ✅ Baby - 宝宝信息（含过敏、偏好、营养目标）
-- ✅ Plan - 餐单计划（含餐段时间段）
-- ✅ Recipe - 食谱信息（含营养成分）
+- ✅ **SyncableEntity** - 同步实体接口（定义云同步元数据字段：cloudId、syncStatus、lastSyncTime、version、isDeleted）
+- ✅ Baby - 宝宝信息（含过敏、偏好、营养目标，实现 SyncableEntity）
+- ✅ Plan - 餐单计划（含餐段时间段，实现 SyncableEntity）
+- ✅ Recipe - 食谱信息（含营养成分，实现 SyncableEntity）
 - ✅ MealPeriod - 餐段时间段枚举
 - ✅ NutritionGoal - 营养目标（含月龄自动计算）
 - ✅ AllergyItem - 过敏食材项（带有效期）
@@ -482,17 +533,30 @@ Database (Room SQLite) / Cloud DB
 - ✅ RecommendationResponse - AI 推荐响应模型
 - ✅ PlanConflict - 计划冲突模型
 - ✅ ConflictResolution - 冲突解决模型
+- ✅ User - 用户模型（认证相关）
+- ✅ AuthState - 认证状态
+- ✅ InventoryItem - 库存物品模型（实现 SyncableEntity）
+- ✅ StorageMethod - 存储方式枚举（冷藏、冷冻、常温）
+- ✅ ExpiryStatus - 过期状态枚举
 
 #### 7. 数据库
-- ✅ Room 数据库（当前版本：6）
+- ✅ Room 数据库（当前版本：14）
 - ✅ 数据库迁移策略
   - MIGRATION_1_2：添加 mealPeriod 字段到 plans 表
   - MIGRATION_2_3：创建 health_records 和 growth_records 表
   - MIGRATION_3_4：无操作迁移（版本号递增）
   - MIGRATION_4_5：添加同步元数据字段（cloudId、syncStatus、lastSyncTime、version、isDeleted）
   - MIGRATION_5_6：修复同步元数据字段约束（重建表）
-- ✅ 完整的 DAO 接口（BabyDao、PlanDao、RecipeDao、HealthRecordDao、GrowthRecordDao）
-- ✅ TypeConverters 支持复杂类型（AllergyItem、PreferenceItem、LocalDate 等）
+  - MIGRATION_6_7：添加宝宝头像字段（avatarUrl）
+  - MIGRATION_7_8：添加用户表（users），支持登录功能
+  - MIGRATION_8_9：修复 users 表结构问题（删除索引，重建表）
+  - MIGRATION_9_10：添加 recipes 表 cookingTime 字段
+  - MIGRATION_10_11：添加 plans 表 mealTime 字段
+  - MIGRATION_11_12：添加 plans 表反馈相关字段（feedbackStatus、feedbackTime）
+  - MIGRATION_12_13：更新 babies 表的 allergies 和 preferences 字段结构（支持 addedDate）
+  - MIGRATION_13_14：添加 inventory_items 表，支持仓库功能
+- ✅ 完整的 DAO 接口（BabyDao、PlanDao、RecipeDao、HealthRecordDao、GrowthRecordDao、UserDao、InventoryItemDao）
+- ✅ TypeConverters 支持复杂类型（AllergyItem、PreferenceItem、LocalDate、StorageMethod 等）
 - ✅ 数据库索引优化
 
 #### 8. 业务逻辑层
@@ -520,7 +584,7 @@ Database (Room SQLite) / Cloud DB
 - ✅ 完整的导航路由
 
 #### 10. 云同步架构
-- ✅ REST API 接口（Recipe、Plan、Baby、Sync、HealthAnalysis）
+- ✅ REST API 接口（Recipe、Plan、Baby、Sync、HealthAnalysis、Auth）
 - ✅ RemoteDataSource 接口和实现
 - ✅ SyncManager 同步管理器（拉取、推送、冲突解决）
 - ✅ 数据映射器（Entity ↔ Cloud 转换）
@@ -528,6 +592,7 @@ Database (Room SQLite) / Cloud DB
 - ✅ 软删除支持（isDeleted 字段）
 - ✅ 版本控制（version 字段）
 - ✅ DTOs（SyncPullResponse、SyncPushRequest、SyncPushResponse）
+- ✅ AuthRepository 用户认证管理
 
 #### 11. AI 分析架构
 - ✅ HealthAnalysisService 接口
@@ -561,6 +626,8 @@ Database (Room SQLite) / Cloud DB
 #### 17. 导航路由配置
 完整的导航路由配置，支持以下路由：
 
+- `login` - 登录页面
+- `register` - 注册页面
 - `home` - 今日餐单首页
 - `recipes` - 食谱列表
 - `recipes/detail/{recipeId}` - 食谱详情
@@ -569,6 +636,8 @@ Database (Room SQLite) / Cloud DB
 - `plans/detail/{planId}` - 计划详情
 - `plans/form/{babyId}/{planId}` - 添加/编辑计划
 - `plans/recommendation/editor/{babyId}` - AI 推荐编辑器
+- `inventory` - 仓库列表
+- `inventory/form/{itemId}` - 添加/编辑仓库物品
 - `baby` - 宝宝列表
 - `baby/form/{babyId}` - 添加/编辑宝宝
 - `baby/detail/{babyId}` - 宝宝详情
@@ -595,6 +664,23 @@ Database (Room SQLite) / Cloud DB
 - ✅ 支持体重、身高、头围曲线绘制
 - ✅ 对比 WHO/中国标准生长曲线
 - ✅ 数据点标注和交互
+
+#### 17. 用户认证功能
+- ✅ 登录页面（LoginScreen，支持手机号/邮箱登录）
+- ✅ 注册页面（RegisterScreen，支持手机号/邮箱注册）
+- ✅ LoginViewModel 和 RegisterViewModel 完整实现
+- ✅ 用户状态管理（AuthState）
+- ✅ 注销功能
+
+#### 18. 仓库管理功能
+- ✅ 仓库列表页面（InventoryListScreen）
+- ✅ 仓库物品表单（InventoryFormScreen）
+- ✅ InventoryViewModel 完整实现
+- ✅ InventoryRepository 数据访问
+- ✅ 库存物品追踪（生产日期、过期日期、存储方式）
+- ✅ 过期状态计算（ExpiryStatus）
+- ✅ 存储方式枚举（StorageMethod：冷藏、冷冻、常温）
+- ✅ 库存数据库表（inventory_items）
 
 ### 待完善功能
 
@@ -661,6 +747,361 @@ Database (Room SQLite) / Cloud DB
 - 优先信任 AI 智能能力
 - 本地规则仅作为安全网和兜底方案
 - 避免过度工程化
+
+#### 代码简化原则
+在代码设计和实现中，遵循代码简化原则："消除重复，抽象通用模式"。
+
+**应用场景：**
+
+1. **Repository 层**
+   - **原则**：使用泛型消除重复代码
+   - **实现**：
+     - BaseRepository 提供通用的 Flow 映射方法 `.toDomainModels()`
+     - SyncableRepository 提供同步元数据处理工具
+     - 所有具体仓库继承基类，实现自己的 CRUD 操作
+   - **避免**：在每个仓库中重复相同的 Flow 映射逻辑
+   - **效果**：减少约 200 行重复代码，每个仓库减少 30-50 行
+
+2. **实体映射**
+   - **原则**：通过扩展函数简化常见操作
+   - **实现**：
+     - `SyncMetadata.kt` 提供 `prepareForInsert()` 和 `prepareForUpdate()` 扩展函数
+     - 统一处理同步元数据设置（cloudId、syncStatus、lastSyncTime、version、isDeleted）
+   - **避免**：在每个 Repository 中重复编写实体准备逻辑
+   - **效果**：集中管理通用逻辑，提高一致性
+
+3. **接口设计**
+   - **原则**：定义清晰的接口契约
+   - **实现**：
+     - SyncableEntity 接口定义云同步元数据字段
+     - BaseDao 和 SyncableDao 接口定义 CRUD 方法签名
+   - **避免**：缺乏类型约束和明确的接口定义
+   - **效果**：编译时类型检查，减少运行时错误
+
+**核心思想：**
+- 使用泛型消除重复代码（BaseRepository 模式）
+- 通过扩展函数简化常见操作
+- 集中管理通用逻辑
+- 提高代码可维护性和一致性
+
+#### AI Function Calling（工具调用）原则
+在 AI 功能扩展中，遵循工具调用原则，使 AI 能够通过结构化接口调用应用功能。
+
+**核心原理：**
+
+AI 调用工具的本质是一个"回合制游戏"，AI 不直接执行代码，而是输出结构化文本（通常是 JSON），由程序解析参数并执行真正的工具调用，最后将结果传回 AI 生成最终回复。
+
+**调用流程：**
+
+1. **定义阶段**：程序在发给 AI 的请求中附带工具列表，使用 JSON Schema 格式描述工具名称、参数类型、必填项、枚举值等
+2. **决策阶段**：AI 接收用户问题和工具列表，通过内部推理判断是否需要调用工具
+3. **输出阶段**：AI 输出函数名和参数（JSON 格式），例如：`{"name": "get_recipe", "arguments": "{\"recipeId\": 1}"}`
+4. **执行阶段**：程序监听 AI 返回，解析参数，执行真实的函数（如查询数据库、调用 API）
+5. **总结阶段**：程序将工具执行结果再次发送给 AI，AI 结合结果用自然语言回答用户
+
+**参数控制策略：**
+
+为了保证 AI 输出正确的参数，需要遵循以下策略：
+
+- **强约束的 JSON Schema**：明确参数类型（string、number、boolean）、必填字段（required）、枚举值（enum）
+- **详细的参数描述**：用大白话描述参数含义和格式，避免歧义
+- **模型微调支持**：主流模型（GPT-4o、Claude 3.5 Sonnet）都经过函数调用微调，会自动进入"结构化输出模式"
+
+**在 BabyFood 中的应用：**
+
+以下业务功能适合工具化，可被 AI 调用：
+
+1. **食谱管理工具**
+   - `search_recipes`：搜索食谱（支持关键词、月龄、分类筛选）
+   - `get_recipe_detail`：获取食谱详情（食材、步骤、营养成分）
+   - `create_recipe`：创建新食谱
+   - `update_recipe`：更新食谱信息
+   - `delete_recipe`：删除食谱
+
+2. **宝宝档案管理工具**
+   - `get_baby_list`：获取宝宝列表
+   - `get_baby_detail`：获取宝宝详情（基本信息、营养目标、黑白名单）
+   - `create_baby`：创建宝宝档案
+   - `update_baby`：更新宝宝信息
+   - `add_allergy`：添加过敏食材
+   - `add_preference`：添加偏好食材
+
+3. **体检记录管理工具**
+   - `get_health_records`：获取体检记录列表
+   - `get_health_record_detail`：获取体检记录详情
+   - `create_health_record`：创建体检记录
+   - `analyze_health`：分析体检数据（调用 AI 健康分析服务）
+
+4. **生长记录管理工具**
+   - `get_growth_records`：获取生长记录列表
+   - `create_growth_record`：创建生长记录
+   - `get_growth_curve`：获取生长曲线数据
+
+5. **餐单计划管理工具**
+   - `get_plans`：获取餐单计划列表
+   - `get_plan_detail`：获取计划详情
+   - `create_plan`：创建餐单计划
+   - `generate_recommendation`：生成 AI 推荐计划（调用 RecommendationService）
+
+6. **营养目标工具**
+   - `calculate_nutrition_goal`：根据月龄计算营养目标
+   - `get_nutrition_goal`：获取宝宝当前营养目标
+   - `update_nutrition_goal`：更新营养目标
+
+7. **黑白名单管理工具**
+   - `get_allergies`：获取过敏食材列表
+   - `get_preferences`：获取偏好食材列表
+   - `add_allergy_item`：添加过敏食材（支持有效期）
+   - `add_preference_item`：添加偏好食材（支持有效期）
+
+**工具定义示例：**
+
+```json
+{
+  "type": "function",
+  "function": {
+    "name": "get_recipe_detail",
+    "description": "获取指定食谱的详细信息，包括食材清单、制作步骤和营养成分",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "recipeId": {
+          "type": "integer",
+          "description": "食谱的唯一标识符（ID），例如：1、15、30"
+        }
+      },
+      "required": ["recipeId"]
+    }
+  }
+}
+```
+
+**设计要求：**
+
+- **工具定义必须使用严格的 JSON Schema**：明确类型、必填项、枚举值
+- **参数描述必须清晰明确**：避免歧义，提供示例
+- **必填字段必须明确列出**：AI 会检查必填项是否齐全
+- **枚举值必须限制在固定范围内**：避免 AI 编造无效值
+
+**核心思想：**
+
+- AI 是决策者，程序是执行者
+- 通过结构化接口实现 AI 与应用的交互
+- 参数准确性依赖于 JSON Schema 的严格定义
+- 工具调用扩展了 AI 的能力边界，使其能够操作真实数据
+
+## 重构复盘记录（2026-01-29）
+
+### Repository 层重构事故
+
+#### 背景
+2026-01-29 对 Repository 层进行了大规模重构，引入 `BaseRepository` 和 `SyncableRepository` 泛型基类，试图通过抽象减少重复代码。
+
+#### 结果
+- **影响范围**：17+ 个文件需要修复
+- **修复耗时**：约 2 小时
+- **Bug 数量**：50+ 个编译错误
+- **最终状态**：✅ 构建成功
+
+#### 根本原因分析
+
+##### 1. 破坏了现有的 API 契约
+- **问题**：移除了 `override val dao` 属性声明，但没有提供替代的实现方式
+- **原因**：试图通过泛型和抽象方法统一 CRUD 操作，但实际 DAO 层接口设计不统一
+- **影响**：所有 Repository 的 CRUD 方法调用都失效
+
+##### 2. Room DAO 的技术限制
+- **问题**：Room 的 DAO 接口**不能继承**其他接口
+- **原因**：虽然定义了 `BaseDao` 和 `SyncableDao` 接口作为文档，但实际 DAO 无法继承它们
+- **影响**：编译器无法识别 DAO 是否实现了期望的方法，导致类型检查失败
+
+##### 3. 方法名不一致
+- **问题**：不同的 DAO 使用了不同的方法命名约定
+  - 有些用 `insertXxx`、`updateXxx`、`deleteXxx`（如 `insertRecipe`、`updatePlan`）
+  - 有些用标准方法名 `insert`、`update`、`delete`
+- **原因**：历史代码演进过程中缺乏统一规范
+- **影响**：大量引用失效，需要逐个修复
+
+##### 4. 缺少充分的重构策略
+- **问题**：试图一次性重构整个 Repository 层
+- **原因**：没有采用渐进式重构，没有先在一个 Repository 上验证方案
+- **影响**：影响范围失控，17+ 个文件需要修改
+
+##### 5. 实体类型转换的复杂性
+- **问题**：Domain 模型和 Entity 模型之间的字段类型不完全匹配
+  - `InventoryItem` 中 `productionDate` 是 `LocalDate`，但 `InventoryItemEntity` 中是 `String`
+  - `Plan` 中 `mealPeriod` 是 `String`，但 `PlanEntity` 中是 `MealPeriod` 枚举
+- **原因**：重构时简化了映射逻辑，但没有正确处理这些类型转换
+- **影响**：类型不匹配错误
+
+##### 6. `prepareForUpdate` 的签名变化
+- **问题**：重构后 `prepareForUpdate` 需要传入 `existing` 实体参数
+- **原因**：为了正确处理同步元数据（保留 cloudId、递增 version）
+- **影响**：很多调用方没有提供这个参数，导致编译错误
+
+##### 7. 影响范围估计不足
+- **问题**：Repository 层的重构影响了大量调用方
+- **影响范围**：
+  - 所有 ViewModel（8+ 个文件）
+  - SyncManager
+  - 数据初始化器
+  - AI 服务
+  - 总计 17+ 个文件需要修改
+- **原因**：没有使用 "Find Usages" 功能提前识别所有影响点
+
+#### 修复的文件列表
+
+1. `BabyRepository.kt` - 移除 dao 属性，实现 CRUD 方法
+2. `PlanRepository.kt` - 移除 dao 属性，实现 CRUD 方法
+3. `RecipeRepository.kt` - 移除 dao 属性，实现 CRUD 方法
+4. `InventoryRepository.kt` - 移除 dao 属性，实现 CRUD 方法
+5. `HealthRecordRepository.kt` - 添加 update 和 delete 方法
+6. `GrowthRecordRepository.kt` - 修复方法名引用
+7. `SyncManager.kt` - 修复 DAO 方法引用
+8. `MainViewModel.kt` - 修复 Repository 方法引用
+9. `BabyViewModel.kt` - 修复 Repository 方法引用
+10. `HealthRecordViewModel.kt` - 修复 Repository 方法引用
+11. `HomeViewModel.kt` - 修复 Repository 方法引用
+12. `InventoryViewModel.kt` - 修复 Repository 方法引用
+13. `PlansViewModel.kt` - 修复 Repository 方法引用
+14. `RecipesViewModel.kt` - 修复 Repository 方法引用
+15. `DataMigration.kt` - 修复 DAO 方法引用
+16. `RecipeInitializer.kt` - 修复 DAO 方法引用
+17. `RecommendationService.kt` - 修复 Repository 方法引用
+
+#### 经验教训
+
+##### 应该采用的重构策略
+
+1. **渐进式重构**
+   - ✅ 先在一个 Repository 上验证方案
+   - ✅ 确保可行后再推广到其他 Repository
+   - ❌ 不要一次性重构整个层
+
+2. **保持 API 向后兼容**
+   - ✅ 保留旧方法名，添加 `@Deprecated` 注解
+   - ✅ 逐步迁移调用方，而不是一次性全部修改
+   - ❌ 不要直接移除或修改现有 API
+
+3. **先运行完整测试**
+   - ✅ 在重构前确保所有测试通过
+   - ✅ 重构后立即运行测试验证
+   - ❌ 不要在没有测试的情况下进行大规模重构
+
+4. **使用 IDE 重构工具**
+   - ✅ 使用 IDE 的 "Rename Symbol" 功能批量重命名
+   - ✅ 使用 "Find Usages" 查找所有引用
+   - ❌ 避免手动修改导致的遗漏
+
+5. **充分的影响分析**
+   - ✅ 使用 IDE 的 "Find Usages" 功能查找所有引用
+   - ✅ 提前列出所有需要修改的文件
+   - ✅ 评估影响范围和风险
+   - ❌ 不要在没有充分分析的情况下开始重构
+
+6. **小步提交**
+   - ✅ 每次只重构一个 Repository
+   - ✅ 每次重构后立即验证编译和测试
+   - ✅ 提交清晰的提交信息
+   - ❌ 不要在一个 commit 中包含大量修改
+
+##### 更好的设计方案
+
+```kotlin
+// ❌ 不要试图抽象所有 CRUD 方法
+abstract class BaseRepository<T, E, ID> {
+    abstract val dao: BaseDao<E, ID>  // Room 不支持继承
+    abstract fun E.toDomainModel(): T
+    abstract fun T.toEntity(): E
+    
+    // 这些方法无法真正抽象，因为 DAO 方法名不统一
+    abstract suspend fun getById(id: ID): T?
+    abstract suspend fun insert(item: T): ID
+    abstract suspend fun update(item: T)
+    abstract suspend fun delete(item: T)
+}
+
+// ✅ 保持简单，直接实现
+@Singleton
+class BabyRepository @Inject constructor(
+    private val babyDao: BabyDao
+) {
+    // 直接使用 DAO 的方法
+    suspend fun getById(id: Long): Baby? = 
+        babyDao.getById(id)?.toDomainModel()
+    
+    suspend fun insert(baby: Baby): Long = 
+        babyDao.insert(baby.toEntity().prepareForInsert())
+    
+    suspend fun update(baby: Baby) {
+        val existing = babyDao.getById(baby.id)
+            ?: throw IllegalArgumentException("Baby not found")
+        babyDao.update(baby.toEntity().prepareForUpdate(existing))
+    }
+    
+    suspend fun delete(baby: Baby) {
+        val existing = babyDao.getById(baby.id)
+            ?: throw IllegalArgumentException("Baby not found")
+        babyDao.update(baby.toEntity().prepareForUpdate(existing, isDeleted = true))
+    }
+    
+    // 业务逻辑方法
+    fun getAllBabies(): Flow<List<Baby>> =
+        babyDao.getAllBabies().map { entities ->
+            entities.map { it.toDomainModel() }
+        }
+}
+```
+
+#### 重构原则总结
+
+1. **不要过度设计抽象层**
+   - Room DAO 的限制和 Kotlin 泛型的复杂性使得抽象 Repository 层变得困难
+   - 简单直接的实现往往比过度抽象更好
+
+2. **渐进式重构**
+   - 每次只修改一个小模块
+   - 立即验证编译和测试
+   - 确保每一步都是可回滚的
+
+3. **保持 API 向后兼容**
+   - 优先添加新方法，而不是修改现有方法
+   - 使用 `@Deprecated` 标记旧方法
+   - 给调用方足够的迁移时间
+
+4. **充分测试**
+   - 在重构前确保所有测试通过
+   - 重构后立即运行测试验证
+   - 添加回归测试防止问题再次发生
+
+5. **使用工具辅助**
+   - 使用 IDE 的重构工具
+   - 使用 "Find Usages" 查找所有引用
+   - 避免手动修改导致的遗漏
+
+#### 未来改进建议
+
+1. **统一 DAO 方法命名**
+   - 制定 DAO 方法命名规范
+   - 逐步统一所有 DAO 的方法名
+   - 使用代码检查工具强制执行
+
+2. **添加单元测试**
+   - 为每个 Repository 添加单元测试
+   - 测试所有 CRUD 操作
+   - 测试实体映射逻辑
+
+3. **代码审查流程**
+   - 大规模重构需要代码审查
+   - 提前评估影响范围
+   - 制定回滚计划
+
+4. **文档化重构过程**
+   - 记录重构原因和目标
+   - 记录影响范围和风险
+   - 记录遇到的问题和解决方案
+
+---
 
 ## 常见问题
 
@@ -838,14 +1279,20 @@ Database (Room SQLite) / Cloud DB
    - 完善同步状态显示
    - 添加同步日志和错误处理
 
-2. 用户体验优化
+2. 仓库功能完善
+   - 添加库存提醒功能（过期预警、库存不足）
+   - 实现库存自动扣减（与餐单计划关联）
+   - 添加食材购买清单生成
+   - 支持批量导入库存数据
+
+3. 用户体验优化
    - 搜索历史记录
    - 热门推荐功能
    - 收藏功能
    - 分享功能
    - 数据导出功能（PDF/Excel）
 
-3. 图片支持
+4. 图片支持
    - 食谱图片上传
    - 食谱图片展示
    - 图片压缩和优化
@@ -858,6 +1305,7 @@ Database (Room SQLite) / Cloud DB
    - AI 食谱生成
    - AI 生长发育评估
    - 协同过滤推荐算法优化
+   - AI 库存管理建议（基于消费历史预测需求）
 
 2. 社区功能
    - 用户分享

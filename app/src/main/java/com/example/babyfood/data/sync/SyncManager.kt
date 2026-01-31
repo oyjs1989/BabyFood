@@ -156,10 +156,10 @@ class SyncManager @Inject constructor(
             if (existing != null) {
                 // 更新现有食谱
                 val updated = RecipeMapper.toEntity(recipe).copy(id = existing.id)
-                recipeDao.updateRecipe(updated)
+                recipeDao.update(updated)
             } else {
                 // 插入新食谱
-                recipeDao.insertRecipe(RecipeMapper.toEntity(recipe))
+                recipeDao.insert(RecipeMapper.toEntity(recipe))
             }
         }
     }
@@ -174,7 +174,7 @@ class SyncManager @Inject constructor(
             if (existing != null) {
                 // 更新现有计划
                 val updated = PlanMapper.toEntity(plan).copy(id = existing.id)
-                planDao.updatePlan(updated)
+                planDao.update(updated)
             } else {
                 // 插入新计划（需要映射 babyId 和 recipeId）
                 // TODO: 实现本地 ID 映射
@@ -192,7 +192,7 @@ class SyncManager @Inject constructor(
             if (existing != null) {
                 // 更新现有宝宝（合并敏感信息）
                 val updated = BabyMapper.toEntity(baby, existing).copy(id = existing.id)
-                babyDao.updateBaby(updated)
+                babyDao.update(updated)
             } else {
                 // 插入新宝宝（需要从本地获取敏感信息）
                 // TODO: 实现本地 ID 映射
@@ -242,7 +242,7 @@ class SyncManager @Inject constructor(
         val now = Clock.System.now().toEpochMilliseconds()
 
         recipes.forEach { recipe ->
-            recipeDao.updateRecipe(recipe.copy(
+            recipeDao.update(recipe.copy(
                 syncStatus = "SYNCED",
                 lastSyncTime = now,
                 version = recipe.version + 1
@@ -250,7 +250,7 @@ class SyncManager @Inject constructor(
         }
 
         plans.forEach { plan ->
-            planDao.updatePlan(plan.copy(
+            planDao.update(plan.copy(
                 syncStatus = "SYNCED",
                 lastSyncTime = now,
                 version = plan.version + 1
@@ -258,7 +258,7 @@ class SyncManager @Inject constructor(
         }
 
         babies.forEach { baby ->
-            babyDao.updateBaby(baby.copy(
+            babyDao.update(baby.copy(
                 syncStatus = "SYNCED",
                 lastSyncTime = now,
                 version = baby.version + 1

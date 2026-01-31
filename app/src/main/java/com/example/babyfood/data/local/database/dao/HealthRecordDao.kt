@@ -14,8 +14,9 @@ import kotlinx.datetime.LocalDate
 interface HealthRecordDao {
     @Query("SELECT * FROM health_records WHERE babyId = :babyId ORDER BY recordDate DESC")
     fun getHealthRecordsByBaby(babyId: Long): Flow<List<HealthRecordEntity>>
+
     @Query("SELECT * FROM health_records WHERE id = :recordId")
-    suspend fun getHealthRecordById(recordId: Long): HealthRecordEntity?
+    suspend fun getById(recordId: Long): HealthRecordEntity?
 
     @Query("SELECT * FROM health_records WHERE babyId = :babyId ORDER BY recordDate DESC LIMIT 1")
     suspend fun getLatestHealthRecord(babyId: Long): HealthRecordEntity?
@@ -24,13 +25,13 @@ interface HealthRecordDao {
     suspend fun getAllHealthRecordsSync(): List<HealthRecordEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertHealthRecord(record: HealthRecordEntity): Long
+    suspend fun insert(record: HealthRecordEntity): Long
 
     @Update
-    suspend fun updateHealthRecord(record: HealthRecordEntity)
+    suspend fun update(record: HealthRecordEntity)
 
     @Delete
-    suspend fun deleteHealthRecord(record: HealthRecordEntity)
+    suspend fun delete(record: HealthRecordEntity)
 
     @Query("DELETE FROM health_records WHERE id = :recordId")
     suspend fun deleteHealthRecordById(recordId: Long)

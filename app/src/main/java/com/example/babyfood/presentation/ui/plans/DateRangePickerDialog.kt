@@ -119,7 +119,8 @@ private fun DatePicker(
         )
         
         OutlinedCard(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline)
         ) {
             Row(
                 modifier = Modifier

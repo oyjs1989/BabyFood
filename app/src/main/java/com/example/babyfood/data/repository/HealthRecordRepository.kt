@@ -1,6 +1,5 @@
 package com.example.babyfood.data.repository
 
-import com.example.babyfood.data.ai.HealthAnalysisService
 import com.example.babyfood.data.ai.LocalHealthAnalysisStrategy
 import com.example.babyfood.data.ai.RemoteHealthAnalysisStrategy
 import com.example.babyfood.data.local.database.dao.HealthRecordDao
@@ -11,7 +10,6 @@ import com.example.babyfood.data.strategy.createStrategyExecutor
 import com.example.babyfood.domain.model.GrowthRecord
 import com.example.babyfood.domain.model.HealthRecord
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,15 +22,52 @@ class HealthRecordRepository @Inject constructor(
     private val localHealthAnalysisStrategy: LocalHealthAnalysisStrategy,
     private val remoteHealthAnalysisStrategy: RemoteHealthAnalysisStrategy,
     private val strategyManager: StrategyManager
-) {
-    fun getHealthRecordsByBaby(babyId: Long): Flow<List<HealthRecord>> =
-        healthRecordDao.getHealthRecordsByBaby(babyId).map { entities -> entities.map { it.toDomainModel() } }
+) : BaseRepository<HealthRecord, HealthRecordEntity, Long>() {
 
-    suspend fun getHealthRecordById(recordId: Long): HealthRecord? =
-        healthRecordDao.getHealthRecordById(recordId)?.toDomainModel()
+    // Note: HealthRecordDao implements BaseDao methods implicitly
+    // but doesn't extend the interface due to Room limitations
+
+    override fun HealthRecordEntity.toDomainModel(): HealthRecord = HealthRecord(
+        id = id,
+        babyId = babyId,
+        recordDate = recordDate,
+        weight = weight,
+        height = height,
+        headCircumference = headCircumference,
+        ironLevel = ironLevel,
+        calciumLevel = calciumLevel,
+        hemoglobin = hemoglobin,
+        aiAnalysis = aiAnalysis,
+        isConfirmed = isConfirmed,
+        expiryDate = expiryDate,
+        notes = notes
+    )
+
+    override fun HealthRecord.toEntity(): HealthRecordEntity = HealthRecordEntity(
+        id = id,
+        babyId = babyId,
+        recordDate = recordDate,
+        weight = weight,
+        height = height,
+        headCircumference = headCircumference,
+        ironLevel = ironLevel,
+        calciumLevel = calciumLevel,
+        hemoglobin = hemoglobin,
+        aiAnalysis = aiAnalysis,
+        isConfirmed = isConfirmed,
+        expiryDate = expiryDate,
+        notes = notes
+    )
+
+    // ============ Domain-Specific Query Methods ============
+
+    fun getHealthRecordsByBaby(babyId: Long): Flow<List<HealthRecord>> =
+        healthRecordDao.getHealthRecordsByBaby(babyId).toDomainModels()
 
     suspend fun getLatestHealthRecord(babyId: Long): HealthRecord? =
         healthRecordDao.getLatestHealthRecord(babyId)?.toDomainModel()
+
+    // ============ Custom Insert Logic with AI Analysis ============
 
     /**
      * 插入体检记录（集成 AI 分析）
@@ -45,24 +80,8 @@ class HealthRecordRepository @Inject constructor(
         // 创建带 AI 分析结论的体检记录
         val recordWithAnalysis = record.copy(aiAnalysis = aiAnalysis)
 
-        val healthRecordId = healthRecordDao.insertHealthRecord(
-            com.example.babyfood.data.local.database.entity.HealthRecordEntity(
-                id = recordWithAnalysis.id,
-                babyId = recordWithAnalysis.babyId,
-                recordDate = recordWithAnalysis.recordDate,
-                weight = recordWithAnalysis.weight,
-                height = recordWithAnalysis.height,
-                headCircumference = recordWithAnalysis.headCircumference,
-                ironLevel = recordWithAnalysis.ironLevel,
-                calciumLevel = recordWithAnalysis.calciumLevel,
-                hemoglobin = recordWithAnalysis.hemoglobin,
-                aiAnalysis = recordWithAnalysis.aiAnalysis,
-                isConfirmed = recordWithAnalysis.isConfirmed,
-                expiryDate = recordWithAnalysis.expiryDate,
-                notes = recordWithAnalysis.notes
-            )
-        )
-        
+        val healthRecordId = healthRecordDao.insert(recordWithAnalysis.toEntity())
+
         // 自动同步到生长记录表（如果体重和身高不为空）
         if (record.weight != null && record.height != null) {
             val growthRecord = GrowthRecord(
@@ -75,9 +94,22 @@ class HealthRecordRepository @Inject constructor(
             )
             growthRecordRepository.insertGrowthRecord(growthRecord)
         }
-        
+
         return healthRecordId
     }
+
+    suspend fun update(record: HealthRecord) {
+        healthRecordDao.update(record.toEntity())
+    }
+
+    suspend fun delete(record: HealthRecord) {
+        healthRecordDao.delete(record.toEntity())
+    }
+
+    suspend fun deleteHealthRecordsByBaby(babyId: Long) =
+        healthRecordDao.deleteHealthRecordsByBaby(babyId)
+
+    // ============ Private Helper Methods ============
 
     /**
      * 执行健康分析
@@ -85,20 +117,20 @@ class HealthRecordRepository @Inject constructor(
      */
     private suspend fun performHealthAnalysis(record: HealthRecord): String? {
         // 获取 Baby 数据
-        val baby = babyRepository.getBabyById(record.babyId)
+        val baby = babyRepository.getById(record.babyId)
         if (baby == null) {
             // 如果找不到 Baby 数据，返回 null
             return null
         }
 
         val strategyType = strategyManager.getCurrentAiStrategy()
-        
+
         val executor = createStrategyExecutor(
             strategyType = strategyType,
             localStrategy = { localHealthAnalysisStrategy.analyze(record, baby) },
             remoteStrategy = { remoteHealthAnalysisStrategy.analyze(record, baby) }
         )
-        
+
         return when (val result = executor.execute()) {
             is StrategyResult.Success -> result.data
             is StrategyResult.Fallback -> {
@@ -111,48 +143,4 @@ class HealthRecordRepository @Inject constructor(
             }
         }
     }
-
-    suspend fun updateHealthRecord(record: HealthRecord) =
-        healthRecordDao.updateHealthRecord(
-            com.example.babyfood.data.local.database.entity.HealthRecordEntity(
-                id = record.id,
-                babyId = record.babyId,
-                recordDate = record.recordDate,
-                weight = record.weight,
-                height = record.height,
-                headCircumference = record.headCircumference,
-                ironLevel = record.ironLevel,
-                calciumLevel = record.calciumLevel,
-                hemoglobin = record.hemoglobin,
-                aiAnalysis = record.aiAnalysis,
-                isConfirmed = record.isConfirmed,
-                expiryDate = record.expiryDate,
-                notes = record.notes
-            )
-        )
-
-    suspend fun deleteHealthRecord(record: HealthRecord) =
-        healthRecordDao.deleteHealthRecord(
-            com.example.babyfood.data.local.database.entity.HealthRecordEntity(
-                id = record.id,
-                babyId = record.babyId,
-                recordDate = record.recordDate,
-                weight = record.weight,
-                height = record.height,
-                headCircumference = record.headCircumference,
-                ironLevel = record.ironLevel,
-                calciumLevel = record.calciumLevel,
-                hemoglobin = record.hemoglobin,
-                aiAnalysis = record.aiAnalysis,
-                isConfirmed = record.isConfirmed,
-                expiryDate = record.expiryDate,
-                notes = record.notes
-            )
-        )
-
-    suspend fun deleteHealthRecordById(recordId: Long) =
-        healthRecordDao.deleteHealthRecordById(recordId)
-
-    suspend fun deleteHealthRecordsByBaby(babyId: Long) =
-        healthRecordDao.deleteHealthRecordsByBaby(babyId)
 }

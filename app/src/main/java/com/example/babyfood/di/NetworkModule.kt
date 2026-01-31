@@ -2,6 +2,7 @@ package com.example.babyfood.di
 
 import android.content.Context
 import com.example.babyfood.BuildConfig
+import com.example.babyfood.data.remote.api.AuthApiService
 import com.example.babyfood.data.remote.api.BabyApiService
 import com.example.babyfood.data.remote.api.PlanApiService
 import com.example.babyfood.data.remote.api.RecipeApiService
@@ -33,9 +34,9 @@ object NetworkModule {
 
     /**
      * API 基础 URL
-     * TODO: 替换为实际的 API 地址
+     * 从 BuildConfig 读取配置文件中的后端服务器 IP 和端口
      */
-    private const val BASE_URL = "https://api.babyfood.com/v1/"
+    private const val BASE_URL = "http://" + BuildConfig.BACKEND_SERVER_IP + ":" + BuildConfig.BACKEND_SERVER_PORT + "/"
 
     /**
      * JSON 序列化配置
@@ -92,6 +93,7 @@ object NetworkModule {
 
     /**
      * OkHttp 客户端
+     * 连接超时 10 秒，读取超时 30 秒（符合行业最佳实践）
      */
     @Provides
     @Singleton
@@ -102,7 +104,7 @@ object NetworkModule {
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
             .addInterceptor(authInterceptor)
-            .connectTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
@@ -181,6 +183,15 @@ object NetworkModule {
     @Singleton
     fun provideSyncApiService(retrofit: Retrofit): SyncApiService {
         return retrofit.create(SyncApiService::class.java)
+    }
+
+    /**
+     * Auth API 服务
+     */
+    @Provides
+    @Singleton
+    fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
+        return retrofit.create(AuthApiService::class.java)
     }
 }
 

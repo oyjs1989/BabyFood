@@ -4,88 +4,18 @@ import com.example.babyfood.data.local.database.dao.RecipeDao
 import com.example.babyfood.data.local.database.entity.RecipeEntity
 import com.example.babyfood.domain.model.Recipe
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class RecipeRepository @Inject constructor(
     private val recipeDao: RecipeDao
-) {
-    fun getAllRecipes(): Flow<List<Recipe>> =
-        recipeDao.getAllRecipes().map { entities -> entities.map { entity -> entity.toDomainModel() } }
+) : SyncableRepository<Recipe, RecipeEntity, Long>() {
 
-    suspend fun getRecipeById(recipeId: Long): Recipe? =
-        recipeDao.getRecipeById(recipeId)?.toDomainModel()
+    // Note: RecipeDao implements SyncableDao methods implicitly
+    // but doesn't extend the interface due to Room limitations
 
-    fun getRecipesByAge(ageMonths: Int): Flow<List<Recipe>> =
-        recipeDao.getRecipesByAge(ageMonths).map { entities -> entities.map { entity -> entity.toDomainModel() } }
-
-    fun getRecipesByCategory(category: String): Flow<List<Recipe>> =
-        recipeDao.getRecipesByCategory(category).map { entities -> entities.map { entity -> entity.toDomainModel() } }
-
-    fun getBuiltInRecipes(): Flow<List<Recipe>> =
-        recipeDao.getBuiltInRecipes().map { entities -> entities.map { entity -> entity.toDomainModel() } }
-
-    fun getUserRecipes(): Flow<List<Recipe>> =
-        recipeDao.getUserRecipes().map { entities -> entities.map { entity -> entity.toDomainModel() } }
-
-    suspend fun insertRecipe(recipe: Recipe): Long {
-        val entity = recipe.toEntity().copy(
-            syncStatus = "PENDING_UPLOAD",
-            lastSyncTime = null,
-            version = 1
-        )
-        return recipeDao.insertRecipe(entity)
-    }
-
-    suspend fun insertRecipes(recipes: List<Recipe>) {
-        val entities = recipes.map { recipe ->
-            recipe.toEntity().copy(
-                syncStatus = "PENDING_UPLOAD",
-                lastSyncTime = null,
-                version = 1
-            )
-        }
-        recipeDao.insertRecipes(entities)
-    }
-
-    suspend fun updateRecipe(recipe: Recipe) {
-        val existing = recipeDao.getRecipeById(recipe.id)
-        if (existing != null) {
-            val entity = recipe.toEntity().copy(
-                cloudId = existing.cloudId,
-                syncStatus = "PENDING_UPLOAD",
-                lastSyncTime = existing.lastSyncTime,
-                version = existing.version + 1
-            )
-            recipeDao.updateRecipe(entity)
-        }
-    }
-
-    suspend fun deleteRecipe(recipe: Recipe) {
-        val existing = recipeDao.getRecipeById(recipe.id)
-        if (existing != null) {
-            // 软删除
-            val entity = recipe.toEntity().copy(
-                cloudId = existing.cloudId,
-                syncStatus = "PENDING_UPLOAD",
-                lastSyncTime = existing.lastSyncTime,
-                version = existing.version + 1,
-                isDeleted = true
-            )
-            recipeDao.updateRecipe(entity)
-        }
-    }
-
-    suspend fun deleteRecipeById(recipeId: Long) {
-        val recipe = getRecipeById(recipeId)
-        if (recipe != null && !recipe.isBuiltIn) {
-            deleteRecipe(recipe)
-        }
-    }
-
-    private fun RecipeEntity.toDomainModel(): Recipe = Recipe(
+    override fun RecipeEntity.toDomainModel(): Recipe = Recipe(
         id = id,
         name = name,
         minAgeMonths = minAgeMonths,
@@ -98,7 +28,7 @@ class RecipeRepository @Inject constructor(
         imageUrl = imageUrl
     )
 
-    private fun Recipe.toEntity(): RecipeEntity = RecipeEntity(
+    override fun Recipe.toEntity(): RecipeEntity = RecipeEntity(
         id = id,
         name = name,
         minAgeMonths = minAgeMonths,
@@ -108,11 +38,51 @@ class RecipeRepository @Inject constructor(
         nutrition = nutrition,
         category = category,
         isBuiltIn = isBuiltIn,
-        imageUrl = imageUrl,
-        cloudId = null,
-        syncStatus = "LOCAL_ONLY",
-        lastSyncTime = null,
-        version = 1,
-        isDeleted = false
+        imageUrl = imageUrl
     )
+
+    override fun getItemId(item: Recipe): Long = item.id
+
+    // ============ CRUD Operations ============
+
+    suspend fun getById(id: Long): Recipe? =
+        recipeDao.getById(id)?.toDomainModel()
+
+    suspend fun insert(item: Recipe): Long =
+        recipeDao.insert(item.toEntity().prepareForInsert())
+
+    suspend fun update(item: Recipe) {
+        val existing = recipeDao.getById(item.id)
+        if (existing != null) {
+            recipeDao.update(item.toEntity().prepareForUpdate(existing))
+        }
+    }
+
+    suspend fun delete(item: Recipe) {
+        recipeDao.delete(item.toEntity())
+    }
+
+    // ============ Domain-Specific Query Methods ============
+
+    fun getAllRecipes(): Flow<List<Recipe>> =
+        recipeDao.getAllRecipes().toDomainModels()
+
+    fun getRecipesByAge(ageMonths: Int): Flow<List<Recipe>> =
+        recipeDao.getRecipesByAge(ageMonths).toDomainModels()
+
+    fun getRecipesByCategory(category: String): Flow<List<Recipe>> =
+        recipeDao.getRecipesByCategory(category).toDomainModels()
+
+    fun getBuiltInRecipes(): Flow<List<Recipe>> =
+        recipeDao.getBuiltInRecipes().toDomainModels()
+
+    fun getUserRecipes(): Flow<List<Recipe>> =
+        recipeDao.getUserRecipes().toDomainModels()
+
+    suspend fun deleteRecipeById(recipeId: Long) {
+        val recipe = getById(recipeId)
+        if (recipe != null && !recipe.isBuiltIn) {
+            delete(recipe)
+        }
+    }
 }

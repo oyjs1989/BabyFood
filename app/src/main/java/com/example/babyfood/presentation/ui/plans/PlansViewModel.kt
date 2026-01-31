@@ -158,7 +158,7 @@ class PlansViewModel @Inject constructor(
                     status = PlanStatus.PLANNED,
                     notes = notes
                 )
-                planRepository.insertPlan(plan)
+                planRepository.insert(plan)
                 android.util.Log.d("PlansViewModel", "✓ 计划创建成功: ID=${plan.id}")
                 _uiState.value = _uiState.value.copy(
                     isSaved = true,
@@ -177,7 +177,7 @@ class PlansViewModel @Inject constructor(
         android.util.Log.d("PlansViewModel", "更新计划: ID=${plan.id}, date=${plan.plannedDate}, period=${plan.mealPeriod}")
         viewModelScope.launch {
             try {
-                planRepository.updatePlan(plan)
+                planRepository.update(plan)
                 android.util.Log.d("PlansViewModel", "✓ 计划更新成功")
                 _uiState.value = _uiState.value.copy(
                     isSaved = true,
@@ -198,7 +198,7 @@ class PlansViewModel @Inject constructor(
             try {
                 val plan = _uiState.value.plans.find { it.id == planId }
                 if (plan != null) {
-                    planRepository.updatePlan(plan.copy(status = status))
+                    planRepository.update(plan.copy(status = status))
                     android.util.Log.d("PlansViewModel", "✓ 计划状态更新成功")
                 } else {
                     android.util.Log.w("PlansViewModel", "⚠️ 未找到计划: ID=$planId")
@@ -216,7 +216,7 @@ class PlansViewModel @Inject constructor(
         android.util.Log.d("PlansViewModel", "删除计划: ID=${plan.id}, date=${plan.plannedDate}, period=${plan.mealPeriod}")
         viewModelScope.launch {
             try {
-                planRepository.deletePlan(plan)
+                planRepository.delete(plan)
                 android.util.Log.d("PlansViewModel", "✓ 计划删除成功")
             } catch (e: Exception) {
                 android.util.Log.e("PlansViewModel", "❌ 计划删除失败: ${e.message}")
@@ -257,7 +257,7 @@ class PlansViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(isGenerating = true, error = null)
         
         return try {
-            val baby = babyRepository.getBabyById(babyId)
+            val baby = babyRepository.getById(babyId)
                 ?: throw Exception("宝宝不存在")
             
             android.util.Log.d("PlansViewModel", "宝宝信息: ${baby.name}, ${baby.ageInMonths}个月")

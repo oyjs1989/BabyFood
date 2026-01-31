@@ -4,6 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.babyfood.data.repository.HealthRecordRepository
 import com.example.babyfood.domain.model.HealthRecord
+import com.example.babyfood.presentation.ui.clearError
+import com.example.babyfood.presentation.ui.clearErrorAndSaved
+import com.example.babyfood.presentation.ui.setError
+import com.example.babyfood.presentation.ui.setSaved
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,14 +40,11 @@ class HealthRecordViewModel @Inject constructor(
                 if (record.id == 0L) {
                     healthRecordRepository.insertHealthRecord(record)
                 } else {
-                    healthRecordRepository.updateHealthRecord(record)
+                    healthRecordRepository.update(record)
                 }
-                _uiState.value = _uiState.value.copy(
-                    isSaved = true,
-                    error = null
-                )
+                _uiState.clearErrorAndSaved { error, isSaved -> copy(error = error, isSaved = isSaved) }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message)
+                _uiState.setError(e.message) { error -> copy(error = error) }
             }
         }
     }
@@ -51,19 +52,19 @@ class HealthRecordViewModel @Inject constructor(
     fun deleteHealthRecord(record: HealthRecord) {
         viewModelScope.launch {
             try {
-                healthRecordRepository.deleteHealthRecord(record)
+                healthRecordRepository.delete(record)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message)
+                _uiState.setError(e.message) { error -> copy(error = error) }
             }
         }
     }
 
     fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
+        _uiState.clearError { error -> copy(error = error) }
     }
 
     fun clearSavedFlag() {
-        _uiState.value = _uiState.value.copy(isSaved = false)
+        _uiState.setSaved(false) { isSaved -> copy(isSaved = isSaved) }
     }
 }
 

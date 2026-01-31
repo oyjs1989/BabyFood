@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.babyfood.domain.model.MealPeriod
 import com.example.babyfood.domain.model.PlanStatus
+import com.example.babyfood.presentation.ui.common.AppScaffold
+import com.example.babyfood.presentation.ui.common.AppBottomAction
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
@@ -43,6 +45,10 @@ fun PlanFormScreen(
     var notes by remember { mutableStateOf("") }
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+
+    // 未保存修改跟踪
+    var hasUnsavedChanges by remember { mutableStateOf(false) }
+    var showExitConfirmationDialog by remember { mutableStateOf(false) }
 
     // 餐段选项
     val mealPeriods = listOf(
@@ -77,6 +83,65 @@ fun PlanFormScreen(
         }
     }
 
+    // 监听保存成功状态
+    LaunchedEffect(uiState.isSaved) {
+        if (uiState.isSaved) {
+            viewModel.clearSavedFlag()
+            onSave()
+        }
+    }
+
+    // AI推荐函数
+    val generateRecommendation: () -> Unit = {
+        scope.launch {
+            val recommendation = viewModel.generateDailyRecommendation(babyId, plannedDate)
+            if (recommendation != null) {
+                onNavigateToRecommendationEditor(babyId)
+            }
+        }
+    }
+
+    // 保存函数
+    val savePlan: () -> Unit = {
+        if (selectedRecipeId != null) {
+            scope.launch {
+                try {
+                    if (planId != null && planId > 0) {
+                        // 编辑模式
+                        val existingPlan = uiState.plans.find { it.id == planId }
+                        if (existingPlan != null) {
+                            val updatedPlan = existingPlan.copy(
+                                recipeId = selectedRecipeId!!,
+                                plannedDate = plannedDate,
+                                mealPeriod = selectedMealPeriod.name,
+                                status = selectedStatus,
+                                notes = notes.ifBlank { null }
+                            )
+                            viewModel.updatePlan(updatedPlan)
+                        }
+                    } else {
+                        // 创建模式
+                        viewModel.createPlan(
+                            babyId = babyId,
+                            recipeId = selectedRecipeId!!,
+                            plannedDate = plannedDate,
+                            mealPeriod = selectedMealPeriod,
+                            notes = notes.ifBlank { null }
+                        )
+                    }
+                    hasUnsavedChanges = false
+                    onSave()
+                } catch (e: Exception) {
+                    errorMessage = e.message ?: "保存失败"
+                    showError = true
+                }
+            }
+        } else {
+            errorMessage = "请选择食谱"
+            showError = true
+        }
+    }
+
     // 错误对话框
     if (showError) {
         AlertDialog(
@@ -91,99 +156,65 @@ fun PlanFormScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (planId != null && planId > 0) "编辑计划" else "添加计划") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
-                actions = {
-                    // AI推荐按钮（仅在创建模式显示）
-                    if (planId == null || planId == 0L) {
-                        IconButton(
-                            onClick = {
-                                scope.launch {
-                                    val recommendation = viewModel.generateDailyRecommendation(babyId, plannedDate)
-                                    if (recommendation != null) {
-                                        onNavigateToRecommendationEditor(babyId)
-                                    }
-                                }
-                            },
-                            enabled = !uiState.isGenerating
-                        ) {
-                            if (uiState.isGenerating) {
-                                androidx.compose.material3.CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Icon(
-                                    androidx.compose.material.icons.Icons.Default.AutoAwesome,
-                                    contentDescription = "AI推荐"
-                                )
-                            }
-                        }
-                    }
-                    
-                    // 保存按钮
-                    IconButton(
-                        onClick = {
-                            if (selectedRecipeId == null) {
-                                errorMessage = "请选择食谱"
-                                showError = true
-                                return@IconButton
-                            }
-
-                            scope.launch {
-                                try {
-                                    if (planId != null && planId > 0) {
-                                        // 编辑模式
-                                        val existingPlan = uiState.plans.find { it.id == planId }
-                                        if (existingPlan != null) {
-                                            val updatedPlan = existingPlan.copy(
-                                                recipeId = selectedRecipeId!!,
-                                                plannedDate = plannedDate,
-                                                mealPeriod = selectedMealPeriod.name,
-                                                status = selectedStatus,
-                                                notes = notes.ifBlank { null }
-                                            )
-                                            viewModel.updatePlan(updatedPlan)
-                                        }
-                                    } else {
-                                        // 创建模式
-                                        viewModel.createPlan(
-                                            babyId = babyId,
-                                            recipeId = selectedRecipeId!!,
-                                            plannedDate = plannedDate,
-                                            mealPeriod = selectedMealPeriod,
-                                            notes = notes.ifBlank { null }
-                                        )
-                                    }
-                                    onSave()
-                                } catch (e: Exception) {
-                                    errorMessage = e.message ?: "保存失败"
-                                    showError = true
-                                }
-                            }
-                        }
-                    ) {
-                        Icon(Icons.Default.Check, contentDescription = "保存")
-                    }
+    // 离开确认对话框
+    if (showExitConfirmationDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitConfirmationDialog = false },
+            title = { Text("未保存的修改") },
+            text = { Text("您有未保存的修改，是否要保存？") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        savePlan()
+                        showExitConfirmationDialog = false
+                    },
+                    enabled = selectedRecipeId != null
+                ) {
+                    Text("保存")
                 }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showExitConfirmationDialog = false
+                        onBack()
+                    }
+                ) {
+                    Text("放弃修改")
+                }
+            }
+        )
+    }
+
+    // 构建底部操作按钮列表
+    val bottomActions = mutableListOf<AppBottomAction>()
+    bottomActions.add(
+        AppBottomAction(
+            icon = Icons.Default.Check,
+            label = "保存",
+            contentDescription = "保存计划",
+            onClick = savePlan
+        )
+    )
+    // AI推荐按钮（仅在创建模式显示）
+    if (planId == null || planId == 0L) {
+        bottomActions.add(
+            AppBottomAction(
+                icon = Icons.Default.AutoAwesome,
+                label = "AI推荐",
+                contentDescription = "AI生成推荐",
+                enabled = !uiState.isGenerating,
+                onClick = generateRecommendation
             )
-        }
-    ) { paddingValues ->
+        )
+    }
+
+    AppScaffold(
+        bottomActions = bottomActions
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(16.dp)
         ) {
             // 日期选择
@@ -248,7 +279,9 @@ private fun DatePicker(
     // 简化版日期显示（实际项目中可以使用日期选择器对话框）
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
@@ -264,7 +297,8 @@ private fun DatePicker(
             )
             Text(
                 text = "${date.year}年${date.monthNumber}月${date.dayOfMonth}日",
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
