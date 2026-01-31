@@ -28,8 +28,6 @@ import androidx.compose.material.icons.outlined.BreakfastDining
 import androidx.compose.material.icons.outlined.LunchDining
 import androidx.compose.material.icons.outlined.DinnerDining
 import androidx.compose.material.icons.outlined.Cookie
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.babyfood.domain.model.MealPeriod
 import com.example.babyfood.presentation.theme.SecondaryContainer
+import com.example.babyfood.presentation.theme.components.BabyFoodSmallCard
 import com.example.babyfood.presentation.ui.home.PlanWithRecipe
 
 @Composable
@@ -91,26 +90,36 @@ private fun MealPeriodCard(
     val feedbackStatus = planWithRecipe?.plan?.feedbackStatus
     val hasFeedback = feedbackStatus != null
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (hasRecipe) {
-                MaterialTheme.colorScheme.surface
-            } else {
-                SecondaryContainer
-            }
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = if (hasRecipe) {
-            null
-        } else {
-            androidx.compose.foundation.BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant
-            )
-        }
+    // 自定义卡片背景和边框
+    val cardBackgroundColor = if (hasRecipe) {
+        MaterialTheme.colorScheme.surface
+    } else {
+        SecondaryContainer
+    }
+    val cardBorder = if (!hasRecipe) {
+        androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant
+        )
+    } else {
+        null
+    }
+
+    BabyFoodSmallCard(
+        modifier = Modifier.fillMaxWidth()
     ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(cardBackgroundColor)
+                .let { modifier ->
+                    if (cardBorder != null) {
+                        modifier.border(cardBorder)
+                    } else {
+                        modifier
+                    }
+                }
+        ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -380,6 +389,7 @@ private fun MealPeriodCard(
                 }
             }
         }
+    }
     }
 }
 

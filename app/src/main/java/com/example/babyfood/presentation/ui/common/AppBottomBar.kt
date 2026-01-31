@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.example.babyfood.presentation.theme.ElevationLevel2
 
 /**
  * 应用底部操作栏组件
@@ -41,7 +42,7 @@ fun AppBottomBar(
             .fillMaxWidth()
             .semantics { contentDescription = "底部操作栏" },
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 3.dp
+        tonalElevation = ElevationLevel2
     ) {
         Row(
             modifier = Modifier

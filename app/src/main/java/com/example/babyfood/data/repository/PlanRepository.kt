@@ -22,9 +22,35 @@ class PlanRepository @Inject constructor(
     // Note: PlanDao implements SyncableDao methods implicitly
     // but doesn't extend the interface due to Room limitations
 
-    override fun PlanEntity.toDomainModel(): Plan = this.toDomainModel()
+    override fun PlanEntity.toDomainModel(): Plan = Plan(
+        id = id,
+        babyId = babyId,
+        recipeId = recipeId,
+        plannedDate = plannedDate,
+        mealPeriod = mealPeriod.name,
+        status = status,
+        notes = notes,
+        mealTime = mealTime,
+        feedbackStatus = feedbackStatus,
+        feedbackTime = feedbackTime
+    )
 
-    override fun Plan.toEntity(): PlanEntity = this.toEntity()
+    override fun Plan.toEntity(): PlanEntity = PlanEntity(
+        id = id,
+        babyId = babyId,
+        recipeId = recipeId,
+        plannedDate = plannedDate,
+        mealPeriod = try {
+            MealPeriod.valueOf(mealPeriod)
+        } catch (e: Exception) {
+            MealPeriod.BREAKFAST
+        },
+        status = status,
+        notes = notes,
+        mealTime = mealTime,
+        feedbackStatus = feedbackStatus,
+        feedbackTime = feedbackTime
+    )
 
     override fun getItemId(item: Plan): Long = item.id
 

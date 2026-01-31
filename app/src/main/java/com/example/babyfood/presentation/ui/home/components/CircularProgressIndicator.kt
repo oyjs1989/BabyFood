@@ -7,6 +7,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
@@ -86,7 +87,8 @@ fun CircularProgressWithValue(
     size: Dp = 80.dp,
     strokeWidth: Dp = 8.dp,
     progressColor: Color = MaterialTheme.colorScheme.primary,
-    animationDuration: Int = AnimationDurationNormal
+    animationDuration: Int = AnimationDurationNormal,
+    backgroundColor: Color = Color(0xFFFFFFFF).copy(alpha = 0.3f)  // 白色半透明背景，增强对比度
 ) {
     val animatedProgress = animateProgress(progress, animationDuration)
 
@@ -100,14 +102,15 @@ fun CircularProgressWithValue(
             drawCircularProgress(
                 size = size,
                 strokeWidth = strokeWidth,
-                backgroundColor = progressColor.copy(alpha = 0.15f),
+                backgroundColor = backgroundColor,
                 progressColor = progressColor,
                 animatedProgress = animatedProgress
             )
         }
 
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
         ) {
             Text(
                 text = value,
@@ -123,7 +126,7 @@ fun CircularProgressWithValue(
                 text = unit,
                 style = MaterialTheme.typography.labelSmall,
                 fontSize = 10.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = Color(0xFF333333)  // 使用深灰色，提高可读性
             )
 
             Spacer(modifier = Modifier.height(2.dp))
@@ -133,7 +136,7 @@ fun CircularProgressWithValue(
                 style = MaterialTheme.typography.labelMedium,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = Color(0xFF666666)  // 使用中灰色，提高可读性
             )
         }
     }

@@ -2,11 +2,13 @@ package com.example.babyfood.presentation.theme
 
 import android.app.Activity
 import android.os.Build
-import androidx.compose.animation.core.Ease
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseInBack
 import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.EaseOut
-import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.EaseOutBack
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -17,11 +19,12 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -29,153 +32,139 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// ===== 亮色主题配色方案 =====
+// ===== 亮色主题配色方案 - BabyFood 设计系统 =====
 private val LightColorScheme = lightColorScheme(
     primary = Primary,
-    onPrimary = OnPrimary,
-    primaryContainer = PrimaryContainer,
-    onPrimaryContainer = OnPrimaryContainer,
-    secondary = Secondary,
-    onSecondary = OnSecondary,
-    secondaryContainer = SecondaryContainer,
-    onSecondaryContainer = OnSecondaryContainer,
-    tertiary = Tertiary,
-    onTertiary = OnTertiary,
-    tertiaryContainer = TertiaryContainer,
-    onTertiaryContainer = OnTertiaryContainer,
-    background = Background,
-    onBackground = OnBackground,
-    surface = Surface,
-    onSurface = OnSurface,
-    surfaceVariant = SurfaceVariant,
-    onSurfaceVariant = OnSurfaceVariant,
+    onPrimary = Color.White,
+    primaryContainer = PrimaryLight,
+    onPrimaryContainer = Primary,
+    secondary = Green,
+    onSecondary = Color.White,
+    tertiary = Blue,
+    onTertiary = Color.White,
+    error = Error,
+    onError = Color.White,
+    background = PageBackground,
+    onBackground = TextPrimary,
+    surface = CardBackground,
+    onSurface = TextPrimary,
+    surfaceVariant = PageBackground,
+    onSurfaceVariant = TextSecondary,
     outline = Outline,
-    outlineVariant = OutlineVariant,
-    inverseSurface = PrimaryDark,
+    outlineVariant = Outline,
+    inverseSurface = Primary,
     inverseOnSurface = Color.White,
     inversePrimary = PrimaryLight,
-    error = Error,
-    onError = Color.White,
-    errorContainer = ErrorContainer,
-    onErrorContainer = OnErrorContainer
+    scrim = Scrim
 )
 
-// ===== 暗色主题配色方案 =====
+// ===== 暗色主题配色方案 - BabyFood 设计系统 =====
 private val DarkColorScheme = darkColorScheme(
     primary = DarkPrimary,
-    onPrimary = DarkOnPrimary,
-    primaryContainer = DarkPrimaryContainer,
-    onPrimaryContainer = DarkOnPrimaryContainer,
-    secondary = DarkSecondary,
-    onSecondary = DarkOnSecondary,
-    secondaryContainer = DarkSecondaryContainer,
-    onSecondaryContainer = DarkOnSecondaryContainer,
-    tertiary = DarkTertiary,
-    onTertiary = DarkOnTertiary,
-    tertiaryContainer = DarkTertiaryContainer,
-    onTertiaryContainer = DarkOnTertiaryContainer,
-    background = DarkBackground,
-    onBackground = DarkOnBackground,
-    surface = DarkSurface,
-    onSurface = DarkOnSurface,
-    surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = DarkOnSurfaceVariant,
-    outline = Outline,
-    outlineVariant = OutlineVariant,
-    inverseSurface = DarkOnBackground,
-    inverseOnSurface = DarkBackground,
-    inversePrimary = DarkPrimary,
-    error = Error,
+    onPrimary = Color.White,
+    primaryContainer = Primary,
+    onPrimaryContainer = DarkPrimary,
+    secondary = DarkSuccess,
+    onSecondary = Color.White,
+    tertiary = DarkError,
+    onTertiary = Color.White,
+    error = DarkError,
     onError = Color.White,
-    errorContainer = DarkBackground,
-    onErrorContainer = DarkOnBackground
+    background = DarkPageBackground,
+    onBackground = DarkTextPrimary,
+    surface = DarkCardBackground,
+    onSurface = DarkTextPrimary,
+    surfaceVariant = DarkCardBackground,
+    onSurfaceVariant = DarkTextSecondary,
+    outline = DarkOutline,
+    outlineVariant = DarkOutline,
+    inverseSurface = DarkTextPrimary,
+    inverseOnSurface = DarkPageBackground,
+    inversePrimary = Primary,
+    scrim = DarkScrim
 )
 
-// ===== 动画配置 - Apple 风格 =====
+// ===== 动画配置 - BabyFood 设计系统 =====
+// 基于动效量化标准
 
-// 标准动画持续时间（毫秒）- Apple 风格更流畅
-const val AnimationDurationFast = 200      // 快速动画（按钮点击等）
-const val AnimationDurationNormal = 300    // 标准动画（卡片展开等）
-const val AnimationDurationSlow = 500      // 慢速动画（页面切换等）
-const val AnimationDurationVerySlow = 600  // 非常慢速动画（复杂过渡）
+// 动画持续时间（毫秒）
+const val AnimationDurationPageFadeIn = 300        // 页面切换淡入
+const val AnimationDurationPageSlide = 300         // 页面切换滑动
+const val AnimationDurationButtonClick = 150       // 按钮点击反馈
+const val AnimationDurationCardExpand = 350        // 卡片展开/收起
+const val AnimationDurationLoading = 1000          // 加载指示器旋转周期
+const val AnimationDurationRefresh = 200           // 下拉刷新回弹
 
-// 缓动函数 - Apple 风格
-// 使用更自然的缓动曲线，提升用户体验
-val AnimationEasing = androidx.compose.animation.core.CubicBezierEasing(0.25f, 0.1f, 0.25f, 1.0f)  // ease-in-out
-val AnimationEasingIn = androidx.compose.animation.core.CubicBezierEasing(0.42f, 0.0f, 1.0f, 1.0f)  // ease-in
-val AnimationEasingOut = androidx.compose.animation.core.CubicBezierEasing(0.0f, 0.0f, 0.58f, 1.0f)  // ease-out
-val AnimationEasingSpring = androidx.compose.animation.core.FastOutSlowInEasing  // 弹簧缓动（用于弹性效果）
-
-// 预定义动画规格 - Soft UI Evolution 风格
-@Composable
-fun standardAnimationSpec() = tween<Float>(
-    durationMillis = AnimationDurationNormal,
-    easing = AnimationEasing
+// 缓动函数 - BabyFood 设计系统
+val EaseInOutCubic = CubicBezierEasing(0.4f, 0.0f, 0.2f, 1.0f)  // ease-in-out
+val EaseOutBack = EaseOutBack                                             // ease-out-back
+val LinearEasing = LinearEasing                                           // linear
+val EaseOutEasing = EaseOut                                               // ease-out
+val SpringEasing = spring<Float>(                                         // 弹簧动画
+    dampingRatio = 0.8f,
+    stiffness = 300f
 )
 
-@Composable
-fun fastAnimationSpec() = tween<Float>(
-    durationMillis = AnimationDurationFast,
-    easing = AnimationEasingOut
+// ===== 动画规格 =====
+
+// 页面切换动画：淡入 300ms + 横向滑动 300ms，ease-in-out
+val PageTransitionAnimationSpec: AnimationSpec<Float> = tween(
+    durationMillis = AnimationDurationPageFadeIn,
+    easing = EaseInOutCubic
 )
 
-@Composable
-fun slowAnimationSpec() = tween<Float>(
-    durationMillis = AnimationDurationSlow,
-    easing = AnimationEasing
+// 按钮点击反馈：缩放比例 0.95→1.0，150ms，弹簧动画
+val ButtonClickAnimationSpec: AnimationSpec<Float> = spring(
+    dampingRatio = 0.8f,
+    stiffness = 300f
 )
 
-@Composable
-fun springAnimationSpec() = spring<Float>(
-    dampingRatio = 0.8f,  // 阻尼比（0.0-1.0，越小越弹）
-    stiffness = 300f      // 刚度（越小越软）
+// 卡片展开/收起：高度变化 0→目标高度，350ms，ease-out-back
+val CardExpandAnimationSpec: AnimationSpec<Float> = tween(
+    durationMillis = AnimationDurationCardExpand,
+    easing = EaseOutBack
 )
 
-// ===== 新增：动画扩展函数 =====
+// 加载指示器：旋转周期 1000ms/圈，linear，infinite 无限循环
+val LoadingAnimationSpec: AnimationSpec<Float> = tween(
+    durationMillis = AnimationDurationLoading,
+    easing = LinearEasing
+)
+
+// 下拉刷新：回弹动画 200ms，ease-out
+val RefreshAnimationSpec: AnimationSpec<Float> = tween(
+    durationMillis = AnimationDurationRefresh,
+    easing = EaseOutEasing
+)
+
+// ===== 动画扩展函数 =====
 
 /**
- * 创建平滑的缩放动画
+ * 创建平滑的缩放动画（用于按钮点击反馈）
  * @param targetValue 目标值
- * @param animationSpec 动画规格
  */
 @Composable
 fun animateScale(
-    targetValue: Float,
-    animationSpec: androidx.compose.animation.core.AnimationSpec<Float> = springAnimationSpec()
+    targetValue: Float
 ): Float {
     return animateFloatAsState(
         targetValue = targetValue,
-        animationSpec = animationSpec,
+        animationSpec = ButtonClickAnimationSpec,
         label = "scale_animation"
     ).value
 }
 
 /**
- * 创建平滑的透明度动画
- * @param targetValue 目标值
- * @param animationSpec 动画规格
- */
-@Composable
-fun animateAlpha(
-    targetValue: Float,
-    animationSpec: androidx.compose.animation.core.AnimationSpec<Float> = standardAnimationSpec()
-): Float {
-    return animateFloatAsState(
-        targetValue = targetValue,
-        animationSpec = animationSpec,
-        label = "alpha_animation"
-    ).value
-}
-
-/**
  * 创建脉冲动画（用于强调元素）
- * @param targetValue 目标值
+ * @param targetValue 目标缩放值
  */
 @Composable
 fun animatePulse(
@@ -187,8 +176,8 @@ fun animatePulse(
         targetValue = targetValue,
         animationSpec = infiniteRepeatable(
             animation = tween(
-                durationMillis = AnimationDurationSlow,
-                easing = AnimationEasing
+                durationMillis = AnimationDurationCardExpand,
+                easing = EaseInOutCubic
             ),
             repeatMode = RepeatMode.Reverse
         ),
@@ -197,7 +186,7 @@ fun animatePulse(
 }
 
 /**
- * 创建淡入淡出动画
+ * 创建淡入淡出动画（用于页面切换）
  * @param isVisible 是否可见
  */
 @Composable
@@ -207,46 +196,35 @@ fun animateFadeInOut(
     val targetValue = if (isVisible) 1f else 0f
     return animateFloatAsState(
         targetValue = targetValue,
-        animationSpec = standardAnimationSpec(),
+        animationSpec = PageTransitionAnimationSpec,
         label = "fade_animation"
     ).value
 }
 
 /**
- * 创建滑动动画（用于页面切换）
- * @param targetValue 目标值
+ * 创建加载旋转动画
+ * @param rotation 旋转角度（0-360）
  */
 @Composable
-fun animateSlide(
-    targetValue: Float,
-    animationSpec: androidx.compose.animation.core.AnimationSpec<Float> = slowAnimationSpec()
+fun animateRotation(
+    rotation: Float
 ): Float {
-    return animateFloatAsState(
-        targetValue = targetValue,
-        animationSpec = animationSpec,
-        label = "slide_animation"
-    ).value
-}
-
-/**
- * 创建弹性缩放动画（用于强调效果）
- * @param targetValue 目标值
- */
-@Composable
-fun animateBouncyScale(
-    targetValue: Float
-): Float {
-    return animateFloatAsState(
-        targetValue = targetValue,
-        animationSpec = spring(
-            dampingRatio = 0.6f,  // 更弹性
-            stiffness = 400f     // 更硬朗
+    val infiniteTransition = rememberInfiniteTransition(label = "rotation_animation")
+    return infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = rotation,
+        animationSpec = infiniteRepeatable<Float>(
+            animation = tween(
+                durationMillis = ANIMATION_DURATION_LOADING_CYCLE,
+                easing = LinearEasing
+            ),
+            repeatMode = RepeatMode.Restart
         ),
-        label = "bouncy_scale_animation"
+        label = "rotation"
     ).value
 }
 
-// ===== 新增：动画状态管理 =====
+// ===== 动画状态管理 =====
 
 /**
  * 动画状态枚举
@@ -277,9 +255,9 @@ fun rememberAnimationState(
 @Composable
 fun getAlphaByState(state: AnimationState): Float {
     return when (state) {
-        AnimationState.ENTERING -> animateAlpha(1f)
+        AnimationState.ENTERING -> animateFadeInOut(true)
         AnimationState.VISIBLE -> 1f
-        AnimationState.EXITING -> animateAlpha(0f)
+        AnimationState.EXITING -> animateFadeInOut(false)
         AnimationState.HIDDEN -> 0f
     }
 }
@@ -293,26 +271,26 @@ fun getScaleByState(state: AnimationState): Float {
     return when (state) {
         AnimationState.ENTERING -> animateScale(1f)
         AnimationState.VISIBLE -> 1f
-        AnimationState.EXITING -> animateScale(0.9f)
-        AnimationState.HIDDEN -> 0.9f
+        AnimationState.EXITING -> animateScale(0.95f)
+        AnimationState.HIDDEN -> 0.95f
     }
 }
 
 @Composable
 fun BabyFoodTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    // 页面背景渐变：从橙色到白色的垂直渐变（三色渐变确保底部纯白）
+    val pageBackgroundBrush = Brush.verticalGradient(
+        colors = listOf(
+            PageGradientStart,
+            PageGradientMiddle,
+            PageGradientEnd
+        )
+    )
 
     val view = LocalView.current
     if (!view.isInEditMode) {
@@ -338,9 +316,21 @@ fun BabyFoodTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        // 应用背景渐变
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(pageBackgroundBrush)
+        ) {
+            MaterialTheme(
+                colorScheme = colorScheme,
+                typography = Typography,
+                content = content
+            )
+        }
+    }
 }

@@ -6,53 +6,53 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// ===== 基础排版系统 - Soft UI Evolution 风格 =====
-// 优化行高和字间距，提升可读性和视觉层次
+// ===== 排版系统 - BabyFood 设计系统 =====
+// 基于 WCAG 无障碍量化标准
 
 val Typography = Typography(
-    // ===== 显示文字（用于非常醒目的标题，如大横幅）=====
+    // ===== 显示文字（用于非常醒目的标题）=====
     displayLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
-        fontSize = 34.sp,
-        lineHeight = 41.sp,
-        letterSpacing = 0.sp
+        fontSize = 26.sp,
+        lineHeight = (26 * 1.3).sp,  // 标题行高 1.2-1.4 倍
+        letterSpacing = 0.sp          // 标题字间距 0-0.2sp
     ),
     displayMedium = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
-        fontSize = 28.sp,
-        lineHeight = 34.sp,
+        fontSize = 22.sp,
+        lineHeight = (22 * 1.3).sp,
         letterSpacing = 0.sp
     ),
     displaySmall = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
+        fontSize = 18.sp,
+        lineHeight = (18 * 1.3).sp,
         letterSpacing = 0.sp
     ),
 
-    // ===== 标题文字（用于页面主要部分和重要卡片）=====
+    // ===== 标题文字（用于页面主要部分）=====
     headlineLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
-        fontSize = 28.sp,
-        lineHeight = 34.sp,
+        fontSize = 22.sp,
+        lineHeight = (22 * 1.3).sp,
         letterSpacing = 0.sp
     ),
     headlineMedium = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
+        fontSize = 18.sp,
+        lineHeight = (18 * 1.3).sp,
         letterSpacing = 0.sp
     ),
     headlineSmall = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
-        fontSize = 20.sp,
-        lineHeight = 25.sp,
+        fontSize = 16.sp,
+        lineHeight = (16 * 1.4).sp,
         letterSpacing = 0.sp
     ),
 
@@ -60,85 +60,91 @@ val Typography = Typography(
     titleLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
-        fontSize = 20.sp,
-        lineHeight = 25.sp,
+        fontSize = 16.sp,
+        lineHeight = (16 * 1.4).sp,
         letterSpacing = 0.sp
     ),
     titleMedium = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
-        fontSize = 16.sp,
-        lineHeight = 21.sp,
+        fontSize = 14.sp,
+        lineHeight = (14 * 1.4).sp,
         letterSpacing = 0.sp
     ),
     titleSmall = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
+        fontSize = 12.sp,
+        lineHeight = (12 * 1.4).sp,
         letterSpacing = 0.sp
     ),
 
     // ===== 正文文字（用于主要内容）=====
+    // 正文最小字号 12sp，行高 1.4-1.6 倍
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
-        fontSize = 17.sp,
-        lineHeight = 22.sp,
-        letterSpacing = 0.sp
+        fontSize = 16.sp,
+        lineHeight = (16 * 1.5).sp,  // 正文行高 1.4-1.6 倍
+        letterSpacing = 0.1.sp         // 正文字间距 0.1sp
     ),
     bodyMedium = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
-        fontSize = 15.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.sp
+        fontSize = 14.sp,
+        lineHeight = (14 * 1.5).sp,
+        letterSpacing = 0.1.sp
     ),
     bodySmall = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
-        fontSize = 13.sp,
-        lineHeight = 18.sp,
-        letterSpacing = 0.sp
+        fontSize = 12.sp,              // 正文最小字号
+        lineHeight = (12 * 1.6).sp,
+        letterSpacing = 0.1.sp
     ),
 
     // ===== 标签文字（用于按钮、标签等）=====
+    // 按钮文字不小于 14sp
     labelLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,
-        fontSize = 15.sp,
-        lineHeight = 20.sp,
+        fontSize = 14.sp,              // 按钮文字不小于 14sp
+        lineHeight = (14 * 1.4).sp,
         letterSpacing = 0.sp
     ),
     labelMedium = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,
-        fontSize = 13.sp,
-        lineHeight = 18.sp,
+        fontSize = 12.sp,
+        lineHeight = (12 * 1.4).sp,
         letterSpacing = 0.sp
     ),
     labelSmall = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
-        lineHeight = 16.sp,
+        fontSize = 10.sp,
+        lineHeight = (10 * 1.4).sp,
         letterSpacing = 0.sp
     )
 )
 
-// ===== 自定义辅助样式 - Soft UI Evolution 风格 =====
+// ===== 自定义辅助样式 =====
 
 // 数字样式（用于数据展示）
 val NumberTextStyle = TextStyle(
     fontFamily = FontFamily.Default,
     fontWeight = FontWeight.SemiBold,
-    letterSpacing = (-0.5).sp
+    fontSize = 16.sp,
+    lineHeight = (16 * 1.5).sp,
+    letterSpacing = 0.sp
 )
 
 // 卡片标题样式
 val CardTitleStyle = TextStyle(
     fontFamily = FontFamily.Default,
     fontWeight = FontWeight.SemiBold,
+    fontSize = 16.sp,
+    lineHeight = (16 * 1.4).sp,
     letterSpacing = 0.sp
 )
 
@@ -146,6 +152,8 @@ val CardTitleStyle = TextStyle(
 val ListItemPrimaryStyle = TextStyle(
     fontFamily = FontFamily.Default,
     fontWeight = FontWeight.Medium,
+    fontSize = 14.sp,
+    lineHeight = (14 * 1.5).sp,
     letterSpacing = 0.sp
 )
 
@@ -153,53 +161,60 @@ val ListItemPrimaryStyle = TextStyle(
 val ListItemSecondaryStyle = TextStyle(
     fontFamily = FontFamily.Default,
     fontWeight = FontWeight.Normal,
-    letterSpacing = 0.25.sp
+    fontSize = 12.sp,
+    lineHeight = (12 * 1.6).sp,
+    letterSpacing = 0.1.sp
 )
 
 // 营养数据标签样式
 val NutritionLabelStyle = TextStyle(
     fontFamily = FontFamily.Default,
     fontWeight = FontWeight.Normal,
-    letterSpacing = 0.25.sp
+    fontSize = 12.sp,
+    lineHeight = (12 * 1.6).sp,
+    letterSpacing = 0.1.sp
 )
 
 // 营养数值样式
 val NutritionValueStyle = TextStyle(
     fontFamily = FontFamily.Default,
     fontWeight = FontWeight.SemiBold,
-    letterSpacing = (-0.5).sp
+    fontSize = 14.sp,
+    lineHeight = (14 * 1.4).sp,
+    letterSpacing = 0.sp
 )
 
 // 按钮文本样式
 val ButtonTextStyle = TextStyle(
     fontFamily = FontFamily.Default,
     fontWeight = FontWeight.Medium,
-    letterSpacing = 0.5.sp
+    fontSize = 14.sp,              // 按钮文字不小于 14sp
+    lineHeight = (14 * 1.4).sp,
+    letterSpacing = 0.2.sp
 )
 
-// ===== 新增：友好的圆角字体样式（用于宝宝相关内容）=====
+// ===== 友好的圆角字体样式（用于宝宝相关内容）=====
 val FriendlyHeadingStyle = TextStyle(
     fontFamily = FontFamily.Default,
     fontWeight = FontWeight.SemiBold,
-    letterSpacing = 0.5.sp  // 增加字间距，营造友好感
+    fontSize = 18.sp,
+    lineHeight = (18 * 1.3).sp,
+    letterSpacing = 0.2.sp          // 增加字间距，营造友好感
 )
 
 val FriendlyBodyStyle = TextStyle(
     fontFamily = FontFamily.Default,
     fontWeight = FontWeight.Normal,
-    letterSpacing = 0.3.sp  // 增加字间距，提升可读性
+    fontSize = 14.sp,
+    lineHeight = (14 * 1.6).sp,
+    letterSpacing = 0.3.sp          // 增加字间距，提升可读性（首选 0.3sp）
 )
 
-// ===== 新增：强调文本样式 =====
-val EmphasizedTextStyle = TextStyle(
-    fontFamily = FontFamily.Default,
-    fontWeight = FontWeight.Bold,
-    letterSpacing = 0.sp
-)
-
-// ===== 新增：辅助文本样式（用于次要信息）=====
+// ===== 辅助文本样式（用于次要信息）=====
 val HelperTextStyle = TextStyle(
     fontFamily = FontFamily.Default,
     fontWeight = FontWeight.Normal,
-    letterSpacing = 0.2.sp
+    fontSize = 12.sp,
+    lineHeight = (12 * 1.6).sp,
+    letterSpacing = 0.1.sp
 )

@@ -1,8 +1,13 @@
 package com.example.babyfood.presentation.ui.recipes
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.tween
+import com.example.babyfood.presentation.theme.ANIMATION_DURATION_CARD_EXPAND
+import com.example.babyfood.presentation.theme.EasingEaseOutBack
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,8 +22,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -98,7 +101,6 @@ fun RecipeDetailScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(androidx.compose.foundation.rememberScrollState())
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -162,7 +164,28 @@ fun RecipeDetailScreen(
                 item {
                     AnimatedVisibility(
                         visible = showAiTip,
-                        exit = shrinkVertically() + fadeOut()
+                        enter = expandVertically(
+                            animationSpec = tween(
+                                durationMillis = ANIMATION_DURATION_CARD_EXPAND,
+                                easing = EasingEaseOutBack
+                            )
+                        ) + fadeIn(
+                            animationSpec = tween(
+                                durationMillis = ANIMATION_DURATION_CARD_EXPAND,
+                                easing = EasingEaseOutBack
+                            )
+                        ),
+                        exit = shrinkVertically(
+                            animationSpec = tween(
+                                durationMillis = ANIMATION_DURATION_CARD_EXPAND,
+                                easing = EasingEaseOutBack
+                            )
+                        ) + fadeOut(
+                            animationSpec = tween(
+                                durationMillis = ANIMATION_DURATION_CARD_EXPAND,
+                                easing = EasingEaseOutBack
+                            )
+                        )
                     ) {
                         WarningCard(
                             index = "①",
@@ -179,7 +202,28 @@ fun RecipeDetailScreen(
                     if (allergens.isNotEmpty() && showAllergyTip) {
                         AnimatedVisibility(
                             visible = showAllergyTip,
-                            exit = shrinkVertically() + fadeOut()
+                            enter = expandVertically(
+                                animationSpec = tween(
+                                    durationMillis = ANIMATION_DURATION_CARD_EXPAND,
+                                    easing = EasingEaseOutBack
+                                )
+                            ) + fadeIn(
+                                animationSpec = tween(
+                                    durationMillis = ANIMATION_DURATION_CARD_EXPAND,
+                                    easing = EasingEaseOutBack
+                                )
+                            ),
+                            exit = shrinkVertically(
+                                animationSpec = tween(
+                                    durationMillis = ANIMATION_DURATION_CARD_EXPAND,
+                                    easing = EasingEaseOutBack
+                                )
+                            ) + fadeOut(
+                                animationSpec = tween(
+                                    durationMillis = ANIMATION_DURATION_CARD_EXPAND,
+                                    easing = EasingEaseOutBack
+                                )
+                            )
                         ) {
                             WarningCard(
                                 index = "②",

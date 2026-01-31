@@ -22,7 +22,6 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -35,6 +34,7 @@ import androidx.compose.material3.TextButton
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
+import com.example.babyfood.presentation.theme.components.BabyFoodPrimaryButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -349,7 +349,8 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // ========== 登录按钮 ==========
-            Button(
+            BabyFoodPrimaryButton(
+                text = "登录",
                 onClick = {
                     Log.d("LoginScreen", "========== 登录按钮被点击 ==========")
                     Log.d("LoginScreen", "当前状态: isLoading=${uiState.isLoading}, isFormValid=${uiState.isFormValid}")
@@ -358,33 +359,9 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
-                enabled = !uiState.isLoading && uiState.isFormValid,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Primary,
-                    contentColor = Color.White,
-                    disabledContainerColor = Outline,
-                    disabledContentColor = OnSurfaceVariant
-                )
-            ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .semantics {
-                                contentDescription = "登录中"
-                            },
-                        color = Color.White,
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text(
-                        text = "登录",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
+                enabled = uiState.isFormValid,
+                loading = uiState.isLoading
+            )
 
             // 表单验证状态提示（调试用）
             if (!uiState.isFormValid && !uiState.isLoading) {

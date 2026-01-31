@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -64,6 +63,7 @@ import com.example.babyfood.presentation.theme.Outline
 import com.example.babyfood.presentation.theme.Primary
 import com.example.babyfood.presentation.theme.SurfaceVariant
 import com.example.babyfood.presentation.ui.icons.AppIcons
+import com.example.babyfood.presentation.theme.components.BabyFoodPrimaryButton
 
 /**
  * 注册页面
@@ -490,34 +490,15 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // ========== 注册按钮 ==========
-            Button(
+            BabyFoodPrimaryButton(
+                text = "注册",
                 onClick = { viewModel.register() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
-                enabled = !uiState.isLoading && uiState.isFormValid,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Primary,
-                    contentColor = Color.White,
-                    disabledContainerColor = Outline,
-                    disabledContentColor = OnSurfaceVariant
-                )
-            ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = Color.White,
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text(
-                        text = "注册",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
+                enabled = uiState.isFormValid,
+                loading = uiState.isLoading
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 

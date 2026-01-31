@@ -1,0 +1,598 @@
+openapi: 3.0.3
+info:
+  title: BabyFood UI Design System Contract
+  description: |
+    Internal API contract for the BabyFood UI design system implementation.
+    This contract defines the design system configuration objects, component styles,
+    and accessibility requirements for the Android application.
+  version: 1.0.0
+  contact:
+    name: BabyFood Development Team
+
+# Note: This is not a REST API contract. It defines internal design system
+# specifications used by Jetpack Compose components.
+
+components:
+  schemas:
+    # Color Palette
+    BabyFoodColors:
+      type: object
+      description: Complete color palette for light and dark modes
+      properties:
+        # Light mode colors
+        pageBackground:
+          type: string
+          description: Page background color (light mode)
+          example: "#FDFBF8"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        cardBackground:
+          type: string
+          description: Card/module background color (light mode)
+          example: "#FFFFFF"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        primaryText:
+          type: string
+          description: Primary text color (light mode)
+          example: "#333333"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        secondaryText:
+          type: string
+          description: Secondary text color (light mode)
+          example: "#666666"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        auxiliaryText:
+          type: string
+          description: Auxiliary text color (light mode)
+          example: "#999999"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        divider:
+          type: string
+          description: Divider/border line color (light mode)
+          example: "#E5E5E5"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        # Brand colors
+        primaryBrand:
+          type: string
+          description: Primary brand color (warm orange)
+          example: "#FF9F69"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        extendedBrand:
+          type: string
+          description: Extended brand color (light orange)
+          example: "#FFD4BD"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        softGreen:
+          type: string
+          description: Soft green color (health/natural theme)
+          example: "#88C999"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        freshBlue:
+          type: string
+          description: Fresh blue color (technology/intelligence theme)
+          example: "#73A6FF"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        creamYellow:
+          type: string
+          description: Cream yellow color (warm accent)
+          example: "#FFE8A3"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        # Functional colors
+        success:
+          type: string
+          description: Success color (completed status)
+          example: "#52C41A"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        warning:
+          type: string
+          description: Warning color (in-progress status)
+          example: "#FAAD14"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        error:
+          type: string
+          description: Error color (danger alerts)
+          example: "#F5222D"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        # Dark mode colors
+        pageBackgroundDark:
+          type: string
+          description: Page background color (dark mode)
+          example: "#121212"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        cardBackgroundDark:
+          type: string
+          description: Card/module background color (dark mode)
+          example: "#1E1E1E"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        primaryTextDark:
+          type: string
+          description: Primary text color (dark mode)
+          example: "#F5F5F5"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        secondaryTextDark:
+          type: string
+          description: Secondary text color (dark mode)
+          example: "#C1C1C1"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        auxiliaryTextDark:
+          type: string
+          description: Auxiliary text color (dark mode)
+          example: "#8E8E8E"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        dividerDark:
+          type: string
+          description: Divider/border line color (dark mode)
+          example: "#3D3D3D"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        primaryBrandDark:
+          type: string
+          description: Primary brand color (dark mode)
+          example: "#E67A4A"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        successDark:
+          type: string
+          description: Success color (dark mode)
+          example: "#6BDB3A"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        errorDark:
+          type: string
+          description: Error color (dark mode)
+          example: "#FF6666"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+      required:
+        - pageBackground
+        - cardBackground
+        - primaryText
+        - secondaryText
+        - auxiliaryText
+        - divider
+        - primaryBrand
+        - extendedBrand
+        - softGreen
+        - freshBlue
+        - creamYellow
+        - success
+        - warning
+        - error
+        - pageBackgroundDark
+        - cardBackgroundDark
+        - primaryTextDark
+        - secondaryTextDark
+        - auxiliaryTextDark
+        - dividerDark
+        - primaryBrandDark
+        - successDark
+        - errorDark
+
+    # Typography
+    TextStyle:
+      type: object
+      description: Text style definition
+      properties:
+        fontSize:
+          type: number
+          description: Font size in scale-independent pixels (sp)
+          minimum: 11
+          maximum: 57
+          example: 14
+        fontWeight:
+          type: string
+          enum: [W400, W500, W600, W700]
+          description: Font weight
+          example: "W400"
+        lineHeight:
+          type: number
+          description: Line height in sp (1.2-1.6x fontSize)
+          example: 20
+        letterSpacing:
+          type: number
+          description: Character spacing in sp (0-0.5sp)
+          minimum: -0.25
+          maximum: 0.5
+          example: 0.25
+      required:
+        - fontSize
+        - fontWeight
+        - lineHeight
+        - letterSpacing
+
+    BabyFoodTypography:
+      type: object
+      description: Typography system with all text styles
+      properties:
+        displayLarge:
+          $ref: "#/components/schemas/TextStyle"
+        displayMedium:
+          $ref: "#/components/schemas/TextStyle"
+        displaySmall:
+          $ref: "#/components/schemas/TextStyle"
+        headlineLarge:
+          $ref: "#/components/schemas/TextStyle"
+        headlineMedium:
+          $ref: "#/components/schemas/TextStyle"
+        headlineSmall:
+          $ref: "#/components/schemas/TextStyle"
+        titleLarge:
+          $ref: "#/components/schemas/TextStyle"
+        titleMedium:
+          $ref: "#/components/schemas/TextStyle"
+        titleSmall:
+          $ref: "#/components/schemas/TextStyle"
+        bodyLarge:
+          $ref: "#/components/schemas/TextStyle"
+        bodyMedium:
+          $ref: "#/components/schemas/TextStyle"
+        bodySmall:
+          $ref: "#/components/schemas/TextStyle"
+        labelLarge:
+          $ref: "#/components/schemas/TextStyle"
+        labelMedium:
+          $ref: "#/components/schemas/TextStyle"
+        labelSmall:
+          $ref: "#/components/schemas/TextStyle"
+      required:
+        - displayLarge
+        - displayMedium
+        - displaySmall
+        - headlineLarge
+        - headlineMedium
+        - headlineSmall
+        - titleLarge
+        - titleMedium
+        - titleSmall
+        - bodyLarge
+        - bodyMedium
+        - bodySmall
+        - labelLarge
+        - labelMedium
+        - labelSmall
+
+    # Shapes
+    BabyFoodShapes:
+      type: object
+      description: Corner radius specifications for components
+      properties:
+        largeCardRadius:
+          type: number
+          description: Corner radius for large cards (today's menu, recipe details)
+          format: dp
+          example: 24
+        smallCardRadius:
+          type: number
+          description: Corner radius for small cards (recipe list items, inventory items)
+          format: dp
+          example: 20
+        smallButtonRadius:
+          type: number
+          description: Corner radius for small tag buttons and secondary function buttons
+          format: dp
+          example: 16
+        inputFieldRadius:
+          type: number
+          description: Corner radius for text input fields, search boxes, and form inputs
+          format: dp
+          example: 16
+        dialogRadius:
+          type: number
+          description: Corner radius for global dialogs, modal windows, and bottom floating layers
+          format: dp
+          example: 28
+        smallIconRadius:
+          type: number
+          description: Corner radius for small icon containers
+          format: dp
+          example: 12
+        mediumIconRadius:
+          type: number
+          description: Corner radius for medium and large icon containers
+          format: dp
+          example: 16
+      required:
+        - largeCardRadius
+        - smallCardRadius
+        - smallButtonRadius
+        - inputFieldRadius
+        - dialogRadius
+        - smallIconRadius
+        - mediumIconRadius
+
+    # Elevation
+    BabyFoodElevation:
+      type: object
+      description: Shadow and elevation hierarchy levels
+      properties:
+        level1:
+          type: number
+          description: Level 1 elevation (2dp elevation, 4dp blur radius) for ordinary list cards, tags, and icon containers
+          format: dp
+          example: 2
+        level2:
+          type: number
+          description: Level 2 elevation (8dp elevation, 16dp blur radius) for dialogs, bottom navigation bars, and floating action buttons
+          format: dp
+          example: 8
+        level3:
+          type: number
+          description: Level 3 elevation (24dp elevation, 32dp blur radius) for modal layers, full-screen overlays, and important alert dialogs
+          format: dp
+          example: 24
+      required:
+        - level1
+        - level2
+        - level3
+
+    # Animation
+    AnimationSpec:
+      type: object
+      description: Animation specification
+      properties:
+        duration:
+          type: integer
+          description: Animation duration in milliseconds
+          minimum: 150
+          maximum: 1000
+          example: 300
+        easing:
+          type: string
+          enum: [EaseInOut, EaseOutBack, LinearEasing, Spring]
+          description: Timing function
+          example: "EaseInOut"
+      required:
+        - duration
+        - easing
+
+    BabyFoodAnimation:
+      type: object
+      description: Animation timing and duration specifications
+      properties:
+        pageTransitionDuration:
+          type: integer
+          description: Page transition duration (300ms fade-in + 300ms slide = 600ms total)
+          minimum: 0
+          maximum: 1000
+          example: 600
+        pageTransitionEasing:
+          type: string
+          enum: [EaseInOut, EaseOutBack, LinearEasing, Spring]
+          example: "EaseInOut"
+        buttonClickDuration:
+          type: integer
+          description: Button click duration
+          minimum: 0
+          maximum: 500
+          example: 150
+        buttonClickEasing:
+          type: string
+          enum: [EaseInOut, EaseOutBack, LinearEasing, Spring]
+          example: "Spring"
+        cardExpandDuration:
+          type: integer
+          description: Card expand/collapse duration
+          minimum: 0
+          maximum: 500
+          example: 350
+        cardExpandEasing:
+          type: string
+          enum: [EaseInOut, EaseOutBack, LinearEasing, Spring]
+          example: "EaseOutBack"
+        loadingCycleDuration:
+          type: integer
+          description: Loading indicator rotation cycle duration
+          minimum: 0
+          maximum: 2000
+          example: 1000
+        loadingEasing:
+          type: string
+          enum: [EaseInOut, EaseOutBack, LinearEasing, Spring]
+          example: "LinearEasing"
+        refreshBounceDuration:
+          type: integer
+          description: Pull-to-refresh bounce duration
+          minimum: 0
+          maximum: 500
+          example: 200
+        refreshBounceEasing:
+          type: string
+          enum: [EaseInOut, EaseOutBack, LinearEasing, Spring]
+          example: "EaseOut"
+      required:
+        - pageTransitionDuration
+        - pageTransitionEasing
+        - buttonClickDuration
+        - buttonClickEasing
+        - cardExpandDuration
+        - cardExpandEasing
+        - loadingCycleDuration
+        - loadingEasing
+        - refreshBounceDuration
+        - refreshBounceEasing
+
+    # Layout
+    BabyFoodLayout:
+      type: object
+      description: Responsive layout constraints and breakpoints
+      properties:
+        minScreenWidth:
+          type: number
+          description: Minimum screen width for small phones
+          format: dp
+          example: 320
+        standardScreenWidth:
+          type: number
+          description: Standard screen width for most phones
+          format: dp
+          example: 360
+        maxScreenWidth:
+          type: number
+          description: Maximum screen width for large phones
+          format: dp
+          example: 412
+        minSpacing:
+          type: number
+          description: Minimum spacing for small screens
+          format: dp
+          example: 8
+        standardSpacing:
+          type: number
+          description: Standard spacing for most layouts
+          format: dp
+          example: 16
+        largeSpacing:
+          type: number
+          description: Large spacing for spacious layouts
+          format: dp
+          example: 24
+      required:
+        - minScreenWidth
+        - standardScreenWidth
+        - maxScreenWidth
+        - minSpacing
+        - standardSpacing
+        - largeSpacing
+
+    # Accessibility
+    BabyFoodAccessibility:
+      type: object
+      description: Accessibility standards and requirements
+      properties:
+        minTouchTargetSize:
+          type: number
+          description: Minimum touch target size (WCAG requirement)
+          format: dp
+          minimum: 44
+          example: 44
+        preferredTouchTargetSize:
+          type: number
+          description: Preferred touch target size (WCAG recommendation)
+          format: dp
+          minimum: 48
+          example: 48
+        minContrastRatio:
+          type: number
+          description: Minimum contrast ratio (WCAG AA standard)
+          format: float
+          minimum: 4.5
+          example: 4.5
+        preferredContrastRatio:
+          type: number
+          description: Preferred contrast ratio (WCAG AAA standard)
+          format: float
+          minimum: 7.0
+          example: 7.0
+      required:
+        - minTouchTargetSize
+        - preferredTouchTargetSize
+        - minContrastRatio
+        - preferredContrastRatio
+
+    # Component Styles
+    ButtonStyle:
+      type: object
+      description: Button component styling
+      properties:
+        backgroundColor:
+          type: string
+          description: Button background color
+          example: "#FF9F69"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        contentColor:
+          type: string
+          description: Button text/icon color
+          example: "#FFFFFF"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        cornerRadius:
+          type: number
+          description: Button corner radius
+          format: dp
+          example: 24
+        elevation:
+          type: number
+          description: Button elevation level
+          format: dp
+          example: 2
+        gradient:
+          type: string
+          description: Gradient definition (JSON encoded)
+          example: '{"angle":45,"colors":["#FF9F69","#FFD4BD"]}'
+        clickAnimation:
+          $ref: "#/components/schemas/AnimationSpec"
+      required:
+        - backgroundColor
+        - contentColor
+        - cornerRadius
+        - elevation
+        - clickAnimation
+
+    CardStyle:
+      type: object
+      description: Card component styling
+      properties:
+        backgroundColor:
+          type: string
+          description: Card background color
+          example: "#FFFFFF"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        cornerRadius:
+          type: number
+          description: Card corner radius
+          format: dp
+          example: 24
+        elevation:
+          type: number
+          description: Card elevation level
+          format: dp
+          example: 2
+        gradient:
+          type: string
+          description: Gradient definition (JSON encoded)
+          example: '{"angle":90,"colors":["#FFFFFF","#FDFBF8"]}'
+        expandAnimation:
+          $ref: "#/components/schemas/AnimationSpec"
+      required:
+        - backgroundColor
+        - cornerRadius
+        - elevation
+        - expandAnimation
+
+    InputFieldStyle:
+      type: object
+      description: Input field component styling
+      properties:
+        backgroundColor:
+          type: string
+          description: Input field background color
+          example: "#FFFFFF"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        borderColor:
+          type: string
+          description: Default border color
+          example: "#E5E5E5"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        focusBorderColor:
+          type: string
+          description: Focus border color
+          example: "#FF9F69"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        errorBorderColor:
+          type: string
+          description: Error border color
+          example: "#F5222D"
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        cornerRadius:
+          type: number
+          description: Input field corner radius
+          format: dp
+          example: 16
+        borderWidth:
+          type: number
+          description: Border width (1dp default, 2dp focus/error)
+          format: dp
+          minimum: 1
+          maximum: 2
+          example: 1
+      required:
+        - backgroundColor
+        - borderColor
+        - focusBorderColor
+        - errorBorderColor
+        - cornerRadius
+        - borderWidth

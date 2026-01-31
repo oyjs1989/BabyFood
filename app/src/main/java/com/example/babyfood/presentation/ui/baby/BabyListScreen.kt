@@ -79,7 +79,7 @@ fun BabyListScreen(
             } else {
                 val context = LocalContext.current
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(uiState.babies) { baby ->

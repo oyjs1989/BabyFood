@@ -30,6 +30,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import com.example.babyfood.presentation.theme.ANIMATION_DURATION_PAGE_FADE_IN
+import com.example.babyfood.presentation.theme.ANIMATION_DURATION_PAGE_SLIDE
+import com.example.babyfood.presentation.theme.EasingEaseInOut
 import kotlinx.coroutines.launch
 import com.example.babyfood.data.repository.AuthRepository
 import com.example.babyfood.domain.model.PlanConflict
@@ -105,7 +112,35 @@ fun MainScreen(
         NavHost(
             navController = navController,
             startDestination = "login",
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier.padding(paddingValues),
+            enterTransition = {
+                fadeIn(
+                    animationSpec = androidx.compose.animation.core.tween(
+                        durationMillis = ANIMATION_DURATION_PAGE_FADE_IN,
+                        easing = EasingEaseInOut
+                    )
+                ) + slideInHorizontally(
+                    animationSpec = androidx.compose.animation.core.tween(
+                        durationMillis = ANIMATION_DURATION_PAGE_SLIDE,
+                        easing = EasingEaseInOut
+                    ),
+                    initialOffsetX = { it }
+                )
+            },
+            exitTransition = {
+                fadeOut(
+                    animationSpec = androidx.compose.animation.core.tween(
+                        durationMillis = ANIMATION_DURATION_PAGE_FADE_IN,
+                        easing = EasingEaseInOut
+                    )
+                ) + slideOutHorizontally(
+                    animationSpec = androidx.compose.animation.core.tween(
+                        durationMillis = ANIMATION_DURATION_PAGE_SLIDE,
+                        easing = EasingEaseInOut
+                    ),
+                    targetOffsetX = { -it }
+                )
+            }
         ) {
             // 登录页面
             composable("login") {

@@ -22,9 +22,43 @@ class InventoryRepository @Inject constructor(
     // Note: InventoryItemDao implements SyncableDao methods implicitly
     // but doesn't extend the interface due to Room limitations
 
-    override fun InventoryItemEntity.toDomainModel(): InventoryItem = this.toDomainModel()
+    override fun InventoryItemEntity.toDomainModel(): InventoryItem = InventoryItem(
+        id = id,
+        foodId = foodId,
+        foodName = foodName,
+        foodImageUrl = foodImageUrl,
+        productionDate = kotlinx.datetime.LocalDate.parse(productionDate),
+        expiryDate = kotlinx.datetime.LocalDate.parse(expiryDate),
+        storageMethod = StorageMethod.valueOf(storageMethod),
+        quantity = quantity,
+        unit = unit,
+        addedAt = addedAt,
+        notes = notes,
+        cloudId = cloudId,
+        syncStatus = SyncStatus.valueOf(syncStatus),
+        lastSyncTime = lastSyncTime,
+        version = version,
+        isDeleted = isDeleted
+    )
 
-    override fun InventoryItem.toEntity(): InventoryItemEntity = this.toEntity()
+    override fun InventoryItem.toEntity(): InventoryItemEntity = InventoryItemEntity(
+        id = id,
+        foodId = foodId,
+        foodName = foodName,
+        foodImageUrl = foodImageUrl,
+        productionDate = productionDate.toString(),
+        expiryDate = expiryDate.toString(),
+        storageMethod = storageMethod.name,
+        quantity = quantity,
+        unit = unit,
+        addedAt = addedAt,
+        notes = notes,
+        cloudId = cloudId,
+        syncStatus = syncStatus.name,
+        lastSyncTime = lastSyncTime,
+        version = version,
+        isDeleted = isDeleted
+    )
 
     override fun getItemId(item: InventoryItem): Long = item.id
 
