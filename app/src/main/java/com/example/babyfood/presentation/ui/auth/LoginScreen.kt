@@ -64,6 +64,9 @@ import com.example.babyfood.presentation.theme.Primary
 import com.example.babyfood.presentation.theme.Surface
 import com.example.babyfood.presentation.theme.SurfaceVariant
 import com.example.babyfood.presentation.ui.icons.AppIcons
+import com.example.babyfood.presentation.ui.common.AppScaffold
+import com.example.babyfood.presentation.ui.common.AppBarConfig
+import com.example.babyfood.presentation.ui.common.AppBottomAction
 import com.example.babyfood.presentation.ui.components.ErrorDialog
 
 /**

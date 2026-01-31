@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.babyfood.presentation.ui.home.HomeViewModel
+import com.example.babyfood.presentation.ui.common.AppScaffold
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toJavaLocalDateTime
@@ -70,64 +71,59 @@ fun TodayMenuScreen(
             modifier = Modifier.fillMaxSize()
         )
     } else {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        AppScaffold(
+            bottomActions = emptyList()
         ) {
-            // 日期标题
-            Text(
-                text = dateString,
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            androidx.compose.foundation.layout.Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp)
+            ) {
+                // 营养目标卡片
+                uiState.nutritionGoal?.let { goal ->
+                    NutritionGoalCard(
+                        nutritionGoal = goal,
+                        nutritionIntake = uiState.nutritionIntake,
+                        onEdit = { showNutritionGoalEdit = true }
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            // 营养目标卡片
-            uiState.nutritionGoal?.let { goal ->
-                NutritionGoalCard(
-                    nutritionGoal = goal,
-                    nutritionIntake = uiState.nutritionIntake,
-                    onEdit = { showNutritionGoalEdit = true }
+                // 餐单时间轴
+                Text(
+                    text = "今日餐单",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                MealTimeline(
+                    plans = uiState.todayPlans,
+                    onShuffle = { period -> viewModel.shuffleMealPeriod(period) },
+                    onSelectRecipe = { period ->
+                        viewModel.showRecipeSelector(period, kotlinx.datetime.LocalDate(today.year, today.monthNumber, today.dayOfMonth))
+                    },
+                    onViewRecipeDetail = onViewRecipeDetail,
+                    onEditMealTime = { period, currentTime ->
+                        viewModel.showMealTimePicker(period)
+                    },
+                    onFeedback = { period -> viewModel.showFeedbackDialog(period) }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 未来一周计划
+                WeeklyPlansSection(
+                    weeklyPlans = uiState.weeklyPlans,
+                    isExpanded = isWeeklyExpanded,
+                    onToggleExpand = { isWeeklyExpanded = !isWeeklyExpanded }
                 )
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // 餐单时间轴
-            Text(
-                text = "今日餐单",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            MealTimeline(
-                plans = uiState.todayPlans,
-                onShuffle = { period -> viewModel.shuffleMealPeriod(period) },
-                onSelectRecipe = { period ->
-                    viewModel.showRecipeSelector(period, kotlinx.datetime.LocalDate(today.year, today.monthNumber, today.dayOfMonth))
-                },
-                onViewRecipeDetail = onViewRecipeDetail,
-                onEditMealTime = { period, currentTime ->
-                    viewModel.showMealTimePicker(period)
-                },
-                onFeedback = { period -> viewModel.showFeedbackDialog(period) }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 未来一周计划
-            WeeklyPlansSection(
-                weeklyPlans = uiState.weeklyPlans,
-                isExpanded = isWeeklyExpanded,
-                onToggleExpand = { isWeeklyExpanded = !isWeeklyExpanded }
-            )
         }
     }
-
     // 食谱选择对话框
     if (uiState.showRecipeSelector) {
         RecipeSelectorDialog(

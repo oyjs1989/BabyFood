@@ -9,13 +9,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.QuestionMark
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import coil.compose.AsyncImage
+import com.example.babyfood.presentation.ui.common.AppScaffold
+import com.example.babyfood.presentation.ui.common.AppBottomAction
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -85,7 +87,7 @@ fun BabyFormScreen(
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
             viewModel.clearSavedFlag()
-            onBack()
+            onSave()
         }
     }
 
@@ -167,26 +169,33 @@ fun BabyFormScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (isEditing) "编辑宝宝" else "添加宝宝") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
-                    }
+    AppScaffold(
+        bottomActions = listOf(
+            AppBottomAction(
+                icon = Icons.Default.Check,
+                label = "保存",
+                contentDescription = "保存宝宝信息",
+                onClick = {
+                    val baby = com.example.babyfood.domain.model.Baby(
+                        id = babyId,
+                        name = name,
+                        birthDate = birthDate ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
+                        weight = null,
+                        height = null,
+                        allergies = allergyItems.map { com.example.babyfood.domain.model.AllergyItem(it) },
+                        preferences = preferenceItems.map { com.example.babyfood.domain.model.PreferenceItem(it) },
+                        avatarUrl = avatarUrl
+                    )
+                    viewModel.saveBaby(baby)
+                    onSave()
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                enabled = name.isNotBlank() && birthDate != null
             )
-        }
-    ) { paddingValues ->
+        )
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(16.dp)
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -446,28 +455,6 @@ fun BabyFormScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // 保存按钮
-            Button(
-                onClick = {
-                    val baby = com.example.babyfood.domain.model.Baby(
-                        id = babyId,
-                        name = name,
-                        birthDate = birthDate ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
-                        weight = null,
-                        height = null,
-                        allergies = allergyItems.map { com.example.babyfood.domain.model.AllergyItem(it) },
-                        preferences = preferenceItems.map { com.example.babyfood.domain.model.PreferenceItem(it) },
-                        avatarUrl = avatarUrl
-                    )
-                    viewModel.saveBaby(baby)
-                    onSave()
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = name.isNotBlank() && birthDate != null
-            ) {
-                Text("保存")
-            }
 
             // 过敏食材添加对话框
             if (showAllergyDialog) {

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
@@ -21,10 +20,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -42,6 +39,8 @@ import com.example.babyfood.domain.model.DailyMealPlan
 import com.example.babyfood.domain.model.PlanConflict
 import com.example.babyfood.domain.model.PlannedMeal
 import com.example.babyfood.domain.model.WeeklyMealPlan
+import com.example.babyfood.presentation.ui.common.AppScaffold
+import com.example.babyfood.presentation.ui.common.AppBottomAction
 import kotlinx.coroutines.launch
 
 /**
@@ -65,55 +64,39 @@ fun RecommendationEditorScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
-    
+
     var showConflictDialog by remember { mutableStateOf(false) }
     var editedMeals by remember { mutableStateOf<List<PlannedMeal>>(emptyList()) }
     
     LaunchedEffect(Unit) {
         viewModel.clearError()
     }
-    
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("AI推荐计划") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
-                    }
-                },
-                actions = {
-                    TextButton(
-                        onClick = {
-                            scope.launch {
-                                if (conflicts.isNotEmpty()) {
-                                    showConflictDialog = true
-                                } else {
-                                    onSave(ConflictResolution.OVERWRITE_ALL, editedMeals)
-                                }
-                            }
-                        },
-                        enabled = !uiState.isSaving
-                    ) {
-                        if (uiState.isSaving) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.height(24.dp),
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Icon(Icons.Default.Check, contentDescription = "保存")
-                            Spacer(modifier = Modifier.padding(horizontal = 4.dp))
-                            Text("保存")
-                        }
-                    }
-                }
-            )
+
+    // 保存函数
+    val handleSave = {
+        scope.launch {
+            if (conflicts.isNotEmpty()) {
+                showConflictDialog = true
+            } else {
+                onSave(ConflictResolution.OVERWRITE_ALL, editedMeals)
+            }
         }
-    ) { paddingValues ->
+    }
+
+    AppScaffold(
+        bottomActions = listOf(
+            AppBottomAction(
+                icon = Icons.Default.Check,
+                label = "保存",
+                contentDescription = "保存推荐计划",
+                enabled = !uiState.isSaving,
+                onClick = { handleSave() }
+            )
+        )
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
         ) {
             // 营养摘要卡片
             NutritionSummaryCard(weeklyPlan)

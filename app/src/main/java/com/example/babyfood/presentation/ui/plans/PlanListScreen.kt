@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.babyfood.domain.model.MealPeriod
 import com.example.babyfood.domain.model.PlanStatus
+import com.example.babyfood.presentation.ui.common.AppScaffold
+import com.example.babyfood.presentation.ui.common.AppBottomAction
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import java.time.format.TextStyle
@@ -46,99 +48,64 @@ fun PlanListScreen(
     var selectedDate by remember { mutableStateOf(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date) }
     var currentMonth by remember { mutableStateOf(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date) }
     var showDateRangePicker by remember { mutableStateOf(false) }
-    var showAddMenu by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("辅食计划") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
-        },
-        floatingActionButton = {
-            Box {
-                // 主悬浮按钮
-                FloatingActionButton(
-                    onClick = { showAddMenu = true }
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "添加")
+    AppScaffold(
+        bottomActions = listOf(
+            AppBottomAction(
+                icon = Icons.Default.Add,
+                label = "手动添加",
+                contentDescription = "手动添加计划",
+                onClick = {
+                    uiState.selectedBaby?.let { baby ->
+                        onNavigateToAdd(baby.id)
+                    }
                 }
-                
-                // 选项菜单
-                DropdownMenu(
-                    expanded = showAddMenu,
-                    onDismissRequest = { showAddMenu = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("手动添加") },
-                        leadingIcon = {
-                            Icon(Icons.Default.Add, contentDescription = "手动添加")
-                        },
-                        onClick = {
-                            showAddMenu = false
-                            uiState.selectedBaby?.let { baby ->
-                                onNavigateToAdd(baby.id)
-                            }
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("AI推荐") },
-                        leadingIcon = {
-                            Icon(Icons.Default.AutoAwesome, contentDescription = "AI推荐")
-                        },
-                        onClick = {
-                            showAddMenu = false
-                            showDateRangePicker = true
-                        }
-                    )
-                }
-            }
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            // 宝宝选择器
-            if (uiState.babies.size > 1) {
-                BabySelector(
-                    babies = uiState.babies,
-                    selectedBaby = uiState.selectedBaby,
-                    onBabySelected = { viewModel.selectBaby(it) }
-                )
-            }
-
-            // 日历视图
-            CalendarView(
-                currentMonth = currentMonth,
-                selectedDate = selectedDate,
-                plans = uiState.plans,
-                onPreviousMonth = {
-                    currentMonth = currentMonth.minus(1, DateTimeUnit.MONTH)
-                },
-                onNextMonth = {
-                    currentMonth = currentMonth.plus(1, DateTimeUnit.MONTH)
-                },
-                onDateSelected = { date ->
-                    selectedDate = date
+            ),
+            AppBottomAction(
+                icon = Icons.Default.AutoAwesome,
+                label = "AI推荐",
+                contentDescription = "AI生成计划",
+                onClick = {
+                    showDateRangePicker = true
                 }
             )
-
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
-
-            // 选中日期和计划列表
-            SelectedDatePlans(
-                selectedDate = selectedDate,
-                plans = uiState.plans.filter { it.plannedDate == selectedDate },
-                onPlanClick = onNavigateToDetail
+        )
+    ) {
+        // 宝宝选择器
+        if (uiState.babies.size > 1) {
+            BabySelector(
+                babies = uiState.babies,
+                selectedBaby = uiState.selectedBaby,
+                onBabySelected = { viewModel.selectBaby(it) }
             )
         }
+
+        // 日历视图
+        CalendarView(
+            currentMonth = currentMonth,
+            selectedDate = selectedDate,
+            plans = uiState.plans,
+            onPreviousMonth = {
+                currentMonth = currentMonth.minus(1, DateTimeUnit.MONTH)
+            },
+            onNextMonth = {
+                currentMonth = currentMonth.plus(1, DateTimeUnit.MONTH)
+            },
+            onDateSelected = { date ->
+                selectedDate = date
+            }
+        )
+
+        Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+        // 选中日期和计划列表
+        SelectedDatePlans(
+            selectedDate = selectedDate,
+            plans = uiState.plans.filter { it.plannedDate == selectedDate },
+            onPlanClick = onNavigateToDetail
+        )
     }
-    
+
     // 日期范围选择器对话框
     if (showDateRangePicker) {
         DateRangePickerDialog(

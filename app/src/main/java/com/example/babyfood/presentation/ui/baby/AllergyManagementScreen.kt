@@ -4,50 +4,57 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.babyfood.presentation.ui.common.AppScaffold
+import com.example.babyfood.presentation.ui.common.AppBottomAction
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AllergyManagementScreen(
     babyId: Long,
     onBack: () -> Unit,
+    onSave: () -> Unit = {},
     viewModel: BabyViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val baby = uiState.babies.find { it.id == babyId }
-    
+
     var newAllergy by remember { mutableStateOf("") }
     var expiryDays by remember { mutableStateOf("30") }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("过敏食材管理") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
-                    }
+    // 未保存修改跟踪
+    var hasUnsavedChanges by remember { mutableStateOf(false) }
+    var showExitConfirmationDialog by remember { mutableStateOf(false) }
+
+    AppScaffold(
+        bottomActions = listOf(
+            AppBottomAction(
+                icon = Icons.Default.Save,
+                label = "保存",
+                contentDescription = "保存修改",
+                onClick = {
+                    hasUnsavedChanges = false
+                    onSave()
+                    onBack()
                 }
             )
-        }
-    ) { paddingValues ->
+        )
+    ) {
         if (baby != null) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -63,7 +70,7 @@ fun AllergyManagementScreen(
                             style = MaterialTheme.typography.titleMedium
                         )
                         Spacer(modifier = Modifier.height(12.dp))
-                        
+
                         OutlinedTextField(
                             value = newAllergy,
                             onValueChange = { newAllergy = it },
@@ -71,9 +78,9 @@ fun AllergyManagementScreen(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
-                        
+
                         Spacer(modifier = Modifier.height(8.dp))
-                        
+
                         OutlinedTextField(
                             value = expiryDays,
                             onValueChange = { expiryDays = it },
@@ -84,9 +91,9 @@ fun AllergyManagementScreen(
                                 keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
                             )
                         )
-                        
+
                         Spacer(modifier = Modifier.height(12.dp))
-                        
+
                         Button(
                             onClick = {
                                 if (newAllergy.isNotBlank()) {
@@ -94,13 +101,14 @@ fun AllergyManagementScreen(
                                         val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
                                         (today + kotlinx.datetime.DatePeriod(days = expiryDays.toInt())).toString()
                                     } else null
-                                    
+
                                     val updatedBaby = baby.copy(
                                         allergies = baby.allergies.toMutableList().apply {
                                             add(com.example.babyfood.domain.model.AllergyItem(newAllergy, expiryDate))
                                         }
                                     )
                                     viewModel.saveBaby(updatedBaby)
+                                    hasUnsavedChanges = true
                                     newAllergy = ""
                                     expiryDays = "30"
                                 }
@@ -112,7 +120,7 @@ fun AllergyManagementScreen(
                         }
                     }
                 }
-                
+
                 // 过敏食材列表
                 Card(
                     modifier = Modifier.fillMaxWidth()
@@ -125,7 +133,7 @@ fun AllergyManagementScreen(
                             style = MaterialTheme.typography.titleMedium
                         )
                         Spacer(modifier = Modifier.height(12.dp))
-                        
+
                         if (baby.allergies.isEmpty()) {
                             Text(
                                 text = "暂无过敏食材",
@@ -145,6 +153,7 @@ fun AllergyManagementScreen(
                                                 allergies = baby.allergies.toMutableList().apply { remove(allergy) }
                                             )
                                             viewModel.saveBaby(updatedBaby)
+                                            hasUnsavedChanges = true
                                         }
                                     )
                                 }
@@ -154,6 +163,37 @@ fun AllergyManagementScreen(
                 }
             }
         }
+    }
+
+    // 离开确认对话框（在 AppScaffold 外部）
+    if (showExitConfirmationDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitConfirmationDialog = false },
+            title = { Text("未保存的修改") },
+            text = { Text("您有未保存的修改，是否要保存？") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        hasUnsavedChanges = false
+                        showExitConfirmationDialog = false
+                        onSave()
+                        onBack()
+                    }
+                ) {
+                    Text("保存")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showExitConfirmationDialog = false
+                        onBack()
+                    }
+                ) {
+                    Text("放弃修改")
+                }
+            }
+        )
     }
 }
 

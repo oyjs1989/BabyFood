@@ -23,10 +23,8 @@ import androidx.compose.material.icons.filled.ChildCare
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -38,6 +36,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import android.widget.Toast
+import com.example.babyfood.presentation.ui.common.AppScaffold
+import com.example.babyfood.presentation.ui.common.AppBottomAction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,28 +48,21 @@ fun BabyListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(
+    AppScaffold(
+        bottomActions = listOf(
+            AppBottomAction(
+                icon = Icons.Default.Add,
+                label = "添加",
+                contentDescription = "添加宝宝",
                 onClick = onNavigateToAdd
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "添加宝宝")
-            }
-        }
-    ) { paddingValues ->
+            )
+        )
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            Text(
-                text = "宝宝信息",
-                style = MaterialTheme.typography.headlineMedium
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             if (uiState.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -81,11 +74,12 @@ fun BabyListScreen(
                 com.example.babyfood.presentation.theme.EmptyState(
                     icon = Icons.Default.ChildCare,
                     title = "还没有添加宝宝信息",
-                    description = "点击右下角 + 按钮添加宝宝"
+                    description = "点击下方添加按钮添加宝宝"
                 )
             } else {
                 val context = LocalContext.current
                 LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(uiState.babies) { baby ->

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -32,11 +33,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -55,12 +53,15 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.babyfood.presentation.ui.common.AppScaffold
+import com.example.babyfood.presentation.ui.common.AppBottomAction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeFormScreen(
     recipeId: Long? = null,
     onBack: () -> Unit = {},
+    onSave: () -> Unit = {},
     viewModel: RecipesViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -87,8 +88,63 @@ fun RecipeFormScreen(
     var showErrorDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
+    // 未保存修改跟踪
+    var hasUnsavedChanges by remember { mutableStateOf(false) }
+    var showExitConfirmationDialog by remember { mutableStateOf(false) }
+
     // 分类选项
     val categories = listOf("主食", "蔬菜", "水果", "蛋白质")
+
+    // 保存函数
+    val saveRecipe = {
+        // 验证表单
+        if (name.isNotBlank() && ingredients.isNotEmpty() && steps.isNotEmpty()) {
+            // 创建食谱对象
+            val recipe = com.example.babyfood.domain.model.Recipe(
+                id = recipeId ?: 0,
+                name = name,
+                minAgeMonths = minAgeMonths,
+                maxAgeMonths = maxAgeMonths,
+                ingredients = ingredients.map {
+                    com.example.babyfood.domain.model.Ingredient(
+                        name = it.name,
+                        amount = it.amount,
+                        isAllergen = it.isAllergen
+                    )
+                },
+                steps = steps.toList(),
+                nutrition = com.example.babyfood.domain.model.Nutrition(
+                    calories = calories.toFloatOrNull(),
+                    protein = protein.toFloatOrNull(),
+                    fat = fat.toFloatOrNull(),
+                    carbohydrates = carbohydrates.toFloatOrNull(),
+                    fiber = fiber.toFloatOrNull(),
+                    calcium = calcium.toFloatOrNull(),
+                    iron = iron.toFloatOrNull()
+                ),
+                category = category,
+                isBuiltIn = false,
+                imageUrl = imageUrl
+            )
+
+            // 保存
+            if (recipeId != null && recipeId > 0) {
+                viewModel.updateRecipe(recipe)
+            } else {
+                viewModel.addRecipe(recipe)
+            }
+            hasUnsavedChanges = false
+        } else if (name.isBlank()) {
+            errorMessage = "请输入食谱名称"
+            showErrorDialog = true
+        } else if (ingredients.isEmpty()) {
+            errorMessage = "请至少添加一种食材"
+            showErrorDialog = true
+        } else if (steps.isEmpty()) {
+            errorMessage = "请至少添加一个制作步骤"
+            showErrorDialog = true
+        }
+    }
 
     // 加载现有食谱数据（编辑模式）
     LaunchedEffect(recipeId) {
@@ -127,7 +183,7 @@ fun RecipeFormScreen(
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
             viewModel.clearSavedFlag()
-            onBack()
+            onSave()
         }
     }
 
@@ -153,84 +209,49 @@ fun RecipeFormScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (recipeId != null && recipeId > 0) "编辑食谱" else "添加食谱") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+    // 离开确认对话框
+    if (showExitConfirmationDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitConfirmationDialog = false },
+            title = { Text("未保存的修改") },
+            text = { Text("您有未保存的修改，是否要保存？") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        saveRecipe()
+                        showExitConfirmationDialog = false
+                    },
+                    enabled = name.isNotBlank() && ingredients.isNotEmpty() && steps.isNotEmpty()
+                ) {
+                    Text("保存")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showExitConfirmationDialog = false
+                        onBack()
                     }
-                },
-                actions = {
-                    IconButton(
-                        onClick = {
-                            // 验证表单
-                            if (name.isBlank()) {
-                                errorMessage = "请输入食谱名称"
-                                showErrorDialog = true
-                                return@IconButton
-                            }
-                            if (ingredients.isEmpty()) {
-                                errorMessage = "请至少添加一种食材"
-                                showErrorDialog = true
-                                return@IconButton
-                            }
-                            if (steps.isEmpty()) {
-                                errorMessage = "请至少添加一个制作步骤"
-                                showErrorDialog = true
-                                return@IconButton
-                            }
+                ) {
+                    Text("放弃修改")
+                }
+            }
+        )
+    }
 
-                            // 创建食谱对象
-                            val recipe = com.example.babyfood.domain.model.Recipe(
-                                id = recipeId ?: 0,
-                                name = name,
-                                minAgeMonths = minAgeMonths,
-                                maxAgeMonths = maxAgeMonths,
-                                ingredients = ingredients.map {
-                                    com.example.babyfood.domain.model.Ingredient(
-                                        name = it.name,
-                                        amount = it.amount,
-                                        isAllergen = it.isAllergen
-                                    )
-                                },
-                                steps = steps.toList(),
-                                nutrition = com.example.babyfood.domain.model.Nutrition(
-                                    calories = calories.toFloatOrNull(),
-                                    protein = protein.toFloatOrNull(),
-                                    fat = fat.toFloatOrNull(),
-                                    carbohydrates = carbohydrates.toFloatOrNull(),
-                                    fiber = fiber.toFloatOrNull(),
-                                    calcium = calcium.toFloatOrNull(),
-                                    iron = iron.toFloatOrNull()
-                                ),
-                                category = category,
-                                isBuiltIn = false,
-                                imageUrl = imageUrl
-                            )
-
-                            // 保存
-                            if (recipeId != null && recipeId > 0) {
-                                viewModel.updateRecipe(recipe)
-                            } else {
-                                viewModel.addRecipe(recipe)
-                            }
-                        }
-                    ) {
-                        Icon(Icons.Default.Check, contentDescription = "保存")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+    AppScaffold(
+        bottomActions = listOf(
+            AppBottomAction(
+                icon = Icons.Default.Check,
+                label = "保存",
+                contentDescription = "保存食谱",
+                onClick = saveRecipe
             )
-        }
-    ) { paddingValues ->
+        )
+    ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {

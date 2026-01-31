@@ -13,6 +13,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
@@ -20,10 +21,13 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import com.example.babyfood.presentation.ui.common.AppScaffold
+import com.example.babyfood.presentation.ui.common.AppBottomAction
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -68,6 +72,10 @@ fun InventoryFormScreen(
     var unit by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
 
+    // 未保存修改跟踪
+    var hasUnsavedChanges by remember { mutableStateOf(false) }
+    var showExitConfirmationDialog by remember { mutableStateOf(false) }
+
     // 日期选择器状态
     var showProductionDatePicker by remember { mutableStateOf(false) }
     var showExpiryDatePicker by remember { mutableStateOf(false) }
@@ -101,31 +109,42 @@ fun InventoryFormScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (isEditing) "编辑食材" else "添加食材") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
-                    titleContentColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
-                )
+    // 保存函数
+    val saveInventoryItem = {
+        val currentTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        val item = InventoryItem(
+            id = itemId,
+            foodId = foodId,
+            foodName = foodName,
+            foodImageUrl = foodImageUrl,
+            productionDate = productionDate,
+            expiryDate = expiryDate,
+            storageMethod = storageMethod,
+            quantity = quantity.toFloatOrNull() ?: 0f,
+            unit = unit,
+            addedAt = if (isEditing) uiState.selectedItem?.addedAt ?: "" else currentTime.date.toString(),
+            notes = notes.ifBlank { null }
+        )
+        viewModel.saveInventoryItem(item)
+        hasUnsavedChanges = false
+    }
+
+    AppScaffold(
+        bottomActions = listOf(
+            AppBottomAction(
+                icon = Icons.Default.Check,
+                label = "保存",
+                contentDescription = "保存食材",
+                onClick = saveInventoryItem,
+                enabled = foodName.isNotBlank() && quantity.isNotBlank() && unit.isNotBlank()
             )
-        }
-    ) { paddingValues ->
+        )
+    ) {
         val scrollState = rememberScrollState()
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(16.dp)
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -231,31 +250,6 @@ fun InventoryFormScreen(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // 保存按钮
-            Button(
-                onClick = {
-                    val currentTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-                    val item = InventoryItem(
-                        id = itemId,
-                        foodId = foodId,
-                        foodName = foodName,
-                        foodImageUrl = foodImageUrl,
-                        productionDate = productionDate,
-                        expiryDate = expiryDate,
-                        storageMethod = storageMethod,
-                        quantity = quantity.toFloatOrNull() ?: 0f,
-                        unit = unit,
-                        addedAt = if (isEditing) uiState.selectedItem?.addedAt ?: "" else currentTime.date.toString(),
-                        notes = notes.ifBlank { null }
-                    )
-                    viewModel.saveInventoryItem(item)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = foodName.isNotBlank() && quantity.isNotBlank() && unit.isNotBlank()
-            ) {
-                Text("保存")
-            }
         }
     }
 
@@ -315,5 +309,35 @@ fun InventoryFormScreen(
         ) {
             DatePicker(state = datePickerState)
         }
+    }
+
+    // 离开确认对话框
+    if (showExitConfirmationDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitConfirmationDialog = false },
+            title = { Text("未保存的修改") },
+            text = { Text("您有未保存的修改，是否要保存？") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        saveInventoryItem()
+                        showExitConfirmationDialog = false
+                    },
+                    enabled = foodName.isNotBlank() && quantity.isNotBlank() && unit.isNotBlank()
+                ) {
+                    Text("保存")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showExitConfirmationDialog = false
+                        onBack()
+                    }
+                ) {
+                    Text("放弃修改")
+                }
+            }
+        )
     }
 }

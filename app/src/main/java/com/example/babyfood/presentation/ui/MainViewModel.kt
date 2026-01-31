@@ -27,6 +27,16 @@ class MainViewModel @Inject constructor(
     }
 
     /**
+     * 获取认证仓库（供 AppHeader 使用）
+     */
+    fun getAuthRepository(): AuthRepository = authRepository
+
+    /**
+     * 获取宝宝仓库（供 AppHeader 使用）
+     */
+    fun getBabyRepository(): BabyRepository = babyRepository
+
+    /**
      * 用户注销
      * @param onSuccess 注销成功回调
      * @param onFailure 注销失败回调

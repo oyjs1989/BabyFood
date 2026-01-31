@@ -35,6 +35,17 @@ class AuthRepository @Inject constructor(
     }
 
     /**
+     * 获取认证状态
+     */
+    fun getAuthState(): Flow<AuthState> =
+        userDao.getCurrentUser().map { entity ->
+            when {
+                entity != null && entity.isLoggedIn -> AuthState.LoggedIn(entity.toDomainModel())
+                else -> AuthState.NotLoggedIn
+            }
+        }
+
+    /**
      * 获取当前登录用户
      */
     fun getCurrentUser(): Flow<User?> =

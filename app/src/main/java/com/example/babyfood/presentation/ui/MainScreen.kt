@@ -61,29 +61,37 @@ fun MainScreen(
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-    var showUserMenu by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
-            if (currentDestination?.route in listOf("home", "recipes", "plans", "baby")) {
-                AppTopBar(
-                    showUserMenu = showUserMenu,
-                    onMenuToggle = { showUserMenu = it },
-                    onLogout = {
-                        mainViewModel.logout(
-                            onSuccess = {
-                                android.util.Log.d("MainScreen", "✓ 注销成功，导航到登录页面")
-                                navController.navigate("login") {
-                                    popUpTo(0) { inclusive = true }
-                                }
-                            },
-                            onFailure = {
-                                android.util.Log.e("MainScreen", "❌ 注销失败")
+            // 在所有页面显示统一的 AppHeader
+            com.example.babyfood.presentation.ui.common.AppHeader(
+                config = com.example.babyfood.presentation.ui.common.AppHeaderConfig(
+                    currentRoute = currentDestination?.route,
+                    onAppLogoClick = {
+                        // 点击应用名称跳转到首页
+                        if (currentDestination?.route != "home") {
+                            navController.navigate("home") {
+                                popUpTo("home") { inclusive = true }
                             }
-                        )
+                        }
                     }
-                )
-            }
+                ),
+                authRepository = mainViewModel.getAuthRepository(),
+                babyRepository = mainViewModel.getBabyRepository(),
+                onLoginClick = {
+                    navController.navigate("login")
+                },
+                onRegisterClick = {
+                    navController.navigate("register")
+                },
+                onSettingsClick = {
+                    // TODO: 导航到个人设置页面
+                },
+                onSwitchBabyClick = {
+                    // TODO: 导航到切换宝宝页面
+                }
+            )
         },
         bottomBar = {
             if (currentDestination?.route in listOf("home", "recipes", "plans", "inventory", "baby")) {
@@ -148,6 +156,24 @@ fun MainScreen(
                 )
             }
 
+            // 食谱表单（添加/编辑）
+            composable("recipes/form/{recipeId}") { backStackEntry ->
+                val recipeId = backStackEntry.arguments?.getString("recipeId")?.toLongOrNull()
+                com.example.babyfood.presentation.ui.recipes.RecipeFormScreen(
+                    recipeId = recipeId,
+                    onBack = {
+                        navController.navigate("recipes") {
+                            popUpTo("recipes") { inclusive = true }
+                        }
+                    },
+                    onSave = {
+                        navController.navigate("recipes") {
+                            popUpTo("recipes") { inclusive = true }
+                        }
+                    }
+                )
+            }
+
             // 食谱详情
             composable("recipes/detail/{recipeId}") { backStackEntry ->
                 val recipeId = backStackEntry.arguments?.getString("recipeId")?.toLong() ?: 0L
@@ -201,10 +227,14 @@ fun MainScreen(
                     planId = if (planId > 0) planId else null,
                     selectedDate = selectedDate,
                     onBack = {
-                        navController.popBackStack()
+                        navController.navigate("plans") {
+                            popUpTo("plans") { inclusive = true }
+                        }
                     },
                     onSave = {
-                        navController.popBackStack()
+                        navController.navigate("plans") {
+                            popUpTo("plans") { inclusive = true }
+                        }
                     },
                     onNavigateToRecommendationEditor = { babyId ->
                         navController.navigate("plans/recommendation/editor/$babyId")
@@ -230,10 +260,14 @@ fun MainScreen(
                 com.example.babyfood.presentation.ui.inventory.InventoryFormScreen(
                     itemId = itemId,
                     onBack = {
-                        navController.popBackStack()
+                        navController.navigate("inventory") {
+                            popUpTo("inventory") { inclusive = true }
+                        }
                     },
                     onSave = {
-                        navController.popBackStack()
+                        navController.navigate("inventory") {
+                            popUpTo("inventory") { inclusive = true }
+                        }
                     }
                 )
             }
@@ -256,10 +290,14 @@ fun MainScreen(
                 com.example.babyfood.presentation.ui.baby.BabyFormScreen(
                     babyId = babyId,
                     onBack = {
-                        navController.popBackStack()
+                        navController.navigate("baby") {
+                            popUpTo("baby") { inclusive = true }
+                        }
                     },
                     onSave = {
-                        navController.popBackStack()
+                        navController.navigate("baby") {
+                            popUpTo("baby") { inclusive = true }
+                        }
                     }
                 )
             }
@@ -341,10 +379,14 @@ fun MainScreen(
                     babyId = babyId,
                     recordId = recordId,
                     onBack = {
-                        navController.popBackStack()
+                        navController.navigate("baby/health/$babyId") {
+                            popUpTo("baby/health/$babyId") { inclusive = true }
+                        }
                     },
                     onSave = {
-                        navController.popBackStack()
+                        navController.navigate("baby/health/$babyId") {
+                            popUpTo("baby/health/$babyId") { inclusive = true }
+                        }
                     }
                 )
             }
@@ -392,44 +434,6 @@ fun MainScreen(
             }
         }
     }
-}
-
-@Composable
-private fun AppTopBar(
-    showUserMenu: Boolean,
-    onMenuToggle: (Boolean) -> Unit,
-    onLogout: () -> Unit
-) {
-    TopAppBar(
-        title = { Text("BabyFood") },
-        actions = {
-            IconButton(onClick = { onMenuToggle(true) }) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "用户菜单"
-                )
-            }
-
-            DropdownMenu(
-                expanded = showUserMenu,
-                onDismissRequest = { onMenuToggle(false) }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("注销") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                            contentDescription = "注销"
-                        )
-                    },
-                    onClick = {
-                        onMenuToggle(false)
-                        onLogout()
-                    }
-                )
-            }
-        }
-    )
 }
 
 @Composable

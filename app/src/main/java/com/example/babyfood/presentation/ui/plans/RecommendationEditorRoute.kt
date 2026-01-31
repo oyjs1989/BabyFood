@@ -90,6 +90,7 @@ fun RecommendationEditorRoute(
                         )
                         if (result.success) {
                             navController.popBackStack()
+                            viewModel.clearRecommendation()
                         }
                     }
                 }

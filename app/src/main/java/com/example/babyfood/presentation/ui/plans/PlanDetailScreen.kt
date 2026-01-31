@@ -15,6 +15,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.babyfood.domain.model.MealPeriod
 import com.example.babyfood.domain.model.Plan
 import com.example.babyfood.domain.model.PlanStatus
+import com.example.babyfood.presentation.ui.common.AppScaffold
+import com.example.babyfood.presentation.ui.common.AppBottomAction
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 
@@ -67,35 +69,26 @@ fun PlanDetailScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("计划详情") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                actions = {
-                    IconButton(onClick = { plan?.let { onNavigateToEdit(it.id) } }) {
-                        Icon(Icons.Default.Edit, contentDescription = "编辑")
-                    }
-                    IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "删除")
-                    }
-                }
+    AppScaffold(
+        bottomActions = listOf(
+            AppBottomAction(
+                icon = Icons.Default.Edit,
+                label = "编辑",
+                contentDescription = "编辑计划",
+                onClick = { plan?.let { onNavigateToEdit(it.id) } }
+            ),
+            AppBottomAction(
+                icon = Icons.Default.Delete,
+                label = "删除",
+                contentDescription = "删除计划",
+                onClick = { showDeleteDialog = true }
             )
-        }
-    ) { paddingValues ->
+        )
+    ) {
         plan?.let { plan ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
                     .padding(16.dp)
             ) {
                 // 基本信息卡片

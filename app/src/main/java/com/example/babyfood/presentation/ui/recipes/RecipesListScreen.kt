@@ -15,6 +15,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -46,6 +48,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.babyfood.presentation.ui.common.AppScaffold
+import com.example.babyfood.presentation.ui.common.AppBarAction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,122 +79,111 @@ fun RecipesListScreen(
         "蛋白质" to "蛋白质"
     )
 
-    Column(
-        modifier = Modifier.fillMaxSize()
+    AppScaffold(
+        bottomActions = emptyList()
     ) {
-        Text(
-            text = "食谱库",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(16.dp)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 搜索框
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { query ->
-                searchQuery = query
-                viewModel.searchRecipes(query)
-            },
+        androidx.compose.foundation.layout.Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            placeholder = { Text("搜索食谱名称、食材...") },
-            leadingIcon = {
-                Icon(Icons.Default.Search, contentDescription = "搜索")
-            },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = {
-                        searchQuery = ""
-                        viewModel.searchRecipes("")
-                    }) {
-                        Icon(Icons.Default.Clear, contentDescription = "清除")
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            // 搜索框
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { query ->
+                    searchQuery = query
+                    viewModel.searchRecipes(query)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("搜索食谱名称、食材...") },
+                leadingIcon = {
+                    Icon(Icons.Default.Search, contentDescription = "搜索")
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = {
+                            searchQuery = ""
+                            viewModel.searchRecipes("")
+                        }) {
+                            Icon(Icons.Default.Clear, contentDescription = "清除")
+                        }
+                    }
+                },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(
+                    onSearch = { /* 隐藏键盘 */ }
+                )
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 月龄筛选
+            Column {
+                Text(
+                    text = "月龄",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    state = rememberLazyListState()
+                ) {
+                    items(ageFilterOptions) { (label, age) ->
+                        FilterChip(
+                            selected = uiState.selectedAge == age,
+                            onClick = {
+                                if (age != null) {
+                                    viewModel.filterByAge(age)
+                                } else {
+                                    viewModel.clearFilters()
+                                }
+                            },
+                            label = { Text(label) }
+                        )
                     }
                 }
-            },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(
-                onSearch = { /* 隐藏键盘 */ }
-            )
-        )
+            }
 
-        Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // 月龄筛选
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp)
-        ) {
-            Text(
-                text = "月龄",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                state = rememberLazyListState()
-            ) {
-                items(ageFilterOptions) { (label, age) ->
-                    FilterChip(
-                        selected = uiState.selectedAge == age,
-                        onClick = {
-                            if (age != null) {
-                                viewModel.filterByAge(age)
-                            } else {
-                                viewModel.clearFilters()
-                            }
-                        },
-                        label = { Text(label) }
-                    )
+            // 分类筛选
+            Column {
+                Text(
+                    text = "分类",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    state = rememberLazyListState()
+                ) {
+                    items(categoryFilterOptions) { (label, category) ->
+                        FilterChip(
+                            selected = uiState.selectedCategory == category,
+                            onClick = {
+                                if (category != null) {
+                                    viewModel.filterByCategory(category)
+                                } else {
+                                    viewModel.clearFilters()
+                                }
+                            },
+                            label = { Text(label) }
+                        )
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // 分类筛选
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp)
-        ) {
-            Text(
-                text = "分类",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                state = rememberLazyListState()
-            ) {
-                items(categoryFilterOptions) { (label, category) ->
-                    FilterChip(
-                        selected = uiState.selectedCategory == category,
-                        onClick = {
-                            if (category != null) {
-                                viewModel.filterByCategory(category)
-                            } else {
-                                viewModel.clearFilters()
-                            }
-                        },
-                        label = { Text(label) }
-                    )
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = "加载中...")
                 }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (uiState.isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "加载中...")
-            }
-        } else if (uiState.filteredRecipes.isEmpty()) {
+            } else if (uiState.filteredRecipes.isEmpty()) {
                 val isFiltering = searchQuery.isNotEmpty() || uiState.selectedAge != null || uiState.selectedCategory != null
                 com.example.babyfood.presentation.theme.EmptyState(
                     icon = if (isFiltering) Icons.Default.Search else Icons.Default.Restaurant,
@@ -198,15 +191,19 @@ fun RecipesListScreen(
                     description = if (isFiltering) "尝试调整搜索条件或筛选器" else "点击右下角 + 按钮添加食谱"
                 )
             } else {
-            LazyColumn(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(uiState.filteredRecipes) { recipe ->
-                    RecipeCard(
-                        recipe = recipe,
-                        onClick = { onNavigateToDetail(recipe.id) }
-                    )
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 100.dp)
+                ) {
+                    items(uiState.filteredRecipes) { recipe ->
+                        RecipeCard(
+                            recipe = recipe,
+                            onClick = { onNavigateToDetail(recipe.id) }
+                        )
+                    }
                 }
             }
         }

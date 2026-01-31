@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.babyfood.presentation.ui.baby.BabyViewModel
+import com.example.babyfood.presentation.ui.common.AppScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,22 +34,10 @@ fun GrowthCurveScreen(
         babyViewModel.loadBaby(babyId)
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("生长曲线") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+    AppScaffold {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
         ) {
             if (uiState.isLoading) {
                 Box(

@@ -29,16 +29,12 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -60,6 +56,8 @@ import com.example.babyfood.domain.model.ExpiryStatus
 import com.example.babyfood.domain.model.StorageMethod
 import com.example.babyfood.presentation.theme.Warning
 import com.example.babyfood.presentation.theme.OnWarningContainer
+import com.example.babyfood.presentation.ui.common.AppScaffold
+import com.example.babyfood.presentation.ui.common.AppBottomAction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -110,64 +108,49 @@ fun InventoryListScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text("库存食材")
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+    AppScaffold(
+        bottomActions = listOf(
+            AppBottomAction(
+                icon = Icons.Default.Add,
+                label = "添加",
+                contentDescription = "添加库存",
+                onClick = onNavigateToAdd
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToAdd,
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "添加食材")
-            }
-        }
-    ) { paddingValues ->
+        )
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(16.dp)
         ) {
             // 搜索框
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("搜索食材名称...") },
-                leadingIcon = {
-                    Icon(Icons.Default.Search, contentDescription = "搜索")
-                },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Clear, contentDescription = "清除")
-                        }
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("搜索食材名称...") },
+            leadingIcon = {
+                Icon(Icons.Default.Search, contentDescription = "搜索")
+            },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { searchQuery = "" }) {
+                        Icon(Icons.Default.Clear, contentDescription = "清除")
                     }
-                },
-                singleLine = true,
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = ImeAction.Search)
-            )
+                }
+            },
+            singleLine = true,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = ImeAction.Search)
+        )
 
-            // 筛选器
-            var showExpiryStatusFilter by remember { mutableStateOf(false) }
-            var showStorageMethodFilter by remember { mutableStateOf(false) }
+        // 筛选器
+        var showExpiryStatusFilter by remember { mutableStateOf(false) }
+        var showStorageMethodFilter by remember { mutableStateOf(false) }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
                 // 过期状态筛选
                 Box {
                     FilterChip(
@@ -276,14 +259,17 @@ fun InventoryListScreen(
                     Text("加载中...")
                 }
             } else if (uiState.filteredItems.isEmpty()) {
-                            val isFiltering = searchQuery.isNotEmpty() || uiState.selectedExpiryStatus != null || uiState.selectedStorageMethod != null
-                            com.example.babyfood.presentation.theme.EmptyState(
-                                icon = if (isFiltering) Icons.Default.Search else Icons.Default.Kitchen,
-                                title = if (isFiltering) "没有找到符合条件的食材" else "还没有添加库存食材",
-                                description = if (isFiltering) "尝试调整搜索条件或筛选器" else "点击右下角 + 按钮添加库存食材"
-                            )
-                        } else {                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
+                val isFiltering = searchQuery.isNotEmpty() || uiState.selectedExpiryStatus != null || uiState.selectedStorageMethod != null
+                com.example.babyfood.presentation.theme.EmptyState(
+                    icon = if (isFiltering) Icons.Default.Search else Icons.Default.Kitchen,
+                    title = if (isFiltering) "没有找到符合条件的食材" else "还没有添加库存食材",
+                    description = if (isFiltering) "尝试调整搜索条件或筛选器" else "点击右下角 + 按钮添加库存食材"
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(uiState.filteredItems) { item ->
@@ -331,9 +317,7 @@ fun InventoryItemCard(
     }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(
             0.5.dp,

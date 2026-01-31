@@ -12,6 +12,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.babyfood.presentation.ui.common.AppScaffold
+import com.example.babyfood.presentation.ui.common.AppBottomAction
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -31,27 +33,19 @@ fun HealthRecordListScreen(
         viewModel.loadHealthRecords(babyId)
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("体检记录") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
-                    }
-                }
+    AppScaffold(
+        bottomActions = listOf(
+            AppBottomAction(
+                icon = Icons.Default.Add,
+                label = "添加",
+                contentDescription = "添加体检记录",
+                onClick = onAddRecord
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = onAddRecord) {
-                Icon(Icons.Default.Add, contentDescription = "添加体检记录")
-            }
-        }
-    ) { paddingValues ->
+        )
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(16.dp)
         ) {
             // 过滤开关

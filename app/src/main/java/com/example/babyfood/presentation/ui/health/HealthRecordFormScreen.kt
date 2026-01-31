@@ -6,12 +6,16 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.BackHandler
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.babyfood.presentation.ui.common.AppScaffold
+import com.example.babyfood.presentation.ui.common.AppBottomAction
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -46,8 +50,21 @@ fun HealthRecordFormScreen(
     var expiryDays by remember { mutableStateOf(7) }
     var pendingRecordId by remember { mutableStateOf(0L) }
 
+    // 未保存修改跟踪
+    var hasUnsavedChanges by remember { mutableStateOf(false) }
+    var showExitConfirmationDialog by remember { mutableStateOf(false) }
+
     val scrollState = rememberScrollState()
     val isEditing = recordId > 0
+
+    // 返回键处理
+    BackHandler(enabled = true) {
+        if (hasUnsavedChanges) {
+            showExitConfirmationDialog = true
+        } else {
+            onBack()
+        }
+    }
 
     LaunchedEffect(recordId) {
         if (isEditing) {
@@ -85,29 +102,53 @@ fun HealthRecordFormScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (isEditing) "编辑体检记录" else "添加体检记录") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
-                    }
-                }
+    // 保存函数
+    val saveRecord: () -> Unit = {
+        val record = com.example.babyfood.domain.model.HealthRecord(
+            id = recordId,
+            babyId = babyId,
+            recordDate = kotlinx.datetime.LocalDate.parse(recordDate),
+            weight = weight.toFloatOrNull(),
+            height = height.toFloatOrNull(),
+            headCircumference = headCircumference.toFloatOrNull(),
+            ironLevel = ironLevel.toFloatOrNull(),
+            calciumLevel = calciumLevel.toFloatOrNull(),
+            hemoglobin = hemoglobin.toFloatOrNull(),
+            notes = notes.ifBlank { null },
+            aiAnalysis = null,
+            expiryDate = null
+        )
+
+        // 保存记录（会自动触发 AI 分析）
+        viewModel.saveHealthRecord(record)
+        hasUnsavedChanges = false
+        onSave()
+    }
+
+    AppScaffold(
+        bottomActions = listOf(
+            AppBottomAction(
+                icon = Icons.Default.Check,
+                label = "保存",
+                contentDescription = "保存体检记录",
+                enabled = recordDate.isNotBlank(),
+                onClick = saveRecord
             )
-        }
-    ) { paddingValues ->
+        )
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(16.dp)
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             OutlinedTextField(
                 value = recordDate,
-                onValueChange = { recordDate = it },
+                onValueChange = {
+                    recordDate = it
+                    hasUnsavedChanges = true
+                },
                 label = { Text("体检日期 (YYYY-MM-DD)") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
@@ -115,7 +156,10 @@ fun HealthRecordFormScreen(
 
             OutlinedTextField(
                 value = weight,
-                onValueChange = { weight = it },
+                onValueChange = {
+                    weight = it
+                    hasUnsavedChanges = true
+                },
                 label = { Text("体重 (kg)") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -124,7 +168,10 @@ fun HealthRecordFormScreen(
 
             OutlinedTextField(
                 value = height,
-                onValueChange = { height = it },
+                onValueChange = {
+                    height = it
+                    hasUnsavedChanges = true
+                },
                 label = { Text("身高 (cm)") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -133,7 +180,10 @@ fun HealthRecordFormScreen(
 
             OutlinedTextField(
                 value = headCircumference,
-                onValueChange = { headCircumference = it },
+                onValueChange = {
+                    headCircumference = it
+                    hasUnsavedChanges = true
+                },
                 label = { Text("头围 (cm)") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -142,7 +192,10 @@ fun HealthRecordFormScreen(
 
             OutlinedTextField(
                 value = ironLevel,
-                onValueChange = { ironLevel = it },
+                onValueChange = {
+                    ironLevel = it
+                    hasUnsavedChanges = true
+                },
                 label = { Text("铁 (mg/L)") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -151,7 +204,10 @@ fun HealthRecordFormScreen(
 
             OutlinedTextField(
                 value = calciumLevel,
-                onValueChange = { calciumLevel = it },
+                onValueChange = {
+                    calciumLevel = it
+                    hasUnsavedChanges = true
+                },
                 label = { Text("钙 (mg/L)") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -160,7 +216,10 @@ fun HealthRecordFormScreen(
 
             OutlinedTextField(
                 value = hemoglobin,
-                onValueChange = { hemoglobin = it },
+                onValueChange = {
+                    hemoglobin = it
+                    hasUnsavedChanges = true
+                },
                 label = { Text("血红蛋白 (g/L)") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -169,43 +228,14 @@ fun HealthRecordFormScreen(
 
             OutlinedTextField(
                 value = notes,
-                onValueChange = { notes = it },
+                onValueChange = {
+                    notes = it
+                    hasUnsavedChanges = true
+                },
                 label = { Text("备注") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3
             )
-
-            Button(
-                onClick = {
-                    val record = com.example.babyfood.domain.model.HealthRecord(
-                        id = recordId,
-                        babyId = babyId,
-                        recordDate = kotlinx.datetime.LocalDate.parse(recordDate),
-                        weight = weight.toFloatOrNull(),
-                        height = height.toFloatOrNull(),
-                        headCircumference = headCircumference.toFloatOrNull(),
-                        ironLevel = ironLevel.toFloatOrNull(),
-                        calciumLevel = calciumLevel.toFloatOrNull(),
-                        hemoglobin = hemoglobin.toFloatOrNull(),
-                        notes = notes.ifBlank { null },
-                        aiAnalysis = null,
-                        expiryDate = null
-                    )
-                    
-                    // 保存记录（会自动触发 AI 分析）
-                    viewModel.saveHealthRecord(record)
-                    
-                    // 延迟调用 onSave，等待 AI 分析完成
-                    scope.launch {
-                        kotlinx.coroutines.delay(500)
-                        onSave()
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = recordDate.isNotBlank()
-            ) {
-                Text("保存")
-            }
 
             if (uiState.error != null) {
                 Text(
@@ -215,49 +245,76 @@ fun HealthRecordFormScreen(
                 )
             }
         }
-    }
 
-    // AI 确认对话框
-    if (showAiConfirmDialog) {
-        AiAnalysisConfirmDialog(
-            aiAnalysis = editableAiAnalysis,
-            onAnalysisChange = { editableAiAnalysis = it },
-            expiryDays = expiryDays,
-            onExpiryDaysChange = { expiryDays = it },
-            onConfirm = {
-                // 计算有效期
-                val expiryDate = if (expiryDays > 0) {
-                    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-                    today.plus(kotlinx.datetime.DatePeriod(days = expiryDays))
-                } else {
-                    null
+        // AI 确认对话框 - INSIDE AppScaffold content, OUTSIDE Column
+        if (showAiConfirmDialog) {
+            AiAnalysisConfirmDialog(
+                aiAnalysis = editableAiAnalysis,
+                onAnalysisChange = { editableAiAnalysis = it },
+                expiryDays = expiryDays,
+                onExpiryDaysChange = { expiryDays = it },
+                onConfirm = {
+                    // 计算有效期
+                    val expiryDate = if (expiryDays > 0) {
+                        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                        today.plus(kotlinx.datetime.DatePeriod(days = expiryDays))
+                    } else {
+                        null
+                    }
+
+                    // 更新记录
+                    val updatedRecord = com.example.babyfood.domain.model.HealthRecord(
+                        id = pendingRecordId,
+                        babyId = babyId,
+                        recordDate = kotlinx.datetime.LocalDate.parse(recordDate),
+                        weight = weight.toFloatOrNull(),
+                        height = height.toFloatOrNull(),
+                        headCircumference = headCircumference.toFloatOrNull(),
+                        ironLevel = ironLevel.toFloatOrNull(),
+                        calciumLevel = calciumLevel.toFloatOrNull(),
+                        hemoglobin = hemoglobin.toFloatOrNull(),
+                        notes = notes.ifBlank { null },
+                        aiAnalysis = editableAiAnalysis.ifBlank { null },
+                        expiryDate = expiryDate,
+                        isConfirmed = true
+                    )
+                    viewModel.saveHealthRecord(updatedRecord)
+                    showAiConfirmDialog = false
+                    pendingRecordId = 0L
+                    onSave()
+                },
+                onDismiss = {
+                    showAiConfirmDialog = false
+                    pendingRecordId = 0L
+                    onSave()
                 }
-                
-                // 更新记录
-                val updatedRecord = com.example.babyfood.domain.model.HealthRecord(
-                    id = pendingRecordId,
-                    babyId = babyId,
-                    recordDate = kotlinx.datetime.LocalDate.parse(recordDate),
-                    weight = weight.toFloatOrNull(),
-                    height = height.toFloatOrNull(),
-                    headCircumference = headCircumference.toFloatOrNull(),
-                    ironLevel = ironLevel.toFloatOrNull(),
-                    calciumLevel = calciumLevel.toFloatOrNull(),
-                    hemoglobin = hemoglobin.toFloatOrNull(),
-                    notes = notes.ifBlank { null },
-                    aiAnalysis = editableAiAnalysis.ifBlank { null },
-                    expiryDate = expiryDate,
-                    isConfirmed = true
-                )
-                viewModel.saveHealthRecord(updatedRecord)
-                showAiConfirmDialog = false
-                pendingRecordId = 0L
-            },
-            onDismiss = {
-                showAiConfirmDialog = false
-                pendingRecordId = 0L
-            }
-        )
+            )
+        }
+
+        // 离开确认对话框 - INSIDE AppScaffold content, OUTSIDE Column
+        if (showExitConfirmationDialog) {
+            AlertDialog(
+                onDismissRequest = { showExitConfirmationDialog = false },
+                title = { Text("未保存的修改") },
+                text = { Text("您有未保存的修改，是否要保存？") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            saveRecord()
+                            showExitConfirmationDialog = false
+                        },
+                        enabled = recordDate.isNotBlank()
+                    ) {
+                        Text("保存")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showExitConfirmationDialog = false }) {
+                        Text("取消")
+                    }
+                }
+            )
+        }
     }
 }
 
