@@ -21,6 +21,13 @@ data class RecipeEntity(
     val isBuiltIn: Boolean = false,
     val imageUrl: String? = null,
 
+    // 营养功能扩展字段
+    val textureType: String? = null,           // 质地类型：PUREE, MASH, CHUNK, SOLID
+    val isIronRich: Boolean = false,            // 是否富铁食谱
+    val ironContent: Double? = null,            // 铁含量（mg/100g）
+    val riskLevelList: String? = null,          // 风险等级列表（JSON格式）
+    val safetyAdvice: String? = null,           // 安全建议
+
     // 同步元数据字段（向后兼容，默认值）
     override val cloudId: String? = null,           // 云端唯一标识
     override val syncStatus: String = "PENDING_UPLOAD", // 同步状态（默认待上传）
@@ -39,7 +46,12 @@ data class RecipeEntity(
         category = category,
         cookingTime = cookingTime,
         isBuiltIn = isBuiltIn,
-        imageUrl = imageUrl
+        imageUrl = imageUrl,
+        textureType = textureType,
+        isIronRich = isIronRich,
+        ironContent = ironContent,
+        riskLevelList = riskLevelList,
+        safetyAdvice = safetyAdvice
     )
 }
 
@@ -54,5 +66,10 @@ fun Recipe.toEntity(): RecipeEntity = RecipeEntity(
     category = category,
     cookingTime = cookingTime,
     isBuiltIn = isBuiltIn,
-    imageUrl = imageUrl
+    imageUrl = imageUrl,
+    textureType = textureType,
+    isIronRich = isIronRich,
+    ironContent = ironContent,
+    riskLevelList = riskLevelList,
+    safetyAdvice = safetyAdvice
 )

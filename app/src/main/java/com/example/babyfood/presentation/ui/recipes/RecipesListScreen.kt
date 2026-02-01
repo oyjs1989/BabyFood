@@ -48,8 +48,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.babyfood.domain.model.RiskLevel
 import com.example.babyfood.presentation.ui.common.AppScaffold
 import com.example.babyfood.presentation.ui.common.AppBarAction
+import com.example.babyfood.presentation.ui.common.IronRichBadge
+import com.example.babyfood.presentation.ui.common.SafetyWarningBadge
+import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -215,6 +219,22 @@ private fun RecipeCard(
     recipe: com.example.babyfood.domain.model.Recipe,
     onClick: () -> Unit = {}
 ) {
+    // 解析风险等级列表并获取最高风险
+    val highestRisk = recipe.riskLevelList?.let { riskList ->
+        try {
+            val riskLevels = Json.decodeFromString<List<String>>(riskList)
+            riskLevels.mapNotNull { risk ->
+                try {
+                    RiskLevel.valueOf(risk)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+            }.maxByOrNull { riskLevel: RiskLevel -> riskLevel.ordinal }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth(),
@@ -267,18 +287,30 @@ private fun RecipeCard(
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = recipe.name,
                         style = MaterialTheme.typography.titleLarge
                     )
-                    if (recipe.isBuiltIn) {
-                        Text(
-                            text = "内置",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (recipe.isIronRich == true) {
+                            IronRichBadge()
+                        }
+                        highestRisk?.let { risk ->
+                            SafetyWarningBadge(riskLevel = risk)
+                        }
+                        if (recipe.isBuiltIn) {
+                            Text(
+                                text = "内置",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
 

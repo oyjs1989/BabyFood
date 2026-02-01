@@ -15,7 +15,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,6 +40,7 @@ import com.example.babyfood.domain.model.PlannedMeal
 import com.example.babyfood.domain.model.WeeklyMealPlan
 import com.example.babyfood.presentation.ui.common.AppScaffold
 import com.example.babyfood.presentation.ui.common.AppBottomAction
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 
 /**
@@ -67,7 +67,7 @@ fun RecommendationEditorScreen(
 
     var showConflictDialog by remember { mutableStateOf(false) }
     var editedMeals by remember { mutableStateOf<List<PlannedMeal>>(emptyList()) }
-    
+
     LaunchedEffect(Unit) {
         viewModel.clearError()
     }
@@ -207,7 +207,7 @@ private fun DailyPlanEditorCard(
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             dailyPlan.meals.forEach { meal ->
                 MealItem(
                     meal = meal,

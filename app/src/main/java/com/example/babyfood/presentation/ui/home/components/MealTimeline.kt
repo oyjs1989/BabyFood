@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -248,19 +250,36 @@ private fun MealPeriodCard(
                                 // 根据食谱类型生成标签
                                 val tags = generateRecipeTags(recipe)
                                 tags.forEach { tag ->
+                                    val interactionSource = remember { MutableInteractionSource() }
+                                    val isPressed by interactionSource.collectIsPressedAsState()
+                                    val backgroundColor by animateColorAsState(
+                                        targetValue = if (isPressed) tag.color.copy(alpha = 0.8f) else tag.color,
+                                        animationSpec = tween(durationMillis = 200),
+                                        label = "tagBackground"
+                                    )
+
                                     Box(
                                         modifier = Modifier
+                                            .wrapContentWidth()
+                                            .height(28.dp)
                                             .background(
-                                                color = tag.color,
-                                                shape = RoundedCornerShape(4.dp)
+                                                color = backgroundColor,
+                                                shape = RoundedCornerShape(8.dp)
                                             )
-                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                            .clickable(
+                                                interactionSource = interactionSource,
+                                                indication = null
+                                            ) {},
+                                        contentAlignment = Alignment.Center
                                     ) {
                                         Text(
                                             text = "#${tag.name}",
                                             style = MaterialTheme.typography.bodySmall,
                                             fontWeight = FontWeight.Medium,
-                                            color = Color.White
+                                            color = Color.White,
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                            modifier = Modifier.padding(horizontal = 10.dp)
                                         )
                                     }
                                 }

@@ -1,5 +1,6 @@
 package com.example.babyfood.presentation.ui.plans
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -61,18 +62,19 @@ fun ConflictResolutionDialog(
                 }
             }
         },
-        confirmButton = {
-            Button(
-                onClick = { onResolve(ConflictResolution.OVERWRITE_ALL) },
-                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Text("覆盖所有")
-            }
-        },
+        confirmButton = {},
         dismissButton = {
-            Column {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = { onResolve(ConflictResolution.OVERWRITE_ALL) },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("覆盖所有")
+                }
                 TextButton(onClick = { onResolve(ConflictResolution.SKIP_CONFLICTS) }) {
                     Text("跳过冲突")
                 }
@@ -109,18 +111,32 @@ private fun ConflictItem(conflict: PlanConflict) {
             Row(
                 modifier = Modifier.padding(top = 4.dp)
             ) {
-                Text(
-                    text = "现有：食谱ID ${conflict.existingPlan.recipeId}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "推荐：${conflict.newPlan.recipeId}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.weight(1f)
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "现有：",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = conflict.existingRecipeName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "推荐：",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = conflict.newRecipeName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
             }
         }
     }

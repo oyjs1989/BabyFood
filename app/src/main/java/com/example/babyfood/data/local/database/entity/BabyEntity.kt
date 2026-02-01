@@ -21,6 +21,10 @@ data class BabyEntity(
     val nutritionGoal: NutritionGoal? = null,
     val avatarUrl: String? = null,                  // 头像 URL
 
+    // 质地适配扩展字段
+    val chewingAbility: String? = null,             // 咀嚼能力：NORMAL, STRONG, WEAK
+    val preferredTextureLevel: Int? = null,         // 偏好质地级别：1-4
+
     // 同步元数据字段（向后兼容，默认值）
     override val cloudId: String? = null,           // 云端唯一标识
     override val syncStatus: String = "LOCAL_ONLY", // 同步状态
@@ -37,7 +41,9 @@ data class BabyEntity(
         height = height,
         preferences = preferences,
         nutritionGoal = nutritionGoal,
-        avatarUrl = avatarUrl
+        avatarUrl = avatarUrl,
+        chewingAbility = chewingAbility,
+        preferredTextureLevel = preferredTextureLevel
     )
 }
 
@@ -50,5 +56,7 @@ fun Baby.toEntity(): BabyEntity = BabyEntity(
     height = height,
     preferences = preferences,
     nutritionGoal = nutritionGoal,
-    avatarUrl = avatarUrl
+    avatarUrl = avatarUrl,
+    chewingAbility = chewingAbility,
+    preferredTextureLevel = preferredTextureLevel
 )

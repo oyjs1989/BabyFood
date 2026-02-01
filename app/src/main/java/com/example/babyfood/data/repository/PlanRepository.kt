@@ -1,6 +1,7 @@
 package com.example.babyfood.data.repository
 
 import com.example.babyfood.data.local.database.dao.PlanDao
+import com.example.babyfood.data.local.database.dao.RecipeDao
 import com.example.babyfood.data.local.database.entity.PlanEntity
 import com.example.babyfood.domain.model.ConflictResolution
 import com.example.babyfood.domain.model.MealPeriod
@@ -16,7 +17,8 @@ import javax.inject.Singleton
 
 @Singleton
 class PlanRepository @Inject constructor(
-    private val planDao: PlanDao
+    private val planDao: PlanDao,
+    private val recipeDao: RecipeDao
 ) : SyncableRepository<Plan, PlanEntity, Long>() {
 
     // Note: PlanDao implements SyncableDao methods implicitly
@@ -122,25 +124,44 @@ class PlanRepository @Inject constructor(
      * 检测冲突：返回冲突的计划列表
      */
     suspend fun detectConflicts(babyId: Long, newPlans: List<Plan>): List<PlanConflict> {
+        android.util.Log.d("PlanRepository", "========== 开始检测冲突 ==========")
+        android.util.Log.d("PlanRepository", "宝宝ID: $babyId, 新计划数: ${newPlans.size}")
+        
         val conflicts = mutableListOf<PlanConflict>()
 
         // 获取现有计划
         val existingPlans = getPlansByBaby(babyId).first()
+        android.util.Log.d("PlanRepository", "现有计划数: ${existingPlans.size}")
+
+        // 获取所有食谱名称
+        val allRecipeIds = (existingPlans.map { it.recipeId } + newPlans.map { it.recipeId }).distinct()
+        val recipes = recipeDao.getByIds(allRecipeIds)
+        val recipeNameMap = recipes.associateBy({ it.id }, { it.name })
+        android.util.Log.d("PlanRepository", "加载了 ${recipes.size} 个食谱")
 
         for (newPlan in newPlans) {
             for (existingPlan in existingPlans) {
                 // 检查同一天同一餐段的冲突
                 if (newPlan.plannedDate == existingPlan.plannedDate &&
                     newPlan.mealPeriod == existingPlan.mealPeriod) {
+                    val existingRecipeName = recipeNameMap[existingPlan.recipeId] ?: "未知食谱"
+                    val newRecipeName = recipeNameMap[newPlan.recipeId] ?: "未知食谱"
+                    
                     conflicts.add(PlanConflict(
                         newPlan = newPlan,
                         existingPlan = existingPlan,
-                        conflictType = com.example.babyfood.domain.model.ConflictType.SAME_DATE_AND_PERIOD
+                        conflictType = com.example.babyfood.domain.model.ConflictType.SAME_DATE_AND_PERIOD,
+                        existingRecipeName = existingRecipeName,
+                        newRecipeName = newRecipeName
                     ))
+                    
+                    android.util.Log.d("PlanRepository", "检测到冲突: ${existingPlan.plannedDate} ${existingPlan.mealPeriod}, 现有: $existingRecipeName, 推荐: $newRecipeName")
                 }
             }
         }
 
+        android.util.Log.d("PlanRepository", "✓ 检测到 ${conflicts.size} 个冲突")
+        android.util.Log.d("PlanRepository", "========== 冲突检测完成 ==========")
         return conflicts
     }
 

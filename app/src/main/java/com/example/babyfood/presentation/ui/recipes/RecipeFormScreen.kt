@@ -71,6 +71,7 @@ fun RecipeFormScreen(
     var minAgeMonths by remember { mutableIntStateOf(6) }
     var maxAgeMonths by remember { mutableIntStateOf(24) }
     var category by remember { mutableStateOf("主食") }
+    var textureType by remember { mutableStateOf<com.example.babyfood.domain.model.TextureType?>(null) }
     var imageUrl by remember { mutableStateOf<String?>(null) }
     var ingredients = remember { mutableStateListOf<IngredientFormItem>() }
     var steps = remember { mutableStateListOf<String>() }
@@ -123,6 +124,7 @@ fun RecipeFormScreen(
                     iron = iron.toFloatOrNull()
                 ),
                 category = category,
+                textureType = textureType?.name,
                 isBuiltIn = false,
                 imageUrl = imageUrl
             )
@@ -155,6 +157,7 @@ fun RecipeFormScreen(
                 minAgeMonths = recipe.minAgeMonths
                 maxAgeMonths = recipe.maxAgeMonths
                 category = recipe.category
+                textureType = recipe.textureType?.let { com.example.babyfood.domain.model.TextureType.valueOf(it) }
                 imageUrl = recipe.imageUrl
                 ingredients.clear()
                 recipe.ingredients.forEach { ingredient ->
@@ -368,6 +371,25 @@ fun RecipeFormScreen(
                                     imeAction = ImeAction.Next
                                 )
                             )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "质地类型",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            com.example.babyfood.domain.model.TextureType.entries.forEach { texture ->
+                                androidx.compose.material3.FilterChip(
+                                    selected = textureType == texture,
+                                    onClick = { textureType = texture },
+                                    label = { Text(texture.displayName) }
+                                )
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))

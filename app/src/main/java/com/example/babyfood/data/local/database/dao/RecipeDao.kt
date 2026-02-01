@@ -20,6 +20,9 @@ interface RecipeDao {
     @Query("SELECT * FROM recipes WHERE id = :recipeId")
     suspend fun getById(recipeId: Long): RecipeEntity?
 
+    @Query("SELECT * FROM recipes WHERE id IN (:recipeIds)")
+    suspend fun getByIds(recipeIds: List<Long>): List<RecipeEntity>
+
     @Query("SELECT * FROM recipes WHERE minAgeMonths <= :ageMonths AND maxAgeMonths >= :ageMonths")
     fun getRecipesByAge(ageMonths: Int): Flow<List<RecipeEntity>>
 
@@ -31,6 +34,12 @@ interface RecipeDao {
 
     @Query("SELECT * FROM recipes WHERE isBuiltIn = 0")
     fun getUserRecipes(): Flow<List<RecipeEntity>>
+
+    @Query("SELECT * FROM recipes WHERE textureType = :textureType")
+    fun getByTextureType(textureType: String): Flow<List<RecipeEntity>>
+
+    @Query("SELECT * FROM recipes WHERE textureType = :textureType")
+    suspend fun getByTextureTypeSync(textureType: String): List<RecipeEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(recipe: RecipeEntity): Long

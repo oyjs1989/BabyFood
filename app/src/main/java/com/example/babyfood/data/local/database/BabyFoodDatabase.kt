@@ -8,17 +8,27 @@ import androidx.room.TypeConverters
 import com.example.babyfood.data.local.database.dao.BabyDao
 import com.example.babyfood.data.local.database.dao.GrowthRecordDao
 import com.example.babyfood.data.local.database.dao.HealthRecordDao
+import com.example.babyfood.data.local.database.dao.IngredientTrialDao
 import com.example.babyfood.data.local.database.dao.InventoryItemDao
+import com.example.babyfood.data.local.database.dao.NutritionDataDao
+import com.example.babyfood.data.local.database.dao.NutritionGoalDao
 import com.example.babyfood.data.local.database.dao.PlanDao
 import com.example.babyfood.data.local.database.dao.RecipeDao
+import com.example.babyfood.data.local.database.dao.SafetyRiskDao
 import com.example.babyfood.data.local.database.dao.UserDao
+import com.example.babyfood.data.local.database.dao.UserWarningIgnoreDao
 import com.example.babyfood.data.local.database.entity.BabyEntity
 import com.example.babyfood.data.local.database.entity.GrowthRecordEntity
 import com.example.babyfood.data.local.database.entity.HealthRecordEntity
+import com.example.babyfood.data.local.database.entity.IngredientTrialEntity
 import com.example.babyfood.data.local.database.entity.InventoryItemEntity
+import com.example.babyfood.data.local.database.entity.NutritionDataEntity
+import com.example.babyfood.data.local.database.entity.NutritionGoalEntity
 import com.example.babyfood.data.local.database.entity.PlanEntity
 import com.example.babyfood.data.local.database.entity.RecipeEntity
+import com.example.babyfood.data.local.database.entity.SafetyRiskEntity
 import com.example.babyfood.data.local.database.entity.UserEntity
+import com.example.babyfood.data.local.database.entity.UserWarningIgnoreEntity
 
 // 数据库迁移：从版本 1 到版本 2
 val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -373,6 +383,109 @@ val MIGRATION_13_14 = object : Migration(13, 14) {
     }
 }
 
+// 数据库迁移：从版本 14 到版本 15
+val MIGRATION_14_15 = object : Migration(14, 15) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // 1. 创建 safety_risks 表
+        database.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS safety_risks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                ingredientName TEXT NOT NULL,
+                riskLevel TEXT NOT NULL,
+                riskReason TEXT NOT NULL,
+                handlingAdvice TEXT,
+                applicableAgeRangeStart INTEGER,
+                applicableAgeRangeEnd INTEGER,
+                severity INTEGER NOT NULL,
+                dataSource TEXT NOT NULL,
+                createdAt INTEGER NOT NULL
+            )
+        """.trimIndent()
+        )
+
+        // 2. 创建 ingredient_trials 表
+        database.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS ingredient_trials (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                babyId INTEGER NOT NULL,
+                ingredientName TEXT NOT NULL,
+                trialDate INTEGER NOT NULL,
+                isAllergic INTEGER NOT NULL DEFAULT 0,
+                reaction TEXT,
+                FOREIGN KEY(babyId) REFERENCES babies(id) ON DELETE CASCADE
+            )
+            """.trimIndent()
+        )
+
+        // 3. 创建 nutrition_goals 表
+        database.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS nutrition_goals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                babyId INTEGER NOT NULL,
+                calories REAL NOT NULL,
+                protein REAL NOT NULL,
+                calcium REAL NOT NULL,
+                iron REAL NOT NULL,
+                vitaminA REAL NOT NULL,
+                vitaminC REAL NOT NULL,
+                FOREIGN KEY(babyId) REFERENCES babies(id) ON DELETE CASCADE
+            )
+            """.trimIndent()
+        )
+
+        // 4. 创建 nutrition_data 表
+        database.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS nutrition_data (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                ingredientName TEXT NOT NULL,
+                ironContent REAL NOT NULL,
+                zincContent REAL NOT NULL,
+                vitaminAContent REAL NOT NULL,
+                calciumContent REAL NOT NULL,
+                vitaminCContent REAL NOT NULL
+            )
+            """.trimIndent()
+        )
+
+        // 5. 创建 user_warning_ignores 表
+        database.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS user_warning_ignores (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                userId INTEGER NOT NULL,
+                ingredientName TEXT NOT NULL,
+                warningType TEXT NOT NULL,
+                ignoreDate INTEGER NOT NULL,
+                ignoreCount INTEGER NOT NULL DEFAULT 1,
+                FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
+            )
+            """.trimIndent()
+        )
+
+        // 6. 扩展 recipes 表
+        database.execSQL("ALTER TABLE recipes ADD COLUMN textureType TEXT")
+        database.execSQL("ALTER TABLE recipes ADD COLUMN isIronRich INTEGER NOT NULL DEFAULT 0")
+        database.execSQL("ALTER TABLE recipes ADD COLUMN ironContent REAL")
+        database.execSQL("ALTER TABLE recipes ADD COLUMN riskLevelList TEXT")
+        database.execSQL("ALTER TABLE recipes ADD COLUMN safetyAdvice TEXT")
+
+        // 7. 扩展 babies 表
+        database.execSQL("ALTER TABLE babies ADD COLUMN chewingAbility TEXT")
+        database.execSQL("ALTER TABLE babies ADD COLUMN preferredTextureLevel INTEGER")
+
+        // 创建索引
+        database.execSQL("CREATE INDEX IF NOT EXISTS index_safety_risks_ingredientName ON safety_risks(ingredientName)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS index_ingredient_trials_babyId ON ingredient_trials(babyId)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS index_nutrition_goals_babyId ON nutrition_goals(babyId)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS index_nutrition_data_ingredientName ON nutrition_data(ingredientName)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS index_user_warning_ignores_userId ON user_warning_ignores(userId)")
+    }
+}
+
 @Database(
     entities = [
         BabyEntity::class,
@@ -381,9 +494,14 @@ val MIGRATION_13_14 = object : Migration(13, 14) {
         HealthRecordEntity::class,
         GrowthRecordEntity::class,
         UserEntity::class,
-        InventoryItemEntity::class
+        InventoryItemEntity::class,
+        SafetyRiskEntity::class,
+        IngredientTrialEntity::class,
+        NutritionGoalEntity::class,
+        NutritionDataEntity::class,
+        UserWarningIgnoreEntity::class
     ],
-    version = 14,  // 升级到版本 14（添加仓库功能）
+    version = 15,  // 升级到版本 15（优化辅食选择功能 - 营养指南）
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -395,4 +513,9 @@ abstract class BabyFoodDatabase : RoomDatabase() {
     abstract fun growthRecordDao(): GrowthRecordDao
     abstract fun userDao(): UserDao
     abstract fun inventoryItemDao(): InventoryItemDao
+    abstract fun safetyRiskDao(): SafetyRiskDao
+    abstract fun ingredientTrialDao(): IngredientTrialDao
+    abstract fun nutritionGoalDao(): NutritionGoalDao
+    abstract fun nutritionDataDao(): NutritionDataDao
+    abstract fun userWarningIgnoreDao(): UserWarningIgnoreDao
 }

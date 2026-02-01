@@ -192,6 +192,30 @@ class PlansViewModel @Inject constructor(
         }
     }
 
+    fun updatePlanRecipe(planId: Long, newRecipeId: Long) {
+        android.util.Log.d("PlansViewModel", "更新计划食谱: planId=$planId, newRecipeId=$newRecipeId")
+        viewModelScope.launch {
+            try {
+                val plan = _uiState.value.plans.find { it.id == planId }
+                if (plan != null) {
+                    planRepository.update(plan.copy(recipeId = newRecipeId))
+                    android.util.Log.d("PlansViewModel", "✓ 计划食谱更新成功")
+                    _uiState.value = _uiState.value.copy(
+                        isSaved = true,
+                        error = null
+                    )
+                } else {
+                    android.util.Log.w("PlansViewModel", "⚠️ 未找到计划: ID=$planId")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("PlansViewModel", "❌ 计划食谱更新失败: ${e.message}")
+                _uiState.value = _uiState.value.copy(
+                    error = e.message
+                )
+            }
+        }
+    }
+
     fun updatePlanStatus(planId: Long, status: PlanStatus) {
         android.util.Log.d("PlansViewModel", "更新计划状态: ID=$planId, status=$status")
         viewModelScope.launch {
@@ -495,6 +519,22 @@ class PlansViewModel @Inject constructor(
         android.util.Log.d("PlansViewModel", "✓ 推荐数据已清除")
         android.util.Log.d("PlansViewModel", "✓ SavedStateHandle 已清除")
     }
+
+    fun showRecipeSelector(planId: Long) {
+        android.util.Log.d("PlansViewModel", "显示食谱选择器: planId=$planId")
+        _uiState.value = _uiState.value.copy(
+            showRecipeSelector = true,
+            selectedPlanId = planId
+        )
+    }
+
+    fun dismissRecipeSelector() {
+        android.util.Log.d("PlansViewModel", "关闭食谱选择器")
+        _uiState.value = _uiState.value.copy(
+            showRecipeSelector = false,
+            selectedPlanId = null
+        )
+    }
 }
 
 data class PlansUiState(
@@ -509,5 +549,7 @@ data class PlansUiState(
     val recommendation: WeeklyMealPlan? = null,
     val conflicts: List<PlanConflict> = emptyList(),
     val isSaving: Boolean = false,
-    val saveResult: SaveResult? = null
+    val saveResult: SaveResult? = null,
+    val showRecipeSelector: Boolean = false,
+    val selectedPlanId: Long? = null
 )

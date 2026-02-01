@@ -13,7 +13,12 @@ data class Recipe(
     val category: String,
     val cookingTime: Int? = null,   // 烹饪时间（分钟）
     val isBuiltIn: Boolean = false,   // 是否内置食谱
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val textureType: String? = null,           // 质地类型：PUREE, MASH, CHUNK, SOLID
+    val isIronRich: Boolean = false,            // 是否富铁食谱
+    val ironContent: Double? = null,            // 铁含量（mg/100g）
+    val riskLevelList: String? = null,          // 风险等级列表（JSON格式）
+    val safetyAdvice: String? = null            // 安全建议
 )
 
 @Serializable
