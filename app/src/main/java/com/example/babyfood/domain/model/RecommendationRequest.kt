@@ -99,10 +99,29 @@ data class DailyNutritionAverage(
 
 /**
  * AI 推荐响应
+ * 奥卡姆剃刀原则：包含AI的分析思路和营养目标，让用户理解AI的判断过程
  */
 data class RecommendationResponse(
     val success: Boolean,
     val weeklyPlan: WeeklyMealPlan? = null,
     val errorMessage: String? = null,
-    val warnings: List<String> = emptyList()
+    val warnings: List<String> = emptyList(),
+    val analysisReasoning: String? = null,  // AI的分析思路
+    val nutritionGoals: NutritionGoalInfo? = null  // 营养目标
+)
+
+/**
+ * 营养目标信息
+ */
+data class NutritionGoalInfo(
+    val ageRange: String,  // 年龄段
+    val calories: Float,  // 热量
+    val caloriesUnit: String,  // 热量单位
+    val protein: Float,  // 蛋白质
+    val proteinUnit: String,  // 蛋白质单位
+    val calcium: Float,  // 钙
+    val calciumUnit: String,  // 钙单位
+    val iron: Float,  // 铁
+    val ironUnit: String,  // 铁单位
+    val description: String  // 营养目标说明
 )

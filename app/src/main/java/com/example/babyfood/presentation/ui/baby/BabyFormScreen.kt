@@ -52,6 +52,7 @@ fun BabyFormScreen(
     var height by remember { mutableStateOf("") }
     var allergyItems by remember { mutableStateOf<List<String>>(emptyList()) }
     var preferenceItems by remember { mutableStateOf<List<String>>(emptyList()) }
+    var chewingAbility by remember { mutableStateOf("NORMAL") }
     var avatarUrl by remember { mutableStateOf<String?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showAllergyDialog by remember { mutableStateOf(false) }
@@ -101,11 +102,13 @@ fun BabyFormScreen(
                 height = it.height?.toString() ?: ""
                 allergyItems = it.getEffectiveAllergies()
                 preferenceItems = it.getEffectivePreferences()
+                chewingAbility = it.chewingAbility ?: "NORMAL"
                 avatarUrl = it.avatarUrl
             }
         } else {
             // 默认值为当天
             birthDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            chewingAbility = "NORMAL"
         }
     }
 
@@ -184,6 +187,7 @@ fun BabyFormScreen(
                         height = null,
                         allergies = allergyItems.map { com.example.babyfood.domain.model.AllergyItem(it) },
                         preferences = preferenceItems.map { com.example.babyfood.domain.model.PreferenceItem(it) },
+                        chewingAbility = chewingAbility,
                         avatarUrl = avatarUrl
                     )
                     viewModel.saveBaby(baby)
@@ -452,6 +456,39 @@ fun BabyFormScreen(
                         }
                     }
                 }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 咀嚼能力
+            Column {
+                Text(
+                    text = "咀嚼能力",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf(
+                        "NORMAL" to "正常",
+                        "STRONG" to "较强",
+                        "WEAK" to "较弱"
+                    ).forEach { (value, label) ->
+                        FilterChip(
+                            selected = chewingAbility == value,
+                            onClick = { chewingAbility = value },
+                            label = { Text(label) }
+                        )
+                    }
+                }
+                Text(
+                    text = "选择宝宝的咀嚼能力，帮助系统推荐适合的质地",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(top = 4.dp)
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))

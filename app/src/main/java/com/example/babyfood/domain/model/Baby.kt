@@ -14,7 +14,9 @@ data class Baby(
     val height: Float? = null,      // cm
     val preferences: List<PreferenceItem> = emptyList(),  // 偏好食材列表（带有效期）
     val nutritionGoal: NutritionGoal? = null,  // 自定义营养目标（用户可调整）
-    val avatarUrl: String? = null   // 头像 URL
+    val avatarUrl: String? = null,   // 头像 URL
+    val chewingAbility: String? = null,  // 咀嚼能力：NORMAL, STRONG, WEAK
+    val preferredTextureLevel: Int? = null  // 偏好质地级别：1-4
 ) {
     val ageInMonths: Int
         get() {

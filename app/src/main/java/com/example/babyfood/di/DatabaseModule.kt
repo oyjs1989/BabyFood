@@ -16,6 +16,9 @@ import com.example.babyfood.data.local.database.MIGRATION_10_11
 import com.example.babyfood.data.local.database.MIGRATION_11_12
 import com.example.babyfood.data.local.database.MIGRATION_12_13
 import com.example.babyfood.data.local.database.MIGRATION_13_14
+import com.example.babyfood.data.local.database.MIGRATION_14_15
+import com.example.babyfood.data.local.database.dao.NutritionDataDao
+import com.example.babyfood.data.ai.recommendation.IronRichStrategy
 import com.example.babyfood.data.preferences.PreferencesManager
 import dagger.Module
 import dagger.Provides
@@ -41,7 +44,8 @@ object DatabaseModule {
         MIGRATION_10_11,
         MIGRATION_11_12,
         MIGRATION_12_13,
-        MIGRATION_13_14
+        MIGRATION_13_14,
+        MIGRATION_14_15
     )
 
     @Provides
@@ -86,6 +90,14 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideInventoryItemDao(database: BabyFoodDatabase) = database.inventoryItemDao()
+
+    @Provides
+    @Singleton
+    fun provideNutritionDataDao(database: BabyFoodDatabase) = database.nutritionDataDao()
+
+    @Provides
+    @Singleton
+    fun provideIronRichStrategy(nutritionDataDao: NutritionDataDao) = IronRichStrategy(nutritionDataDao)
 }
 
 @Module

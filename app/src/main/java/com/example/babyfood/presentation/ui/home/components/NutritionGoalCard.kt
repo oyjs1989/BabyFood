@@ -1,7 +1,6 @@
 package com.example.babyfood.presentation.ui.home.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.babyfood.domain.model.NutritionGoal
 import com.example.babyfood.domain.model.NutritionIntake
 import com.example.babyfood.presentation.theme.NutritionCalories

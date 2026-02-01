@@ -1,5 +1,6 @@
 package com.example.babyfood.presentation.ui.plans
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.*
+import com.example.babyfood.presentation.ui.home.components.RecipeSelectorDialog
 import androidx.compose.runtime.*
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -26,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.rememberAsyncImagePainter
 import com.example.babyfood.domain.model.MealPeriod
 import com.example.babyfood.domain.model.PlanStatus
 import com.example.babyfood.presentation.ui.common.AppScaffold
@@ -102,7 +105,9 @@ fun PlanListScreen(
         SelectedDatePlans(
             selectedDate = selectedDate,
             plans = uiState.plans.filter { it.plannedDate == selectedDate },
-            onPlanClick = onNavigateToDetail
+            recipes = uiState.recipes,
+            onPlanClick = onNavigateToDetail,
+            onChangeRecipe = { planId -> viewModel.showRecipeSelector(planId) }
         )
     }
 
@@ -110,8 +115,10 @@ fun PlanListScreen(
     if (showDateRangePicker) {
         DateRangePickerDialog(
             onDismiss = { showDateRangePicker = false },
-            onConfirm = { startDate, days ->
+            onConfirm = { startDate, endDate ->
                 showDateRangePicker = false
+                // 计算天数
+                val days = (endDate.toEpochDays() - startDate.toEpochDays() + 1).toInt()
                 // 生成AI推荐并跳转到编辑器
                 uiState.selectedBaby?.let { baby ->
                     scope.launch {
@@ -163,6 +170,18 @@ fun PlanListScreen(
                 TextButton(onClick = { viewModel.clearError() }) {
                     Text("确定")
                 }
+            }
+        )
+    }
+
+    // 食谱选择对话框
+    if (uiState.showRecipeSelector && uiState.selectedPlanId != null) {
+        RecipeSelectorDialog(
+            availableRecipes = uiState.recipes,
+            onDismiss = { viewModel.dismissRecipeSelector() },
+            onRecipeSelected = { newRecipeId ->
+                viewModel.updatePlanRecipe(uiState.selectedPlanId!!, newRecipeId)
+                viewModel.dismissRecipeSelector()
             }
         )
     }
@@ -351,7 +370,9 @@ private fun DateCell(
 private fun SelectedDatePlans(
     selectedDate: LocalDate,
     plans: List<com.example.babyfood.domain.model.Plan>,
-    onPlanClick: (Long) -> Unit
+    recipes: List<com.example.babyfood.domain.model.Recipe>,
+    onPlanClick: (Long) -> Unit,
+    onChangeRecipe: (Long) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -375,7 +396,9 @@ private fun SelectedDatePlans(
             plans.sortedBy { try { MealPeriod.valueOf(it.mealPeriod).order } catch (e: Exception) { 0 } }.forEach { plan ->
                 PlanItem(
                     plan = plan,
-                    onClick = { onPlanClick(plan.id) }
+                    recipes = recipes,
+                    onClick = { onPlanClick(plan.id) },
+                    onChangeRecipe = { onChangeRecipe(plan.id) }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -386,12 +409,15 @@ private fun SelectedDatePlans(
 @Composable
 private fun PlanItem(
     plan: com.example.babyfood.domain.model.Plan,
-    onClick: () -> Unit
+    recipes: List<com.example.babyfood.domain.model.Recipe>,
+    onClick: () -> Unit,
+    onChangeRecipe: () -> Unit
 ) {
+    val recipe = recipes.find { it.id == plan.recipeId }
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable(onClick = onChangeRecipe),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(
             0.5.dp,
@@ -405,17 +431,40 @@ private fun PlanItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // 图片显示在左侧
+            if (recipe?.imageUrl != null) {
+                Image(
+                    painter = rememberAsyncImagePainter(recipe.imageUrl),
+                    contentDescription = recipe.name,
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+            }
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = try { MealPeriod.valueOf(plan.mealPeriod).displayName } catch (e: Exception) { plan.mealPeriod },
+                    text = recipe?.name ?: "食谱ID: ${plan.recipeId}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "食谱ID: ${plan.recipeId}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                if (recipe != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "食材: ${recipe.ingredients.joinToString(", ") { it.name }}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (recipe.cookingTime != null) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "制作时间: ${recipe.cookingTime}分钟",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
                 if (!plan.notes.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
@@ -426,6 +475,7 @@ private fun PlanItem(
                 }
             }
 
+            // 状态标签在最右侧
             PlanStatusChip(status = plan.status)
         }
     }

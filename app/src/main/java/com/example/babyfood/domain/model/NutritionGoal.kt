@@ -93,12 +93,18 @@ data class NutritionGoal(
             ironLevel: Float?,
             calciumLevel: Float?
         ) {
-            Log.d(TAG, "宝宝月龄: $ageInMonths 个月")
-            Log.d(TAG, "当前体重: ${currentWeight ?: "无数据"} kg")
-            Log.d(TAG, "当前身高: ${currentHeight ?: "无数据"} cm")
-            Log.d(TAG, "血红蛋白: ${hemoglobin ?: "无数据"} g/L")
-            Log.d(TAG, "铁含量: ${ironLevel ?: "无数据"} μmol/L")
-            Log.d(TAG, "钙含量: ${calciumLevel ?: "无数据"} mmol/L")
+            val parameters = listOf(
+                "宝宝月龄" to "$ageInMonths 个月",
+                "当前体重" to "${currentWeight?.let { "$it kg" } ?: "无数据"}",
+                "当前身高" to "${currentHeight?.let { "$it cm" } ?: "无数据"}",
+                "血红蛋白" to "${hemoglobin?.let { "$it g/L" } ?: "无数据"}",
+                "铁含量" to "${ironLevel?.let { "$it μmol/L" } ?: "无数据"}",
+                "钙含量" to "${calciumLevel?.let { "$it mmol/L" } ?: "无数据"}"
+            )
+
+            parameters.forEach { (key, value) ->
+                Log.d(TAG, "$key: $value")
+            }
         }
 
         private fun calculateAdjustments(
@@ -145,15 +151,18 @@ data class NutritionGoal(
 
             // 根据血红蛋白微调铁
             hemoglobin?.let { hb ->
-                val (minHb, maxHb) = getStandardHemoglobinRange(ageInMonths)
-                Log.d(TAG, "标准血红蛋白范围: $minHb - $maxHb g/L")
+                val (minHb, _) = getStandardHemoglobinRange(ageInMonths)
+                Log.d(TAG, "标准血红蛋白范围: $minHb - 140.0 g/L")
 
-                if (hb < minHb) {
-                    ironAdjustment = 1.2f
-                    Log.d(TAG, "血红蛋白偏低（${hb} g/L < ${minHb} g/L），增加铁 20%")
-                } else if (hb in minHb..(minHb * 1.05f)) {
-                    ironAdjustment = 1.1f
-                    Log.d(TAG, "血红蛋白略低，轻微增加铁 10%")
+                when {
+                    hb < minHb -> {
+                        ironAdjustment = 1.2f
+                        Log.d(TAG, "血红蛋白偏低（${hb} g/L < ${minHb} g/L），增加铁 20%")
+                    }
+                    hb < minHb * 1.05f -> {
+                        ironAdjustment = 1.1f
+                        Log.d(TAG, "血红蛋白略低，轻微增加铁 10%")
+                    }
                 }
             }
 
@@ -167,12 +176,15 @@ data class NutritionGoal(
 
             // 根据钙含量微调钙
             calciumLevel?.let { ca ->
-                if (ca < 2.2f) {
-                    calciumAdjustment = 1.15f
-                    Log.d(TAG, "钙含量偏低（${ca} < 2.2），增加钙 15%")
-                } else if (ca < 2.5f) {
-                    calciumAdjustment = 1.08f
-                    Log.d(TAG, "钙含量略低，轻微增加钙 8%")
+                when {
+                    ca < 2.2f -> {
+                        calciumAdjustment = 1.15f
+                        Log.d(TAG, "钙含量偏低（${ca} < 2.2），增加钙 15%")
+                    }
+                    ca < 2.5f -> {
+                        calciumAdjustment = 1.08f
+                        Log.d(TAG, "钙含量略低，轻微增加钙 8%")
+                    }
                 }
             }
 
@@ -197,7 +209,14 @@ data class NutritionGoal(
         }
 
         private fun logResult(goal: NutritionGoal, adjustments: NutritionAdjustments) {
-            Log.d(TAG, "微调系数: 热量 ${String.format("%.2f", adjustments.calorieAdjustment)}, 蛋白质 ${String.format("%.2f", adjustments.proteinAdjustment)}, 钙 ${String.format("%.2f", adjustments.calciumAdjustment)}, 铁 ${String.format("%.2f", adjustments.ironAdjustment)}")
+            val adjustmentText = listOf(
+                "热量" to adjustments.calorieAdjustment,
+                "蛋白质" to adjustments.proteinAdjustment,
+                "钙" to adjustments.calciumAdjustment,
+                "铁" to adjustments.ironAdjustment
+            ).joinToString(", ") { "${it.first} ${String.format("%.2f", it.second)}" }
+
+            Log.d(TAG, "微调系数: $adjustmentText")
             Log.d(TAG, "✓ 智能推荐结果: $goal")
             Log.d(TAG, "========== 智能推荐完成 ==========")
         }

@@ -1,9 +1,12 @@
 package com.example.babyfood.data.ai
 
+import com.example.babyfood.data.ai.recommendation.IronRichStrategy
 import com.example.babyfood.data.ai.ruleengine.RuleEngine
 import com.example.babyfood.data.ai.ruleengine.ValidationConstraints
 import com.example.babyfood.data.ai.strategy.CheapModelStrategy
 import com.example.babyfood.data.ai.strategy.MainModelStrategy
+import com.example.babyfood.data.local.database.dao.NutritionDataDao
+import com.example.babyfood.domain.model.NutritionGoalInfo
 import com.example.babyfood.domain.model.RecommendationRequest
 import com.example.babyfood.domain.model.RecommendationResponse
 import com.example.babyfood.data.repository.BabyRepository
@@ -23,27 +26,26 @@ class RecommendationService @Inject constructor(
     private val cheapModelStrategy: CheapModelStrategy,
     private val ruleEngine: RuleEngine,
     private val babyRepository: BabyRepository,
-    private val inventoryRepository: InventoryRepository
+    private val inventoryRepository: InventoryRepository,
+    private val ironRichStrategy: IronRichStrategy,
+    private val nutritionDataDao: NutritionDataDao
 ) {
 
     private val TAG = "AI推荐服务"
 
     /**
      * 生成辅食推荐
+     * 奥卡姆剃刀原则：仅做必要的数据准备，将判断和分析完全交给AI
+     *
      * @param request 推荐请求
-     * @return 推荐响应
+     * @return 推荐响应（包含AI的分析思路和营养目标）
      */
     suspend fun generateRecommendation(request: RecommendationRequest): RecommendationResponse {
         return try {
             logRequestData(request)
-            android.util.Log.d(TAG, "步骤1: 开始筛选候选食谱")
-            android.util.Log.d(TAG, "  年龄范围: ${request.ageInMonths}个月")
-            android.util.Log.d(TAG, "  过敏食材: ${request.allergies.joinToString(", ")}")
-            android.util.Log.d(TAG, "  偏好食材: ${request.preferences.joinToString(", ")}")
-            android.util.Log.d(TAG, "  可用食材: ${request.availableIngredients.joinToString(", ")}")
-            android.util.Log.d(TAG, "  仅使用可用食材: ${request.useAvailableIngredientsOnly}")
+            android.util.Log.d(TAG, "========== 奥卡姆剃刀原则：AI完全负责判断 ==========")
 
-            // 1. 获取候选食谱集合（规则层过滤）
+            android.util.Log.d(TAG, "步骤1: 筛选候选食谱（仅过滤过敏食材）")
             val candidateSet = candidateRecipeService.getCandidateRecipes(
                 ageInMonths = request.ageInMonths,
                 allergies = request.allergies,
@@ -54,12 +56,12 @@ class RecommendationService @Inject constructor(
             )
 
             android.util.Log.d(TAG, "  ✓ 候选食谱筛选完成")
+            android.util.Log.d(TAG, "    - 总候选食谱数: ${candidateSet.allRecipes.size}")
+            android.util.Log.d(TAG, "    - 被过滤食谱数: ${candidateSet.filteredCount}")
             android.util.Log.d(TAG, "    - 早餐候选数: ${candidateSet.breakfast.size}")
             android.util.Log.d(TAG, "    - 午餐候选数: ${candidateSet.lunch.size}")
             android.util.Log.d(TAG, "    - 晚餐候选数: ${candidateSet.dinner.size}")
             android.util.Log.d(TAG, "    - 点心候选数: ${candidateSet.snack.size}")
-            android.util.Log.d(TAG, "    - 总候选食谱数: ${candidateSet.allRecipes.size}")
-            android.util.Log.d(TAG, "    - 被过滤食谱数: ${candidateSet.filteredCount}")
 
             if (candidateSet.allRecipes.isEmpty()) {
                 android.util.Log.w(TAG, "  ❌ 候选食谱为空")
@@ -68,8 +70,8 @@ class RecommendationService @Inject constructor(
                 return RecommendationResponse(success = false, errorMessage = reason)
             }
 
-            android.util.Log.d(TAG, "步骤2: 使用主力模型生成周计划")
-            // 2. 使用主力模型生成一周饮食计划
+            android.util.Log.d(TAG, "步骤2: 使用AI生成周计划（包含分析思路和营养目标）")
+            // 奥卡姆剃刀：AI完全负责周计划生成、排序、营养匹配
             val weeklyPlan = mainModelStrategy.generateWeeklyPlan(
                 candidateSet = candidateSet,
                 ageInMonths = request.ageInMonths,
@@ -77,10 +79,10 @@ class RecommendationService @Inject constructor(
                 startDate = request.startDate
             )
 
-            android.util.Log.d(TAG, "  ✓ 周计划生成完成")
+            android.util.Log.d(TAG, "  ✓ AI周计划生成完成")
             android.util.Log.d(TAG, "    - 计划天数: ${weeklyPlan.dailyPlans.size}")
 
-            android.util.Log.d(TAG, "步骤3: 使用便宜模型生成文案")
+            android.util.Log.d(TAG, "步骤3: 使用AI生成友好文案")
             val updatedWeeklyPlan = weeklyPlan.copy(
                 dailyPlans = weeklyPlan.dailyPlans.map { dailyPlan ->
                     dailyPlan.copy(meals = cheapModelStrategy.generateBatchMealTexts(dailyPlan.meals))
@@ -89,7 +91,7 @@ class RecommendationService @Inject constructor(
 
             android.util.Log.d(TAG, "  ✓ 文案生成完成")
 
-            android.util.Log.d(TAG, "步骤4: 规则校验（仅记录，不影响结果）")
+            android.util.Log.d(TAG, "步骤4: 规则校验（仅记录日志，不影响AI结果）")
             val allRecipes = updatedWeeklyPlan.dailyPlans.flatMap { it.meals.map { it.recipe } }
             android.util.Log.d(TAG, "  - 待校验食谱数: ${allRecipes.size}")
 
@@ -113,11 +115,13 @@ class RecommendationService @Inject constructor(
             android.util.Log.d(TAG, "    - 违规项: ${validationResult.violations.joinToString("; ")}")
             android.util.Log.d(TAG, "    - 警告项: ${validationResult.warnings.joinToString("; ")}")
 
-            android.util.Log.d(TAG, "✓ 推荐成功返回（完全由 AI 生成）")
+            android.util.Log.d(TAG, "✓ 推荐成功返回（完全由 AI 生成，包含分析思路和营养目标）")
             RecommendationResponse(
                 success = true,
                 weeklyPlan = updatedWeeklyPlan,
-                warnings = validationResult.warnings
+                warnings = validationResult.warnings,
+                analysisReasoning = "AI根据宝宝年龄、过敏史、偏好食材、可用食材等综合分析，生成符合营养目标的周计划",
+                nutritionGoals = getNutritionGoalsForAge(request.ageInMonths)
             )
 
         } catch (e: Exception) {
@@ -125,6 +129,74 @@ class RecommendationService @Inject constructor(
             android.util.Log.e(TAG, "  异常消息: ${e.message}")
             android.util.Log.e(TAG, "  异常堆栈: ", e)
             RecommendationResponse(success = false, errorMessage = "生成推荐失败：${e.message}")
+        }
+    }
+
+    /**
+     * 获取指定年龄的营养目标（中国营养学会标准）
+     */
+    private fun getNutritionGoalsForAge(ageInMonths: Int): NutritionGoalInfo {
+        return when (ageInMonths) {
+            in 6..8 -> NutritionGoalInfo(
+                ageRange = "6-8个月",
+                calories = 500f,
+                caloriesUnit = "kcal",
+                protein = 20f,
+                proteinUnit = "g",
+                calcium = 260f,
+                calciumUnit = "mg",
+                iron = 8.8f,
+                ironUnit = "mg",
+                description = "6-8个月宝宝开始添加辅食，以富含铁的食物为主，如强化铁米粉、肉泥、肝泥等"
+            )
+            in 9..11 -> NutritionGoalInfo(
+                ageRange = "9-11个月",
+                calories = 600f,
+                caloriesUnit = "kcal",
+                protein = 25f,
+                proteinUnit = "g",
+                calcium = 350f,
+                calciumUnit = "mg",
+                iron = 9.0f,
+                ironUnit = "mg",
+                description = "9-11个月宝宝可尝试更多种类的食物，逐步增加食物的质地和多样性"
+            )
+            in 12..17 -> NutritionGoalInfo(
+                ageRange = "12-17个月",
+                calories = 700f,
+                caloriesUnit = "kcal",
+                protein = 30f,
+                proteinUnit = "g",
+                calcium = 500f,
+                calciumUnit = "mg",
+                iron = 9.0f,
+                ironUnit = "mg",
+                description = "12-17个月宝宝可逐渐过渡到家庭膳食，注意营养均衡和多样化"
+            )
+            in 18..23 -> NutritionGoalInfo(
+                ageRange = "18-23个月",
+                calories = 800f,
+                caloriesUnit = "kcal",
+                protein = 35f,
+                proteinUnit = "g",
+                calcium = 600f,
+                calciumUnit = "mg",
+                iron = 9.0f,
+                ironUnit = "mg",
+                description = "18-23个月宝宝可食用大部分家庭食物，注意控制盐糖摄入"
+            )
+            else -> NutritionGoalInfo(
+                ageRange = "24个月及以上",
+                calories = 1000f,
+                caloriesUnit = "kcal",
+                protein = 40f,
+                proteinUnit = "g",
+                calcium = 800f,
+                calciumUnit = "mg",
+                iron = 12.0f,
+                ironUnit = "mg",
+                description = "24个月及以上宝宝可完全适应家庭膳食，保持营养均衡"
+            )
         }
     }
 

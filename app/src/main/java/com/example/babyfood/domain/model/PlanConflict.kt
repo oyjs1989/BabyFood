@@ -6,7 +6,9 @@ package com.example.babyfood.domain.model
 data class PlanConflict(
     val newPlan: Plan,
     val existingPlan: Plan,
-    val conflictType: ConflictType
+    val conflictType: ConflictType,
+    val existingRecipeName: String = "未知食谱",  // 现有食谱名称
+    val newRecipeName: String = "未知食谱"       // 推荐食谱名称
 )
 
 /**

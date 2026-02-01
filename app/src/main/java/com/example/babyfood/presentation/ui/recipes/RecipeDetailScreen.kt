@@ -9,6 +9,7 @@ import androidx.compose.animation.core.tween
 import com.example.babyfood.presentation.theme.ANIMATION_DURATION_CARD_EXPAND
 import com.example.babyfood.presentation.theme.EasingEaseOutBack
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,20 +60,54 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.babyfood.data.service.SafetyRiskAnalyzer
+import com.example.babyfood.data.service.FreshnessAdvisor
+import com.example.babyfood.data.service.CookingMethodRecommender
+import com.example.babyfood.data.service.NutritionMatcher
+import com.example.babyfood.data.repository.NutritionGoalRepository
+import com.example.babyfood.domain.model.RiskLevel
 import com.example.babyfood.presentation.ui.common.AppScaffold
+import com.example.babyfood.presentation.ui.common.FlavorNaturalBadge
+import com.example.babyfood.presentation.ui.common.HandlingAdviceDialog
+import com.example.babyfood.presentation.ui.common.SafetyWarningBadge
+import com.example.babyfood.presentation.ui.common.SafetyWarningIcon
+import com.example.babyfood.presentation.ui.common.CookingMethodBadge
+import com.example.babyfood.presentation.ui.common.FreshnessSummaryCard
+import com.example.babyfood.presentation.ui.common.CookingMethodCard
+import com.example.babyfood.presentation.ui.common.FreshnessTipCard
+import com.example.babyfood.presentation.ui.common.NutritionGradeAndHighlights
+import com.example.babyfood.presentation.ui.common.NutritionHighlightBadge
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
+import javax.inject.Inject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeDetailScreen(
     recipeId: Long,
     onBack: () -> Unit = {},
-    viewModel: RecipesViewModel = hiltViewModel()
+    viewModel: RecipesViewModel = hiltViewModel(),
+    safetyRiskAnalyzer: SafetyRiskAnalyzer? = null,
+    freshnessAdvisor: FreshnessAdvisor = javax.inject.Provider {
+        com.example.babyfood.data.service.FreshnessAdvisor()
+    }.get(),
+    cookingMethodRecommender: CookingMethodRecommender = javax.inject.Provider {
+        com.example.babyfood.data.service.CookingMethodRecommender()
+    }.get(),
+    nutritionMatcher: NutritionMatcher = javax.inject.Provider {
+        com.example.babyfood.data.service.NutritionMatcher()
+    }.get()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var recipe by remember { mutableStateOf<com.example.babyfood.domain.model.Recipe?>(null) }
     var showAiTip by remember { mutableStateOf(true) }
     var showAllergyTip by remember { mutableStateOf(true) }
+    var showSafetyRisk by remember { mutableStateOf(true) }
+    var showHandlingAdviceDialog by remember { mutableStateOf(false) }
+    var safetyAnalysis by remember { mutableStateOf<SafetyRiskAnalyzer.RecipeSafetyAnalysis?>(null) }
     var portions by remember { mutableStateOf(1f) }
+    var babyAgeMonths by remember { mutableStateOf(12) } // 默认12个月
 
     LaunchedEffect(recipeId) {
         recipe = viewModel.getRecipeByIdAsync(recipeId)
@@ -98,6 +133,31 @@ fun RecipeDetailScreen(
                 Text(text = "加载中...")
             }
         } else {
+            // 计算推荐数据（仅在 currentRecipe 非空时计算）
+            val cookingRecommendation = remember(currentRecipe, babyAgeMonths) {
+                cookingMethodRecommender.recommendCookingMethod(currentRecipe, babyAgeMonths)
+            }
+
+            val freshnessAdvices = remember(currentRecipe, babyAgeMonths) {
+                freshnessAdvisor.analyzeRecipeFreshness(currentRecipe, babyAgeMonths)
+            }
+
+            val nutritionGoal = remember(babyAgeMonths) {
+                com.example.babyfood.domain.model.NutritionGoal.calculateByAge(babyAgeMonths)
+            }
+
+            val nutritionMatch = remember(currentRecipe, nutritionGoal) {
+                nutritionMatcher.analyzeRecipeMatch(currentRecipe, nutritionGoal, portions)
+            }
+
+            val nutritionHighlights = remember(nutritionMatch) {
+                nutritionMatcher.getHighlights(nutritionMatch)
+            }
+
+            val nutritionGrade = remember(nutritionMatch) {
+                nutritionMatcher.getNutritionGrade(nutritionMatch)
+            }
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -125,14 +185,57 @@ fun RecipeDetailScreen(
 
                 // 食谱名称
                 item {
-                    Text(
-                        text = currentRecipe.name,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.padding(top = 24.dp),
-                        textAlign = TextAlign.Center
-                    )
+                    Column(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp, vertical = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = currentRecipe.name,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                textAlign = TextAlign.Center
+                            )
+
+                            // 制作方式徽章
+                            CookingMethodBadge(method = cookingRecommendation.recommendedMethod)
+
+                            // 检查是否为原味食谱
+                            val seasonings = listOf(
+                                "盐", "糖", "酱油", "醋", "料酒", "味精", "鸡精",
+                                "耗油", "豆瓣酱", "番茄酱", "沙拉酱"
+                            )
+                            val recipeIngredients = currentRecipe.ingredients.map { it.name.lowercase() }
+                            val hasSeasoning = seasonings.any { seasoning ->
+                                recipeIngredients.any { ingredient -> ingredient.contains(seasoning) }
+                            }
+
+                            if (!hasSeasoning) {
+                                FlavorNaturalBadge()
+                            }
+                        }
+
+                        // 制作方式推荐卡片
+                        Spacer(modifier = Modifier.height(8.dp))
+                        CookingMethodCard(
+                            recommendation = cookingRecommendation,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        // 营养等级和亮点
+                        Spacer(modifier = Modifier.height(8.dp))
+                        NutritionGradeAndHighlights(
+                            grade = nutritionGrade.displayName,
+                            score = nutritionMatch.overallScore,
+                            highlights = nutritionHighlights,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
 
                 // 基础信息栏
@@ -146,6 +249,24 @@ fun RecipeDetailScreen(
                         InfoItemWithIcon(label = "准备", value = "${currentRecipe.cookingTime?.div(2) ?: 10}分钟")
                         InfoItemWithIcon(label = "烹饪", value = "${currentRecipe.cookingTime ?: 20}分钟")
                         InfoItemWithIcon(label = "份量", value = "1份")
+                    }
+                }
+
+                // 质地信息卡片
+                if (currentRecipe.textureType != null) {
+                    item {
+                        val textureType = try {
+                            com.example.babyfood.domain.model.TextureType.valueOf(currentRecipe.textureType)
+                        } catch (e: IllegalArgumentException) {
+                            null
+                        }
+
+                        if (textureType != null) {
+                            com.example.babyfood.presentation.ui.common.TextureInfoCard(
+                                textureType = textureType,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            )
+                        }
                     }
                 }
 
@@ -235,6 +356,47 @@ fun RecipeDetailScreen(
                     }
                 }
 
+                // 安全风险提示卡片
+                item {
+                    if (currentRecipe.riskLevelList != null && showSafetyRisk) {
+                        AnimatedVisibility(
+                            visible = showSafetyRisk,
+                            enter = expandVertically(
+                                animationSpec = tween(
+                                    durationMillis = ANIMATION_DURATION_CARD_EXPAND,
+                                    easing = EasingEaseOutBack
+                                )
+                            ) + fadeIn(
+                                animationSpec = tween(
+                                    durationMillis = ANIMATION_DURATION_CARD_EXPAND,
+                                    easing = EasingEaseOutBack
+                                )
+                            ),
+                            exit = shrinkVertically(
+                                animationSpec = tween(
+                                    durationMillis = ANIMATION_DURATION_CARD_EXPAND,
+                                    easing = EasingEaseOutBack
+                                )
+                            ) + fadeOut(
+                                animationSpec = tween(
+                                    durationMillis = ANIMATION_DURATION_CARD_EXPAND,
+                                    easing = EasingEaseOutBack
+                                )
+                            )
+                        ) {
+                            SafetyRiskCard(
+                                recipe = currentRecipe,
+                                onClick = {
+                                    showHandlingAdviceDialog = true
+                                    // TODO: 这里需要传入宝宝信息进行完整分析
+                                    // 暂时使用默认分析
+                                },
+                                onDismiss = { showSafetyRisk = false }
+                            )
+                        }
+                    }
+                }
+
                 // 食材清单模块
                 item {
                     Card(
@@ -278,6 +440,77 @@ fun RecipeDetailScreen(
                             }
 
                             Spacer(modifier = Modifier.height(16.dp))
+
+                            // 调味品警告
+                            val seasonings = listOf(
+                                "盐", "糖", "酱油", "醋", "料酒", "味精", "鸡精",
+                                "耗油", "豆瓣酱", "番茄酱", "沙拉酱"
+                            )
+                            val recipeIngredients = currentRecipe.ingredients.map { it.name }
+                            val seasoningIngredients = recipeIngredients.filter { ingredient ->
+                                seasonings.any { seasoning -> ingredient.contains(seasoning) }
+                            }
+
+                            if (seasoningIngredients.isNotEmpty()) {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        0.5.dp,
+                                        Color(0xFFFF9800)  // 橙色
+                                    ),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0))
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(12.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "💡",
+                                            fontSize = 16.sp
+                                        )
+                                        Text(
+                                            text = "含调味品：${seasoningIngredients.joinToString("、")}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color(0xFFE65100)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+
+                            // 新鲜度建议摘要
+                            val freshnessSummary = remember(freshnessAdvices) {
+                                freshnessAdvisor.getStorageSummary(freshnessAdvices)
+                            }
+
+                            FreshnessSummaryCard(
+                                summary = freshnessSummary,
+                                adviceCount = freshnessAdvices.size,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // 营养缺乏警告
+                            if (nutritionMatch.deficiencies.isNotEmpty() || nutritionMatch.excesses.isNotEmpty()) {
+                                androidx.compose.foundation.layout.Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp)
+                                ) {
+                                    nutritionMatch.deficiencies.forEach { deficiency ->
+                                        com.example.babyfood.presentation.ui.common.NutritionDeficiencyBadge(
+                                            deficiency = deficiency
+                                        )
+                                    }
+                                    nutritionMatch.excesses.forEach { excess ->
+                                        com.example.babyfood.presentation.ui.common.NutritionDeficiencyBadge(
+                                            deficiency = excess
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
 
                             // 数量选择器
                             Column {
@@ -358,6 +591,28 @@ fun RecipeDetailScreen(
                                     Spacer(modifier = Modifier.height(8.dp))
                                 }
                             }
+                        }
+                    }
+                }
+
+                // 新鲜度详细建议
+                item {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = "新鲜度建议",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+
+                        freshnessAdvices.forEach { advice ->
+                            FreshnessTipCard(
+                                advice = advice,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
                 }
@@ -463,6 +718,18 @@ fun RecipeDetailScreen(
                 item {
                     Spacer(modifier = Modifier.height(80.dp))
                 }
+            }
+
+            // 安全风险处理建议对话框
+            if (showHandlingAdviceDialog && safetyAnalysis != null) {
+                HandlingAdviceDialog(
+                    analysis = safetyAnalysis!!,
+                    onDismiss = { showHandlingAdviceDialog = false },
+                    onIgnoreWarning = { ingredientName ->
+                        // TODO: 记录用户忽略警告
+                        showHandlingAdviceDialog = false
+                    }
+                )
             }
         }
     }
@@ -573,4 +840,117 @@ private fun NutritionRow(label: String, value: String) {
         )
     }
     Spacer(modifier = Modifier.height(8.dp))
+}
+
+/**
+ * 安全风险提示卡片
+ */
+@Composable
+private fun SafetyRiskCard(
+    recipe: com.example.babyfood.domain.model.Recipe,
+    onClick: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    // 解析风险等级列表并获取最高风险
+    val highestRisk = recipe.riskLevelList?.let { riskList ->
+        try {
+            val riskLevels = Json.decodeFromString<List<String>>(riskList)
+            riskLevels.mapNotNull { risk ->
+                try {
+                    RiskLevel.valueOf(risk)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+            }.maxByOrNull { it.ordinal }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    if (highestRisk != null && highestRisk != RiskLevel.NORMAL) {
+        val result = when (highestRisk) {
+            RiskLevel.FORBIDDEN -> Triple(
+                "🚫",
+                "安全警告",
+                "该食谱包含禁用食材，请勿使用"
+            )
+            RiskLevel.NOT_RECOMMENDED -> Triple(
+                "⚠️",
+                "安全提醒",
+                "该食谱包含不推荐食材，建议替换"
+            )
+            RiskLevel.REQUIRES_SPECIAL_HANDLING -> Triple(
+                "💡",
+                "处理提示",
+                "该食谱需特殊处理，请查看详情"
+            )
+            RiskLevel.CAUTIOUS_INTRODUCTION -> Triple(
+                "⚠️",
+                "谨慎食用",
+                "该食谱含常见过敏原，请少量尝试"
+            )
+            RiskLevel.NORMAL -> Triple(
+                "✅",
+                "安全",
+                "该食谱食材安全"
+            )
+        }
+        val icon = result.first
+        val label = result.second
+        val message = result.third
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .clickable(onClick = onClick),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = icon,
+                        fontSize = 14.sp
+                    )
+                }
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "关闭",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        }
+    }
 }

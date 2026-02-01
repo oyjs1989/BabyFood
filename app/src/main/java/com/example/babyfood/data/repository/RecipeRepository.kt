@@ -79,6 +79,12 @@ class RecipeRepository @Inject constructor(
     fun getUserRecipes(): Flow<List<Recipe>> =
         recipeDao.getUserRecipes().toDomainModels()
 
+    fun getByTextureType(textureType: com.example.babyfood.domain.model.TextureType): Flow<List<Recipe>> =
+        recipeDao.getByTextureType(textureType.name).toDomainModels()
+
+    suspend fun getByTextureTypeSync(textureType: com.example.babyfood.domain.model.TextureType): List<Recipe> =
+        recipeDao.getByTextureTypeSync(textureType.name).map { it.toDomainModel() }
+
     suspend fun deleteRecipeById(recipeId: Long) {
         val recipe = getById(recipeId)
         if (recipe != null && !recipe.isBuiltIn) {
