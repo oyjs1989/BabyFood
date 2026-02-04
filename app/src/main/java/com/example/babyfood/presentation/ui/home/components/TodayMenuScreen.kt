@@ -71,10 +71,7 @@ fun TodayMenuScreen(
             modifier = Modifier.fillMaxSize()
         )
     } else {
-        AppScaffold(
-            bottomActions = emptyList()
-        ) {
-            androidx.compose.foundation.layout.Column(
+        androidx.compose.foundation.layout.Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
@@ -122,7 +119,6 @@ fun TodayMenuScreen(
                     onToggleExpand = { isWeeklyExpanded = !isWeeklyExpanded }
                 )
             }
-        }
     }
     // 食谱选择对话框
     if (uiState.showRecipeSelector) {
