@@ -2,6 +2,8 @@ package com.example.babyfood.di
 
 import android.content.Context
 import com.example.babyfood.BuildConfig
+import com.example.babyfood.data.ai.DashScopeImageRecognitionStrategy
+import com.example.babyfood.data.ai.ImageRecognitionService
 import com.example.babyfood.data.remote.api.AuthApiService
 import com.example.babyfood.data.remote.api.BabyApiService
 import com.example.babyfood.data.remote.api.PlanApiService
@@ -193,6 +195,17 @@ object NetworkModule {
     fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
         return retrofit.create(AuthApiService::class.java)
     }
+
+    // ==================== AI 服务 ====================
+
+    /**
+     * 图像识别服务
+     */
+    @Provides
+    @Singleton
+    fun provideImageRecognitionService(
+        dashScopeStrategy: DashScopeImageRecognitionStrategy
+    ): ImageRecognitionService = dashScopeStrategy
 }
 
 /**

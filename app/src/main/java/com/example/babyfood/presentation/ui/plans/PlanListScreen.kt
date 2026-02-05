@@ -104,8 +104,7 @@ fun PlanListScreen(
         // 选中日期和计划列表
         SelectedDatePlans(
             selectedDate = selectedDate,
-            plans = uiState.plans.filter { it.plannedDate == selectedDate },
-            recipes = uiState.recipes,
+            plansWithRecipe = uiState.plansWithRecipe,
             onPlanClick = onNavigateToDetail,
             onChangeRecipe = { planId -> viewModel.showRecipeSelector(planId) }
         )
@@ -369,8 +368,7 @@ private fun DateCell(
 @Composable
 private fun SelectedDatePlans(
     selectedDate: LocalDate,
-    plans: List<com.example.babyfood.domain.model.Plan>,
-    recipes: List<com.example.babyfood.domain.model.Recipe>,
+    plansWithRecipe: List<com.example.babyfood.presentation.ui.plans.PlanWithRecipe>,
     onPlanClick: (Long) -> Unit,
     onChangeRecipe: (Long) -> Unit
 ) {
@@ -386,19 +384,19 @@ private fun SelectedDatePlans(
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        if (plans.isEmpty()) {
+        val filteredPlans = plansWithRecipe.filter { it.plan.plannedDate == selectedDate }
+        if (filteredPlans.isEmpty()) {
                 com.example.babyfood.presentation.theme.EmptyState(
                     icon = Icons.Default.CalendarMonth,
                     title = "暂无计划",
                     description = "点击右下角 + 按钮添加辅食计划"
                 )
             } else {
-            plans.sortedBy { try { MealPeriod.valueOf(it.mealPeriod).order } catch (e: Exception) { 0 } }.forEach { plan ->
+            filteredPlans.sortedBy { try { MealPeriod.valueOf(it.plan.mealPeriod).order } catch (e: Exception) { 0 } }.forEach { planWithRecipe ->
                 PlanItem(
-                    plan = plan,
-                    recipes = recipes,
-                    onClick = { onPlanClick(plan.id) },
-                    onChangeRecipe = { onChangeRecipe(plan.id) }
+                    planWithRecipe = planWithRecipe,
+                    onClick = { onPlanClick(planWithRecipe.plan.id) },
+                    onChangeRecipe = { onChangeRecipe(planWithRecipe.plan.id) }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -408,12 +406,12 @@ private fun SelectedDatePlans(
 
 @Composable
 private fun PlanItem(
-    plan: com.example.babyfood.domain.model.Plan,
-    recipes: List<com.example.babyfood.domain.model.Recipe>,
+    planWithRecipe: com.example.babyfood.presentation.ui.plans.PlanWithRecipe,
     onClick: () -> Unit,
     onChangeRecipe: () -> Unit
 ) {
-    val recipe = recipes.find { it.id == plan.recipeId }
+    val plan = planWithRecipe.plan
+    val recipe = planWithRecipe.recipe
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -445,7 +443,7 @@ private fun PlanItem(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = recipe?.name ?: "食谱ID: ${plan.recipeId}",
+                    text = recipe?.name ?: "未知食谱 (ID: ${plan.recipeId})",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )

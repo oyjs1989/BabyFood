@@ -1,22 +1,32 @@
 package com.example.babyfood.presentation.ui.inventory
 
+import android.content.Context
+import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.babyfood.data.ai.ImageRecognitionService
+import com.example.babyfood.data.ai.ImageRecognitionException
 import com.example.babyfood.data.repository.InventoryRepository
 import com.example.babyfood.domain.model.ExpiryStatus
+import com.example.babyfood.domain.model.ImageRecognitionRequest
+import com.example.babyfood.domain.model.ImageRecognitionResponse
 import com.example.babyfood.domain.model.InventoryItem
 import com.example.babyfood.domain.model.StorageMethod
+import com.example.babyfood.util.ImageUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import android.util.Log
 import javax.inject.Inject
 
 @HiltViewModel
 class InventoryViewModel @Inject constructor(
-    private val inventoryRepository: InventoryRepository
+    private val inventoryRepository: InventoryRepository,
+    private val imageRecognitionService: ImageRecognitionService,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     companion object {
@@ -182,6 +192,75 @@ class InventoryViewModel @Inject constructor(
         applyCurrentFilters()
     }
 
+    /**
+     * 识别食材图片
+     *
+     * @param imageUri 图片 URI
+     */
+    fun recognizeFood(imageUri: Uri) {
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "========== 开始识别食材 ==========")
+                Log.d(TAG, "图片 URI: $imageUri")
+
+                _uiState.value = _uiState.value.copy(
+                    isRecognizing = true,
+                    recognitionError = null
+                )
+
+                // 压缩图片并转换为 Base64
+                val base64 = ImageUtils.compressAndEncodeToBase64(context, imageUri)
+                Log.d(TAG, "✓ 图片压缩和编码完成")
+
+                // 调用 AI 识别
+                val request = ImageRecognitionRequest(imageBase64 = base64)
+                val response = imageRecognitionService.recognizeFood(request)
+
+                Log.d(TAG, "✓ 食材识别成功: ${response.foodName}")
+                Log.d(TAG, "置信度: ${response.confidence}")
+                Log.d(TAG, "保存方式: ${response.storageMethod}")
+                Log.d(TAG, "保质期: ${response.estimatedShelfLife}天")
+
+                _uiState.value = _uiState.value.copy(
+                    isRecognizing = false,
+                    recognitionResult = response
+                )
+
+                Log.d(TAG, "========== 识别完成 ==========")
+
+                // 清理临时文件
+                ImageUtils.deleteTempFile(context, imageUri)
+
+            } catch (e: ImageRecognitionException) {
+                Log.e(TAG, "❌ 食材识别失败: ${e.message}")
+                _uiState.value = _uiState.value.copy(
+                    isRecognizing = false,
+                    recognitionError = e.message
+                )
+                // 清理临时文件
+                ImageUtils.deleteTempFile(context, imageUri)
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ 食材识别异常: ${e.message}")
+                _uiState.value = _uiState.value.copy(
+                    isRecognizing = false,
+                    recognitionError = "识别失败: ${e.message}"
+                )
+                // 清理临时文件
+                ImageUtils.deleteTempFile(context, imageUri)
+            }
+        }
+    }
+
+    /**
+     * 清除识别结果
+     */
+    fun clearRecognitionResult() {
+        _uiState.value = _uiState.value.copy(
+            recognitionResult = null,
+            recognitionError = null
+        )
+    }
+
     fun getExpiryStatistics(): ExpiryStatistics {
         val items = _uiState.value.inventoryItems
         return ExpiryStatistics(
@@ -203,7 +282,11 @@ data class InventoryUiState(
     val selectedItem: InventoryItem? = null,
     val searchQuery: String = "",
     val selectedExpiryStatus: ExpiryStatus? = null,
-    val selectedStorageMethod: StorageMethod? = null
+    val selectedStorageMethod: StorageMethod? = null,
+    // 图像识别相关字段
+    val isRecognizing: Boolean = false,
+    val recognitionResult: ImageRecognitionResponse? = null,
+    val recognitionError: String? = null
 )
 
 data class ExpiryStatistics(

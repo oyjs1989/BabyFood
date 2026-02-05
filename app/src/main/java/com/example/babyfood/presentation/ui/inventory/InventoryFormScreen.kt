@@ -1,5 +1,7 @@
 package com.example.babyfood.presentation.ui.inventory
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,14 +10,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,12 +47,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.babyfood.domain.model.InventoryItem
 import com.example.babyfood.domain.model.StorageMethod
+import com.example.babyfood.util.ImageUtils
 import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
@@ -60,6 +69,7 @@ fun InventoryFormScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val isEditing = itemId > 0L
+    val context = LocalContext.current
 
     // 表单状态
     var foodId by remember { mutableStateOf(0L) }
@@ -80,6 +90,28 @@ fun InventoryFormScreen(
     var showProductionDatePicker by remember { mutableStateOf(false) }
     var showExpiryDatePicker by remember { mutableStateOf(false) }
 
+    // 图像识别相关状态
+    var showImageRecognitionDialog by remember { mutableStateOf(false) }
+    val tempImageUri = remember { ImageUtils.createTempImageFile(context) }
+
+    // 拍照启动器
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            viewModel.recognizeFood(tempImageUri)
+        }
+    }
+
+    // 相册选择启动器
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            viewModel.recognizeFood(it)
+        }
+    }
+
     // 编辑模式：加载数据
     LaunchedEffect(itemId) {
         if (isEditing) {
@@ -98,6 +130,33 @@ fun InventoryFormScreen(
             quantity = item.quantity.toString()
             unit = item.unit
             notes = item.notes ?: ""
+        }
+    }
+
+    // 监听识别结果，自动填充表单
+    LaunchedEffect(uiState.recognitionResult) {
+        uiState.recognitionResult?.let { result ->
+            foodName = result.foodName
+            foodId = result.foodId
+            foodImageUrl = result.foodImageUrl
+            storageMethod = StorageMethod.valueOf(result.storageMethod)
+            unit = result.defaultUnit
+            quantity = result.quantity.toString()
+            
+            // 计算保质期
+            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            val expiryEpochDay = today.toEpochDays() + result.estimatedShelfLife
+            expiryDate = kotlinx.datetime.LocalDate.fromEpochDays(expiryEpochDay)
+            
+            // 填充备注（包含置信度）
+            val notesBuilder = StringBuilder()
+            if (result.notes != null) {
+                notesBuilder.append(result.notes).append("\n")
+            }
+            notesBuilder.append("AI 识别置信度: ${(result.confidence * 100).toInt()}%")
+            notes = notesBuilder.toString()
+            
+            viewModel.clearRecognitionResult()
         }
     }
 
@@ -164,7 +223,12 @@ fun InventoryFormScreen(
                 onValueChange = { foodName = it },
                 label = { Text("食材名称") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                trailingIcon = {
+                    IconButton(onClick = { showImageRecognitionDialog = true }) {
+                        Icon(Icons.Default.CameraAlt, contentDescription = "拍照识别")
+                    }
+                }
             )
 
             // 生产日期
@@ -309,6 +373,89 @@ fun InventoryFormScreen(
         ) {
             DatePicker(state = datePickerState)
         }
+    }
+
+    // 图像识别对话框
+    if (showImageRecognitionDialog) {
+        AlertDialog(
+            onDismissRequest = { showImageRecognitionDialog = false },
+            title = { Text("拍照识别食材") },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            cameraLauncher.launch(tempImageUri)
+                            showImageRecognitionDialog = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.CameraAlt, contentDescription = "拍照")
+                        Spacer(modifier = Modifier.size(8.dp))
+                        Text("拍照")
+                    }
+                    
+                    Button(
+                        onClick = {
+                            imagePickerLauncher.launch("image/*")
+                            showImageRecognitionDialog = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Image, contentDescription = "相册")
+                        Spacer(modifier = Modifier.size(8.dp))
+                        Text("从相册选择")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showImageRecognitionDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
+
+    // AI 识别加载对话框
+    if (uiState.isRecognizing) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("AI 识别中") },
+            text = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(64.dp),
+                        strokeWidth = 4.dp
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "正在识别食材信息...",
+                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = { }
+        )
+    }
+
+    // 识别错误对话框
+    if (uiState.recognitionError != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.clearRecognitionResult() },
+            title = { Text("识别失败") },
+            text = { Text(uiState.recognitionError ?: "") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.clearRecognitionResult() }) {
+                    Text("确定")
+                }
+            }
+        )
     }
 
     // 离开确认对话框

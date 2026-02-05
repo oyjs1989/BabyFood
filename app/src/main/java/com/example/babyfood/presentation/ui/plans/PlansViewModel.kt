@@ -23,12 +23,22 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import javax.inject.Inject
+
+/**
+ * 计划与食谱的合并数据类
+ * 用于在 UI 层直接显示计划及其关联的食谱信息
+ */
+data class PlanWithRecipe(
+    val plan: Plan,
+    val recipe: Recipe?
+)
 
 @HiltViewModel
 class PlansViewModel @Inject constructor(
@@ -75,8 +85,27 @@ class PlansViewModel @Inject constructor(
             recipeRepository.getAllRecipes().collect { recipes ->
                 android.util.Log.d("PlansViewModel", "✓ 食谱列表加载完成: ${recipes.size}个")
                 _uiState.value = _uiState.value.copy(recipes = recipes)
+                // 更新合并后的列表
+                updatePlansWithRecipe()
             }
         }
+    }
+
+    /**
+     * 合并 plans 和 recipes 数据
+     * 当 plans 或 recipes 任一数据更新时，自动重新计算合并后的列表
+     */
+    private fun updatePlansWithRecipe() {
+        val plans = _uiState.value.plans
+        val recipes = _uiState.value.recipes
+        val plansWithRecipe = plans.map { plan ->
+            PlanWithRecipe(
+                plan = plan,
+                recipe = recipes.find { it.id == plan.recipeId }
+            )
+        }
+        _uiState.value = _uiState.value.copy(plansWithRecipe = plansWithRecipe)
+        android.util.Log.d("PlansViewModel", "✓ plansWithRecipe 更新完成: ${plansWithRecipe.size}个")
     }
 
     /**
@@ -127,6 +156,8 @@ class PlansViewModel @Inject constructor(
                         plans = plans,
                         isLoading = false
                     )
+                    // 更新合并后的列表
+                    updatePlansWithRecipe()
                 }
             }
         } else {
@@ -542,6 +573,7 @@ data class PlansUiState(
     val selectedBaby: Baby? = null,
     val recipes: List<Recipe> = emptyList(),
     val plans: List<Plan> = emptyList(),
+    val plansWithRecipe: List<PlanWithRecipe> = emptyList(),
     val isLoading: Boolean = true,
     val isSaved: Boolean = false,
     val error: String? = null,
