@@ -1,8 +1,12 @@
 package com.example.babyfood.presentation.ui.inventory
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
@@ -21,16 +26,23 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Button
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
+import androidx.compose.animation.core.*
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import com.example.babyfood.presentation.ui.common.AppScaffold
 import com.example.babyfood.presentation.ui.common.AppBottomAction
@@ -48,16 +60,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.example.babyfood.domain.model.InventoryItem
 import com.example.babyfood.domain.model.StorageMethod
 import com.example.babyfood.util.ImageUtils
+import kotlinx.coroutines.delay
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,14 +112,28 @@ fun InventoryFormScreen(
 
     // 图像识别相关状态
     var showImageRecognitionDialog by remember { mutableStateOf(false) }
+    var showPermissionDeniedDialog by remember { mutableStateOf(false) }
     val tempImageUri = remember { ImageUtils.createTempImageFile(context) }
 
-    // 拍照启动器
+    // 拍照启动器（先定义，因为 permissionLauncher 需要引用它）
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
             viewModel.recognizeFood(tempImageUri)
+        }
+    }
+
+    // 权限请求启动器
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            Log.d("InventoryFormScreen", "✓ 相机权限已授予")
+            cameraLauncher.launch(tempImageUri)
+        } else {
+            Log.w("InventoryFormScreen", "⚠️ 相机权限被拒绝")
+            showPermissionDeniedDialog = true
         }
     }
 
@@ -387,7 +421,20 @@ fun InventoryFormScreen(
                 ) {
                     Button(
                         onClick = {
-                            cameraLauncher.launch(tempImageUri)
+                            Log.d("InventoryFormScreen", "========== 检查相机权限 ==========")
+                            when {
+                                ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.CAMERA
+                                ) == PackageManager.PERMISSION_GRANTED -> {
+                                    Log.d("InventoryFormScreen", "✓ 相机权限已授予，直接启动相机")
+                                    cameraLauncher.launch(tempImageUri)
+                                }
+                                else -> {
+                                    Log.d("InventoryFormScreen", "⚠️ 请求相机权限")
+                                    permissionLauncher.launch(Manifest.permission.CAMERA)
+                                }
+                            }
                             showImageRecognitionDialog = false
                         },
                         modifier = Modifier.fillMaxWidth()
@@ -396,9 +443,10 @@ fun InventoryFormScreen(
                         Spacer(modifier = Modifier.size(8.dp))
                         Text("拍照")
                     }
-                    
+
                     Button(
                         onClick = {
+                            Log.d("InventoryFormScreen", "✓ 从相册选择")
                             imagePickerLauncher.launch("image/*")
                             showImageRecognitionDialog = false
                         },
@@ -418,30 +466,186 @@ fun InventoryFormScreen(
         )
     }
 
-    // AI 识别加载对话框
-    if (uiState.isRecognizing) {
+    // 权限被拒绝对话框
+    if (showPermissionDeniedDialog) {
         AlertDialog(
-            onDismissRequest = { },
-            title = { Text("AI 识别中") },
-            text = {
+            onDismissRequest = { showPermissionDeniedDialog = false },
+            title = { Text("需要相机权限") },
+            text = { Text("拍照功能需要相机权限。请在系统设置中开启权限后重试。") },
+            confirmButton = {
+                TextButton(onClick = { showPermissionDeniedDialog = false }) {
+                    Text("确定")
+                }
+            }
+        )
+    }
+
+    // AI 识别加载遮罩层 - 直接显示在页面上
+    if (uiState.isRecognizing) {
+        // 使用 LaunchedEffect 手动实现旋转动画
+        var rotation by remember { mutableStateOf(0f) }
+        var rotation2 by remember { mutableStateOf(0f) }
+        var textAlpha by remember { mutableStateOf(1f) }
+        var dotCount by remember { mutableStateOf(0) }
+        
+        // 旋转动画 - 外圈
+        LaunchedEffect(Unit) {
+            while (true) {
+                rotation = (rotation + 10f) % 360f
+                delay(30)
+            }
+        }
+        
+        // 旋转动画 - 内圈（反向）
+        LaunchedEffect(Unit) {
+            while (true) {
+                rotation2 = (rotation2 - 15f) % 360f
+                delay(25)
+            }
+        }
+        
+        // 文字透明度动画（闪烁效果）
+        LaunchedEffect(Unit) {
+            var fading = true
+            while (true) {
+                if (fading) {
+                    textAlpha -= 0.1f
+                    if (textAlpha <= 0.5f) fading = false
+                } else {
+                    textAlpha += 0.1f
+                    if (textAlpha >= 1f) fading = true
+                }
+                delay(150)
+            }
+        }
+        
+        // 动态点动画
+        LaunchedEffect(Unit) {
+            while (true) {
+                dotCount = (dotCount + 1) % 4
+                delay(500)
+            }
+        }
+        
+        // 获取颜色
+        val primaryColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
+        val secondaryColor = androidx.compose.material3.MaterialTheme.colorScheme.secondary
+        val surfaceColor = androidx.compose.material3.MaterialTheme.colorScheme.surface
+        val lightGrayColor = androidx.compose.ui.graphics.Color.LightGray.copy(alpha = 0.3f)
+
+        // 全屏遮罩层
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.5f))
+                .clickable(enabled = false) { }, // 拦截点击事件
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = surfaceColor,
+                shadowElevation = 8.dp,
+                modifier = Modifier.padding(32.dp)
+            ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(24.dp)
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)
                 ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(64.dp),
-                        strokeWidth = 4.dp
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    // 标题
                     Text(
-                        text = "正在识别食材信息...",
-                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                        text = "AI 识别中",
+                        style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    // 显示正在识别的图片
+                    uiState.recognizingImageUri?.let { imageUri ->
+                        AsyncImage(
+                            model = imageUri,
+                            contentDescription = "正在识别的食材图片",
+                            modifier = Modifier
+                                .size(150.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
+                    // 使用 Canvas 自定义绘制双圈旋转动画
+                    Box(
+                        modifier = Modifier.size(70.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // 外圈 - 正向旋转
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            val strokeWidth = 5f
+                            val diameter = size.minDimension - strokeWidth
+                            val radius = diameter / 2
+                            val centerX = size.width / 2
+                            val centerY = size.height / 2
+
+                            // 外圈旋转圆弧
+                            drawArc(
+                                color = primaryColor,
+                                startAngle = rotation - 90f,
+                                sweepAngle = 80f,
+                                useCenter = false,
+                                topLeft = androidx.compose.ui.geometry.Offset(
+                                    centerX - radius,
+                                    centerY - radius
+                                ),
+                                size = androidx.compose.ui.geometry.Size(diameter, diameter),
+                                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                            )
+                        }
+                        
+                        // 内圈 - 反向旋转
+                        Canvas(modifier = Modifier.size(50.dp)) {
+                            val strokeWidth = 5f
+                            val diameter = size.minDimension - strokeWidth
+                            val radius = diameter / 2
+                            val centerX = size.width / 2
+                            val centerY = size.height / 2
+
+                            // 内圈旋转圆弧
+                            drawArc(
+                                color = secondaryColor,
+                                startAngle = rotation2 - 90f,
+                                sweepAngle = 100f,
+                                useCenter = false,
+                                topLeft = androidx.compose.ui.geometry.Offset(
+                                    centerX - radius,
+                                    centerY - radius
+                                ),
+                                size = androidx.compose.ui.geometry.Size(diameter, diameter),
+                                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 动态文字 - 带闪烁效果和动态点
+                    val dots = ".".repeat(dotCount)
+                    Text(
+                        text = "正在智能识别食材信息$dots",
+                        style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.graphicsLayer { alpha = textAlpha }
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // 副标题
+                    Text(
+                        text = "AI 正在分析图片特征",
+                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
                         color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            },
-            confirmButton = { }
-        )
+            }
+        }
     }
 
     // 识别错误对话框

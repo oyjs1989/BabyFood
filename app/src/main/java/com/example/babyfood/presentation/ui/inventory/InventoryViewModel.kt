@@ -58,16 +58,18 @@ class InventoryViewModel @Inject constructor(
     fun searchInventoryItems(query: String) {
         Log.d(TAG, "========== 搜索仓库物品 ==========")
         Log.d(TAG, "搜索关键词: $query")
-        _uiState.value = _uiState.value.copy(searchQuery = query)
+        _uiState.value = _uiState.value.copy(searchQuery = query, isSearching = true)
         viewModelScope.launch {
             if (query.isEmpty()) {
                 loadInventoryItems()
+                _uiState.value = _uiState.value.copy(isSearching = false)
             } else {
                 inventoryRepository.searchInventoryItems(query).collect { items ->
                     val filteredItems = applyFilters(items)
                     _uiState.value = _uiState.value.copy(
                         inventoryItems = items,
-                        filteredItems = filteredItems
+                        filteredItems = filteredItems,
+                        isSearching = false
                     )
                     Log.d(TAG, "✓ 搜索完成，找到 ${items.size} 个物品 ==========")
                 }
@@ -156,12 +158,15 @@ class InventoryViewModel @Inject constructor(
             try {
                 Log.d(TAG, "========== 删除仓库物品 ==========")
                 Log.d(TAG, "物品名称: ${item.foodName}")
+                _uiState.value = _uiState.value.copy(isDeleting = true)
                 inventoryRepository.delete(item)
+                _uiState.value = _uiState.value.copy(isDeleting = false)
                 Log.d(TAG, "✓ 删除物品成功")
                 Log.d(TAG, "========== 删除完成 ==========")
             } catch (e: Exception) {
                 Log.e(TAG, "❌ 删除物品失败: ${e.message}")
                 _uiState.value = _uiState.value.copy(
+                    isDeleting = false,
                     error = e.message
                 )
             }
@@ -205,6 +210,7 @@ class InventoryViewModel @Inject constructor(
 
                 _uiState.value = _uiState.value.copy(
                     isRecognizing = true,
+                    recognizingImageUri = imageUri,
                     recognitionError = null
                 )
 
@@ -256,6 +262,7 @@ class InventoryViewModel @Inject constructor(
      */
     fun clearRecognitionResult() {
         _uiState.value = _uiState.value.copy(
+            recognizingImageUri = null,
             recognitionResult = null,
             recognitionError = null
         )
@@ -285,8 +292,13 @@ data class InventoryUiState(
     val selectedStorageMethod: StorageMethod? = null,
     // 图像识别相关字段
     val isRecognizing: Boolean = false,
+    val recognizingImageUri: android.net.Uri? = null,  // 正在识别的图片URI
     val recognitionResult: ImageRecognitionResponse? = null,
-    val recognitionError: String? = null
+    val recognitionError: String? = null,
+    // 搜索加载状态
+    val isSearching: Boolean = false,
+    // 删除加载状态
+    val isDeleting: Boolean = false
 )
 
 data class ExpiryStatistics(

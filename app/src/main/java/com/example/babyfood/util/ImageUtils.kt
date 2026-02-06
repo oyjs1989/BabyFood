@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Base64
+import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -165,22 +166,27 @@ object ImageUtils {
      * 创建临时图片文件用于拍照
      *
      * @param context 上下文
-     * @return 临时文件的 URI
+     * @return 临时文件的 content:// URI
      */
     fun createTempImageFile(context: Context): Uri {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val fileName = "IMG_$timeStamp.jpg"
-        
+
         val storageDir = context.getExternalFilesDir("temp_images")
         if (storageDir != null && !storageDir.exists()) {
             storageDir.mkdirs()
         }
 
         val tempFile = File(storageDir, fileName)
-        
+
         android.util.Log.d(TAG, "创建临时文件: ${tempFile.absolutePath}")
-        
-        return android.net.Uri.fromFile(tempFile)
+
+        // 使用 FileProvider 生成 content:// URI，避免 FileUriExposedException
+        return FileProvider.getUriForFile(
+            context,
+            "com.example.babyfood.fileprovider",
+            tempFile
+        )
     }
 
     /**

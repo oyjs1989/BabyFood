@@ -11,6 +11,7 @@ import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -33,11 +34,37 @@ class DashScopeImageRecognitionStrategy @Inject constructor() : ImageRecognition
             .writeTimeout(90, TimeUnit.SECONDS)
             .addInterceptor { chain ->
                 val originalRequest = chain.request()
+
+                // 打印请求信息
+                Log.d(TAG, "========== HTTP Request ==========")
+                Log.d(TAG, "URL: ${originalRequest.url}")
+                Log.d(TAG, "Method: ${originalRequest.method}")
+                Log.d(TAG, "Headers: ${originalRequest.headers}")
+
                 val requestBuilder = originalRequest.newBuilder()
                     .header("Authorization", "Bearer ${getApiKey()}")
                     .header("Content-Type", "application/json")
                 val request = requestBuilder.build()
                 chain.proceed(request)
+            }
+            .addInterceptor { chain ->
+                val request = chain.request()
+                val response = chain.proceed(request)
+
+                // 打印响应信息
+                Log.d(TAG, "========== HTTP Response ==========")
+                Log.d(TAG, "Status Code: ${response.code}")
+                Log.d(TAG, "Status Message: ${response.message}")
+                Log.d(TAG, "Headers: ${response.headers}")
+
+                if (!response.isSuccessful) {
+                    // 读取错误响应体
+                    val responseBody = response.peekBody(Long.MAX_VALUE)
+                    val errorBody = responseBody.string()
+                    Log.e(TAG, "Error Response Body: $errorBody")
+                }
+
+                response
             }
             .build()
     }
@@ -74,19 +101,29 @@ class DashScopeImageRecognitionStrategy @Inject constructor() : ImageRecognition
                 )
             )
 
-            Log.d(TAG, "Calling DashScope API...")
-            val response = dashScopeApi.chatCompletions(chatRequest)
+            // 打印请求体
+            Log.d(TAG, "Request Body:")
+            try {
+                val requestJson = json.encodeToString(ImageChatCompletionRequest.serializer(), chatRequest)
+                // 只打印部分内容，避免日志过长
+                val truncatedJson = if (requestJson.length > 500) {
+                    requestJson.take(200) + "...[truncated]..." + requestJson.takeLast(200)
+                } else {
+                    requestJson
+                }
+                Log.d(TAG, truncatedJson)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to serialize request: ${e.message}")
+            }
 
-            val contentList = response.choices.firstOrNull()?.message?.content
-                ?: throw ImageRecognitionException("API returned empty response")
+                        Log.d(TAG, "Calling DashScope API...")
+                        val response = dashScopeApi.chatCompletions(chatRequest)
             
-            val content = contentList
-                .filterIsInstance<ImageTextContent>()
-                .firstOrNull()?.text
-                ?: throw ImageRecognitionException("API response does not contain text")
-
-            Log.d(TAG, "AI response content: $content")
-
+                        // API 返回的 content 是字符串（markdown 格式的 JSON）
+                        val content = response.choices.firstOrNull()?.message?.content
+                            ?: throw ImageRecognitionException("API returned empty response")
+            
+                        Log.d(TAG, "AI response content: $content")
             val result = parseJsonResponse(content)
 
             Log.d(TAG, "Food recognition successful: ${result.foodName}")
@@ -100,8 +137,23 @@ class DashScopeImageRecognitionStrategy @Inject constructor() : ImageRecognition
         } catch (e: ImageRecognitionException) {
             Log.e(TAG, "Food recognition failed: ${e.message}")
             throw e
+        } catch (e: retrofit2.HttpException) {
+            // 捕获 HTTP 异常并打印详细信息
+            Log.e(TAG, "========== HTTP Error ==========")
+            Log.e(TAG, "HTTP Code: ${e.code()}")
+            Log.e(TAG, "HTTP Message: ${e.message()}")
+            try {
+                val errorBody = e.response()?.errorBody()?.string()
+                Log.e(TAG, "Error Body: $errorBody")
+            } catch (ex: Exception) {
+                Log.e(TAG, "Failed to read error body: ${ex.message}")
+            }
+            Log.e(TAG, "Stack trace:", e)
+            throw ImageRecognitionException("Image recognition failed: HTTP ${e.code()} - ${e.message()}", e)
         } catch (e: Exception) {
             Log.e(TAG, "Food recognition exception: ${e.message}")
+            Log.e(TAG, "Exception type: ${e.javaClass.name}")
+            Log.e(TAG, "Stack trace:", e)
             throw ImageRecognitionException("Image recognition failed: ${e.message}", e)
         }
     }
@@ -113,14 +165,76 @@ class DashScopeImageRecognitionStrategy @Inject constructor() : ImageRecognition
             else -> "image/jpeg"
         }
 
+        // 构造 Base64 data URL 格式: data:image/jpeg;base64,/9j/4AAQ...
+        val dataUrl = "data:$mimeType;base64,${request.imageBase64}"
+
         return ImageContent(
-            type = "image",
-            mimeType = mimeType,
-            data = request.imageBase64
+            imageUrl = ImageUrlData(url = dataUrl)
         )
     }
 
     private fun buildPrompt(): String {
+        val locale = Locale.getDefault()
+        val isChinese = locale.language == Locale.CHINESE.language || locale.language == "zh"
+
+        return if (isChinese) {
+            buildChinesePrompt()
+        } else {
+            buildEnglishPrompt()
+        }
+    }
+
+    private fun buildChinesePrompt(): String {
+        return """
+你是一位专业的食物营养师和食物识别专家。请从上传的图片中识别食物并提取关键信息。
+
+请严格按照JSON格式返回数据，包含以下字段：
+{
+  "foodName": "食物名称（例如：胡萝卜、牛肉、南瓜）",
+  "foodId": 0,
+  "foodImageUrl": null,
+  "storageMethod": "储存方式（REFRIGERATOR 冷藏/FREEZER 冷冻/ROOM_TEMP 常温）",
+  "estimatedShelfLife": "预估保质期天数（整数）",
+  "defaultUnit": "默认重量单位（例如：克、千克、毫克），必须使用重量单位",
+  "quantity": 0,
+  "nutritionInfo": {
+    "calories": "每100克热量（千卡）",
+    "protein": "每100克蛋白质（克）",
+    "calcium": "每100克钙（毫克）",
+    "iron": "每100克铁（毫克）"
+  },
+  "confidence": "识别置信度（0-1之间的小数）",
+  "notes": "备注信息（可选）"
+}
+
+识别规则：
+1. 优先使用具体的食物名称（例如用"胡萝卜"而不是"蔬菜"）
+2. 根据食物特性确定储存方式：
+   - REFRIGERATOR（冷藏）：蔬菜、水果、肉类、乳制品、蛋类
+   - FREEZER（冷冻）：肉类、海鲜、冷冻食品
+   - ROOM_TEMP（常温）：干货、调味品、罐头食品
+3. 根据食物特性预估保质期：
+   - 蔬菜：3-7天
+   - 水果：5-14天
+   - 肉类（冷藏）：3-5天
+   - 肉类（冷冻）：90-180天
+   - 蛋类：21天
+   - 乳制品：7-14天
+   - 干货/调味品：180-365天
+4. 营养成分基于常见食物营养表（每100克）
+5. 置信度表示识别可信度，清晰图片0.8-1.0，模糊图片0.5-0.8
+6. 备注可以包含食物品种、产地等信息
+
+如果图片模糊或无法识别，请返回：
+{
+  "error": "无法识别，请重新拍摄或手动输入"
+}
+
+请只返回JSON格式数据，不要包含其他文字描述。
+""".trimIndent()
+    }
+
+    private fun buildEnglishPrompt(): String {
         return """
 You are a professional food nutritionist and food recognition expert. Please identify the food from the uploaded image and extract key information.
 
@@ -131,7 +245,7 @@ Please return data in strict JSON format with the following fields:
   "foodImageUrl": null,
   "storageMethod": "Storage method (REFRIGERATOR/FREEZER/ROOM_TEMP)",
   "estimatedShelfLife": "Estimated shelf life in days (integer)",
-  "defaultUnit": "Default unit (e.g., g, kg, piece)",
+  "defaultUnit": "Default weight unit (e.g., g, kg, mg), must use weight unit",
   "quantity": 0,
   "nutritionInfo": {
     "calories": "Calories per 100g (kcal)",
@@ -256,15 +370,20 @@ private data class ImageMessage(
 private sealed class ImageContentBase
 
 @Serializable
+@SerialName("image_url")
 private data class ImageContent(
-    val type: String = "image",
-    val mimeType: String,
-    val data: String
+    @SerialName("image_url")
+    val imageUrl: ImageUrlData
 ) : ImageContentBase()
 
 @Serializable
+private data class ImageUrlData(
+    val url: String
+)
+
+@Serializable
+@SerialName("text")
 private data class ImageTextContent(
-    val type: String = "text",
     val text: String
 ) : ImageContentBase()
 
@@ -282,9 +401,15 @@ private data class ImageChatCompletionResponse(
 @Serializable
 private data class ImageChoice(
     val index: Int,
-    val message: ImageMessage,
+    val message: ImageResponseMessage,
     @SerialName("finish_reason")
     val finishReason: String
+)
+
+@Serializable
+private data class ImageResponseMessage(
+    val role: String,
+    val content: String  // API 返回的是字符串，不是数组
 )
 
 @Serializable

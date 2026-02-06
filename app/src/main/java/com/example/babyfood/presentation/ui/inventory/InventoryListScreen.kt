@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
@@ -86,22 +87,45 @@ fun InventoryListScreen(
 
     if (showDeleteDialog && itemToDelete != null) {
         AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
+            onDismissRequest = { if (!uiState.isDeleting) showDeleteDialog = false },
             title = { Text("删除物品") },
-            text = { Text("确定要删除 ${itemToDelete!!.foodName} 吗？") },
+            text = {
+                if (uiState.isDeleting) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Text("正在删除...")
+                    }
+                } else {
+                    Text("确定要删除 ${itemToDelete!!.foodName} 吗？")
+                }
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
                         viewModel.deleteInventoryItem(itemToDelete!!)
                         showDeleteDialog = false
                         itemToDelete = null
-                    }
+                    },
+                    enabled = !uiState.isDeleting
                 ) {
-                    Text("删除", color = MaterialTheme.colorScheme.error)
+                    if (uiState.isDeleting) {
+                        Text("删除中...")
+                    } else {
+                        Text("删除", color = MaterialTheme.colorScheme.error)
+                    }
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
+                TextButton(
+                    onClick = { showDeleteDialog = false },
+                    enabled = !uiState.isDeleting
+                ) {
                     Text("取消")
                 }
             }
@@ -133,7 +157,12 @@ fun InventoryListScreen(
                 Icon(Icons.Default.Search, contentDescription = "搜索")
             },
             trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
+                if (uiState.isSearching) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else if (searchQuery.isNotEmpty()) {
                     IconButton(onClick = { searchQuery = "" }) {
                         Icon(Icons.Default.Clear, contentDescription = "清除")
                     }
