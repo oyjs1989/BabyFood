@@ -34,7 +34,7 @@ fun CookingMethodBadge(
     modifier: Modifier = Modifier
 ) {
     val color = Color(
-        CookingMethodRecommender().getMethodColor(method).toLong(16)
+        CookingMethodRecommender().getMethodColor(method).removePrefix("#").toLong(16)
     )
     val icon = CookingMethodRecommender().getMethodIcon(method)
     val text = CookingMethodRecommender().getMethodText(method)
@@ -127,7 +127,7 @@ fun CookingMethodCard(
     modifier: Modifier = Modifier
 ) {
     val color = Color(
-        CookingMethodRecommender().getMethodColor(recommendation.recommendedMethod).toLong(16)
+        CookingMethodRecommender().getMethodColor(recommendation.recommendedMethod).removePrefix("#").toLong(16)
     )
 
     Card(
@@ -236,7 +236,7 @@ fun SimpleCookingMethodTag(
     modifier: Modifier = Modifier
 ) {
     val color = Color(
-        CookingMethodRecommender().getMethodColor(method).toLong(16)
+        CookingMethodRecommender().getMethodColor(method).removePrefix("#").toLong(16)
     )
     val text = when (method) {
         CookingMethodRecommender.CookingMethod.HOMEMADE -> "自制"
