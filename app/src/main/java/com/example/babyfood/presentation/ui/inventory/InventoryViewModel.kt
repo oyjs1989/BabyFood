@@ -44,12 +44,7 @@ class InventoryViewModel @Inject constructor(
         Log.d(TAG, "========== 开始加载仓库物品列表 ==========")
         viewModelScope.launch {
             inventoryRepository.getAllInventoryItems().collect { items ->
-                val filteredItems = applyFilters(items)
-                _uiState.value = _uiState.value.copy(
-                    inventoryItems = items,
-                    filteredItems = filteredItems,
-                    isLoading = false
-                )
+                updateStateWithFilteredItems(items, isSearching = false)
                 Log.d(TAG, "✓ 仓库物品列表加载完成，共 ${items.size} 个物品 ==========")
             }
         }
@@ -62,15 +57,9 @@ class InventoryViewModel @Inject constructor(
         viewModelScope.launch {
             if (query.isEmpty()) {
                 loadInventoryItems()
-                _uiState.value = _uiState.value.copy(isSearching = false)
             } else {
                 inventoryRepository.searchInventoryItems(query).collect { items ->
-                    val filteredItems = applyFilters(items)
-                    _uiState.value = _uiState.value.copy(
-                        inventoryItems = items,
-                        filteredItems = filteredItems,
-                        isSearching = false
-                    )
+                    updateStateWithFilteredItems(items, isSearching = false)
                     Log.d(TAG, "✓ 搜索完成，找到 ${items.size} 个物品 ==========")
                 }
             }
@@ -81,48 +70,53 @@ class InventoryViewModel @Inject constructor(
         Log.d(TAG, "========== 按保质期状态筛选 ==========")
         Log.d(TAG, "筛选状态: $status")
         _uiState.value = _uiState.value.copy(selectedExpiryStatus = status)
-        applyCurrentFilters()
+        refreshFilters()
     }
 
     fun filterByStorageMethod(method: StorageMethod?) {
         Log.d(TAG, "========== 按保存方式筛选 ==========")
         Log.d(TAG, "筛选方式: $method")
         _uiState.value = _uiState.value.copy(selectedStorageMethod = method)
-        applyCurrentFilters()
+        refreshFilters()
     }
 
-    private fun applyCurrentFilters() {
+    private fun refreshFilters() {
         viewModelScope.launch {
-            val items = if (_uiState.value.searchQuery.isNotEmpty()) {
+            val source = if (_uiState.value.searchQuery.isNotEmpty()) {
                 inventoryRepository.searchInventoryItems(_uiState.value.searchQuery)
             } else {
                 inventoryRepository.getAllInventoryItems()
             }
-
-            items.collect { allItems ->
-                val filteredItems = applyFilters(allItems)
-                _uiState.value = _uiState.value.copy(
-                    inventoryItems = allItems,
-                    filteredItems = filteredItems
-                )
+            source.collect { items ->
+                updateStateWithFilteredItems(items)
             }
         }
     }
 
+    private fun updateStateWithFilteredItems(items: List<InventoryItem>, isSearching: Boolean? = null) {
+        val filteredItems = applyFilters(items)
+        val update = _uiState.value.copy(
+            inventoryItems = items,
+            filteredItems = filteredItems,
+            isLoading = false
+        )
+        _uiState.value = if (isSearching != null) {
+            update.copy(isSearching = isSearching)
+        } else {
+            update
+        }
+    }
+
     private fun applyFilters(items: List<InventoryItem>): List<InventoryItem> {
-        var filtered = items
-
-        // 按保质期状态筛选
-        _uiState.value.selectedExpiryStatus?.let { status ->
-            filtered = filtered.filter { it.getExpiryStatus() == status }
+        return items.filter { item ->
+            val matchesExpiryStatus = _uiState.value.selectedExpiryStatus?.let { status ->
+                item.getExpiryStatus() == status
+            } ?: true
+            val matchesStorageMethod = _uiState.value.selectedStorageMethod?.let { method ->
+                item.storageMethod == method
+            } ?: true
+            matchesExpiryStatus && matchesStorageMethod
         }
-
-        // 按保存方式筛选
-        _uiState.value.selectedStorageMethod?.let { method ->
-            filtered = filtered.filter { it.storageMethod == method }
-        }
-
-        return filtered
     }
 
     fun saveInventoryItem(item: InventoryItem) {
@@ -194,7 +188,7 @@ class InventoryViewModel @Inject constructor(
             selectedExpiryStatus = null,
             selectedStorageMethod = null
         )
-        applyCurrentFilters()
+        refreshFilters()
     }
 
     /**

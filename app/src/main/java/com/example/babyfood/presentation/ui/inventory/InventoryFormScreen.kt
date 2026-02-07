@@ -26,30 +26,20 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Button
-import androidx.compose.foundation.Canvas
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DatePicker
 import androidx.compose.animation.core.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import com.example.babyfood.presentation.ui.common.AppScaffold
 import com.example.babyfood.presentation.ui.common.AppBottomAction
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -60,24 +50,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.foundation.clickable
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
 import com.example.babyfood.domain.model.InventoryItem
 import com.example.babyfood.domain.model.StorageMethod
 import com.example.babyfood.util.ImageUtils
-import kotlinx.coroutines.delay
 import kotlinx.datetime.Clock
-import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,9 +84,7 @@ fun InventoryFormScreen(
     var unit by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
 
-    // 未保存修改跟踪
-    var hasUnsavedChanges by remember { mutableStateOf(false) }
-    var showExitConfirmationDialog by remember { mutableStateOf(false) }
+    
 
     // 日期选择器状态
     var showProductionDatePicker by remember { mutableStateOf(false) }
@@ -219,7 +199,6 @@ fun InventoryFormScreen(
             notes = notes.ifBlank { null }
         )
         viewModel.saveInventoryItem(item)
-        hasUnsavedChanges = false
     }
 
     AppScaffold(
@@ -480,172 +459,9 @@ fun InventoryFormScreen(
         )
     }
 
-    // AI 识别加载遮罩层 - 直接显示在页面上
+    // AI 识别加载遮罩层
     if (uiState.isRecognizing) {
-        // 使用 LaunchedEffect 手动实现旋转动画
-        var rotation by remember { mutableStateOf(0f) }
-        var rotation2 by remember { mutableStateOf(0f) }
-        var textAlpha by remember { mutableStateOf(1f) }
-        var dotCount by remember { mutableStateOf(0) }
-        
-        // 旋转动画 - 外圈
-        LaunchedEffect(Unit) {
-            while (true) {
-                rotation = (rotation + 10f) % 360f
-                delay(30)
-            }
-        }
-        
-        // 旋转动画 - 内圈（反向）
-        LaunchedEffect(Unit) {
-            while (true) {
-                rotation2 = (rotation2 - 15f) % 360f
-                delay(25)
-            }
-        }
-        
-        // 文字透明度动画（闪烁效果）
-        LaunchedEffect(Unit) {
-            var fading = true
-            while (true) {
-                if (fading) {
-                    textAlpha -= 0.1f
-                    if (textAlpha <= 0.5f) fading = false
-                } else {
-                    textAlpha += 0.1f
-                    if (textAlpha >= 1f) fading = true
-                }
-                delay(150)
-            }
-        }
-        
-        // 动态点动画
-        LaunchedEffect(Unit) {
-            while (true) {
-                dotCount = (dotCount + 1) % 4
-                delay(500)
-            }
-        }
-        
-        // 获取颜色
-        val primaryColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
-        val secondaryColor = androidx.compose.material3.MaterialTheme.colorScheme.secondary
-        val surfaceColor = androidx.compose.material3.MaterialTheme.colorScheme.surface
-        val lightGrayColor = androidx.compose.ui.graphics.Color.LightGray.copy(alpha = 0.3f)
-
-        // 全屏遮罩层
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.5f))
-                .clickable(enabled = false) { }, // 拦截点击事件
-            contentAlignment = Alignment.Center
-        ) {
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = surfaceColor,
-                shadowElevation = 8.dp,
-                modifier = Modifier.padding(32.dp)
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)
-                ) {
-                    // 标题
-                    Text(
-                        text = "AI 识别中",
-                        style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-
-                    // 显示正在识别的图片
-                    uiState.recognizingImageUri?.let { imageUri ->
-                        AsyncImage(
-                            model = imageUri,
-                            contentDescription = "正在识别的食材图片",
-                            modifier = Modifier
-                                .size(150.dp)
-                                .clip(RoundedCornerShape(8.dp)),
-                            contentScale = ContentScale.Crop
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-
-                    // 使用 Canvas 自定义绘制双圈旋转动画
-                    Box(
-                        modifier = Modifier.size(70.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        // 外圈 - 正向旋转
-                        Canvas(modifier = Modifier.fillMaxSize()) {
-                            val strokeWidth = 5f
-                            val diameter = size.minDimension - strokeWidth
-                            val radius = diameter / 2
-                            val centerX = size.width / 2
-                            val centerY = size.height / 2
-
-                            // 外圈旋转圆弧
-                            drawArc(
-                                color = primaryColor,
-                                startAngle = rotation - 90f,
-                                sweepAngle = 80f,
-                                useCenter = false,
-                                topLeft = androidx.compose.ui.geometry.Offset(
-                                    centerX - radius,
-                                    centerY - radius
-                                ),
-                                size = androidx.compose.ui.geometry.Size(diameter, diameter),
-                                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                            )
-                        }
-                        
-                        // 内圈 - 反向旋转
-                        Canvas(modifier = Modifier.size(50.dp)) {
-                            val strokeWidth = 5f
-                            val diameter = size.minDimension - strokeWidth
-                            val radius = diameter / 2
-                            val centerX = size.width / 2
-                            val centerY = size.height / 2
-
-                            // 内圈旋转圆弧
-                            drawArc(
-                                color = secondaryColor,
-                                startAngle = rotation2 - 90f,
-                                sweepAngle = 100f,
-                                useCenter = false,
-                                topLeft = androidx.compose.ui.geometry.Offset(
-                                    centerX - radius,
-                                    centerY - radius
-                                ),
-                                size = androidx.compose.ui.geometry.Size(diameter, diameter),
-                                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // 动态文字 - 带闪烁效果和动态点
-                    val dots = ".".repeat(dotCount)
-                    Text(
-                        text = "正在智能识别食材信息$dots",
-                        style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
-                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.graphicsLayer { alpha = textAlpha }
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    // 副标题
-                    Text(
-                        text = "AI 正在分析图片特征",
-                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
+        ImageRecognitionLoadingDialog(imageUri = uiState.recognizingImageUri)
     }
 
     // 识别错误对话框
@@ -662,33 +478,4 @@ fun InventoryFormScreen(
         )
     }
 
-    // 离开确认对话框
-    if (showExitConfirmationDialog) {
-        AlertDialog(
-            onDismissRequest = { showExitConfirmationDialog = false },
-            title = { Text("未保存的修改") },
-            text = { Text("您有未保存的修改，是否要保存？") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        saveInventoryItem()
-                        showExitConfirmationDialog = false
-                    },
-                    enabled = foodName.isNotBlank() && quantity.isNotBlank() && unit.isNotBlank()
-                ) {
-                    Text("保存")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showExitConfirmationDialog = false
-                        onBack()
-                    }
-                ) {
-                    Text("放弃修改")
-                }
-            }
-        )
     }
-}
