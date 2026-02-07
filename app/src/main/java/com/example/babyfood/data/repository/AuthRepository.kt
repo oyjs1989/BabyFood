@@ -1,23 +1,30 @@
 package com.example.babyfood.data.repository
 
+import android.provider.Settings
 import android.util.Log
+import com.example.babyfood.data.local.TokenStorage
 import com.example.babyfood.data.local.database.dao.UserDao
 import com.example.babyfood.data.local.database.entity.UserEntity
 import com.example.babyfood.data.remote.api.AuthApiService
+import com.example.babyfood.data.remote.dto.RegisterRequest
+import com.example.babyfood.data.remote.dto.VerificationCodeResponse
 import com.example.babyfood.domain.model.AuthState
 import com.example.babyfood.domain.model.LoginRequest
 import com.example.babyfood.domain.model.LoginResponse
-import com.example.babyfood.domain.model.RegisterRequest
 import com.example.babyfood.domain.model.User
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.Json
 import retrofit2.HttpException
 import java.io.IOException
 import java.net.SocketTimeoutException
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import android.content.Context
 
 /**
  * 认证仓库
@@ -26,7 +33,9 @@ import javax.inject.Singleton
 @Singleton
 class AuthRepository @Inject constructor(
     private val userDao: UserDao,
-    private val authApiService: AuthApiService
+    private val authApiService: AuthApiService,
+    private val tokenStorage: TokenStorage,
+    @ApplicationContext private val context: Context
 ) {
     companion object {
         private const val TAG = "AuthRepository"
@@ -178,7 +187,7 @@ class AuthRepository @Inject constructor(
     suspend fun refreshToken(): AuthState {
         Log.d(TAG, "========== 开始刷新Token ==========")
 
-        val refreshToken = getRefreshToken()
+        val refreshToken = tokenStorage.getRefreshToken()
         if (refreshToken == null) {
             Log.e(TAG, "❌ 未找到刷新令牌")
             return AuthState.Error("未找到刷新令牌")
@@ -190,7 +199,12 @@ class AuthRepository @Inject constructor(
             apiCall = { authApiService.refreshToken(it) },
             successAction = { response ->
                 if (response.success && response.user != null) {
-                    saveToken(response.token, response.refreshToken)
+                    tokenStorage.saveToken(
+                        token = response.token ?: "",
+                        refreshToken = response.refreshToken ?: "",
+                        expiresIn = response.expiresIn ?: 7200,
+                        userId = response.user.id
+                    )
                     Log.d(TAG, "✓ Token刷新成功")
                     AuthState.LoggedIn(response.user)
                 } else {
@@ -199,6 +213,122 @@ class AuthRepository @Inject constructor(
                 }
             }
         )
+    }
+
+    /**
+     * 发送短信验证码
+     * @param phone 手机号
+     * @return Flow<Result<Boolean>> 发送结果
+     */
+    fun sendSmsVerificationCode(phone: String): Flow<Result<Boolean>> = flow {
+        android.util.Log.d(TAG, "========== 发送短信验证码开始 ==========")
+        android.util.Log.d(TAG, "手机号: $phone")
+
+        try {
+            val response = authApiService.sendSmsVerificationCode(phone)
+            if (response.success) {
+                android.util.Log.d(TAG, "✓ 验证码发送成功")
+                emit(Result.success(true))
+            } else {
+                android.util.Log.e(TAG, "❌ 验证码发送失败: ${response.errorMessage}")
+                emit(Result.failure(Exception(response.errorMessage ?: "发送失败")))
+            }
+            android.util.Log.d(TAG, "========== 发送短信验证码结束 ==========")
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "❌ 网络请求失败: ${e.message}", e)
+            emit(Result.failure(e))
+        }
+    }
+
+    /**
+     * 发送邮件验证码
+     * @param email 邮箱地址
+     * @return Flow<Result<Boolean>> 发送结果
+     */
+    fun sendEmailVerificationCode(email: String): Flow<Result<Boolean>> = flow {
+        android.util.Log.d(TAG, "========== 发送邮件验证码开始 ==========")
+        android.util.Log.d(TAG, "邮箱: $email")
+
+        try {
+            val response = authApiService.sendEmailVerificationCode(email)
+            if (response.success) {
+                android.util.Log.d(TAG, "✓ 验证码发送成功")
+                emit(Result.success(true))
+            } else {
+                android.util.Log.e(TAG, "❌ 验证码发送失败: ${response.errorMessage}")
+                emit(Result.failure(Exception(response.errorMessage ?: "发送失败")))
+            }
+            android.util.Log.d(TAG, "========== 发送邮件验证码结束 ==========")
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "❌ 网络请求失败: ${e.message}", e)
+            emit(Result.failure(e))
+        }
+    }
+
+    /**
+     * 用户注册（新实现）
+     * @param phone 手机号（可选）
+     * @param email 邮箱（可选）
+     * @param password 密码
+     * @param confirmPassword 确认密码
+     * @param verificationCode 验证码
+     * @return Flow<Result<User>> 注册结果
+     */
+    suspend fun register(
+        phone: String?,
+        email: String?,
+        password: String,
+        confirmPassword: String,
+        verificationCode: String
+    ): Flow<Result<User>> = flow {
+        android.util.Log.d(TAG, "========== 用户注册开始 ==========")
+
+        try {
+            val request = RegisterRequest(
+                phone = phone,
+                email = email,
+                password = password,
+                confirmPassword = confirmPassword,
+                verificationCode = verificationCode,
+                agreeToTerms = true,
+                deviceInfo = com.example.babyfood.data.remote.dto.DeviceInfo(
+                    platform = "android",
+                    device_id = getDeviceId(),
+                    app_version = "1.0.0"
+                )
+            )
+
+            val response = authApiService.register(request)
+
+            if (response.success && response.token != null && response.user != null) {
+                android.util.Log.d(TAG, "✓ 注册成功，保存 Token")
+
+                // 保存 Token
+                response.expiresIn?.let {
+                    tokenStorage.saveToken(
+                        token = response.token,
+                        refreshToken = response.refreshToken ?: "",
+                        expiresIn = it,
+                        userId = response.user.id
+                    )
+                }
+
+                // 保存用户到数据库
+                val userEntity = response.user.toEntity()
+                userDao.insertUser(userEntity)
+                val loginTime = Clock.System.now().toString()
+                userDao.setLoggedIn(userEntity.id, loginTime)
+
+                emit(Result.success(response.user))
+            } else {
+                android.util.Log.e(TAG, "❌ 注册失败: ${response.errorMessage}")
+                emit(Result.failure(Exception(response.errorMessage ?: "注册失败")))
+            }
+            android.util.Log.d(TAG, "========== 用户注册结束 ==========")
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "❌ 网络请求失败: ${e.message}", e)
+            emit(Result.failure(e))
+        }
     }
 
     /**
@@ -309,23 +439,36 @@ class AuthRepository @Inject constructor(
     }
 
     private fun saveToken(token: String?, refreshToken: String?) {
-        // TODO: 实现安全的Token存储（使用Android Keystore或EncryptedSharedPreferences）
-        Log.d(TAG, "保存Token: ${token?.take(10)}...")
+        val userId = tokenStorage.getUserId()
+        tokenStorage.saveToken(
+            token = token ?: "",
+            refreshToken = refreshToken ?: "",
+            expiresIn = 7200, // 2小时
+            userId = userId
+        )
     }
 
     private fun clearToken() {
-        // TODO: 清除存储的Token
-        Log.d(TAG, "清除Token")
+        tokenStorage.clear()
     }
 
     private fun getToken(): String? {
-        // TODO: 从安全存储获取访问令牌
-        return null
+        return tokenStorage.getToken()
     }
 
     private fun getRefreshToken(): String? {
-        // TODO: 从安全存储获取刷新令牌
-        return null
+        return tokenStorage.getRefreshToken()
+    }
+
+    /**
+     * 获取设备唯一标识
+     * @return 设备 ID
+     */
+    private fun getDeviceId(): String {
+        return Settings.Secure.getString(
+            context.contentResolver,
+            Settings.Secure.ANDROID_ID
+        ) ?: UUID.randomUUID().toString()
     }
 
     private fun User.toEntity(): UserEntity = UserEntity(
@@ -334,8 +477,8 @@ class AuthRepository @Inject constructor(
         email = email,
         nickname = nickname,
         avatar = avatar,
-        createdAt = createdAt,
-        updatedAt = updatedAt,
+        createdAt = createdAt.toString(),
+        updatedAt = updatedAt.toString(),
         isEmailVerified = isEmailVerified,
         isPhoneVerified = isPhoneVerified,
         isLoggedIn = false,
@@ -344,13 +487,15 @@ class AuthRepository @Inject constructor(
 
     private fun UserEntity.toDomainModel(): User = User(
         id = id,
+        username = "", // 数据库中没有存储 username
         phone = phone,
         email = email,
         nickname = nickname,
         avatar = avatar,
-        createdAt = createdAt,
-        updatedAt = updatedAt,
+        createdAt = createdAt.toLongOrNull() ?: 0L,
+        updatedAt = updatedAt.toLongOrNull() ?: 0L,
         isEmailVerified = isEmailVerified,
-        isPhoneVerified = isPhoneVerified
+        isPhoneVerified = isPhoneVerified,
+        role = "user"
     )
 }

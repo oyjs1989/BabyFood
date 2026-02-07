@@ -46,6 +46,7 @@ import javax.inject.Inject
  * @param onRegisterClick 注册按钮点击回调
  * @param onSettingsClick 个人设置点击回调
  * @param onSwitchBabyClick 切换宝宝点击回调
+ * @param onLogoutClick 退出登录点击回调
  * @param modifier 修饰符（可选）
  * @param windowInsets 系统栏内边距（可选）
  */
@@ -58,6 +59,7 @@ fun AppHeader(
     onRegisterClick: () -> Unit,
     onSettingsClick: () -> Unit = {},
     onSwitchBabyClick: () -> Unit = {},
+    onLogoutClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     windowInsets: WindowInsets = WindowInsets(0, 0, 0, 0)
 ) {
@@ -111,7 +113,8 @@ fun AppHeader(
                         authRepository = authRepository,
                         babyRepository = babyRepository,
                         onSettingsClick = onSettingsClick,
-                        onSwitchBabyClick = onSwitchBabyClick
+                        onSwitchBabyClick = onSwitchBabyClick,
+                        onLogoutClick = onLogoutClick
                     )
                 }
                 is AuthState.NotLoggedIn -> {

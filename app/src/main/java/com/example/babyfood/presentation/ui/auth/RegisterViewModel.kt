@@ -5,14 +5,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.babyfood.data.repository.AuthRepository
 import com.example.babyfood.domain.model.AuthState
-import com.example.babyfood.domain.model.RegisterRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import javax.inject.Inject
 
 /**
@@ -134,32 +133,30 @@ class RegisterViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
-            try {
-                // TODO: 调用实际的验证码发送API
-                // val response = if (isPhone) {
-                //     authApiService.sendSmsVerificationCode(account)
-                // } else {
-                //     authApiService.sendEmailVerificationCode(account)
-                // }
+            val flow = if (isPhone) {
+                authRepository.sendSmsVerificationCode(account)
+            } else {
+                authRepository.sendEmailVerificationCode(account)
+            }
 
-                // 模拟网络请求
-                delay(1000)
+            flow.collect { result ->
+                result.onSuccess {
+                    Log.d(TAG, "✓ 验证码发送成功到 $accountType: $account")
 
-                Log.d(TAG, "✓ 验证码发送成功到 $accountType: $account")
+                    // 开始倒计时
+                    startCountdown()
 
-                // 开始倒计时
-                startCountdown()
-
-                _uiState.value = _uiState.value.copy(
-                    isSendingCode = false,
-                    error = null
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ 验证码发送失败: ${e.message}")
-                _uiState.value = _uiState.value.copy(
-                    isSendingCode = false,
-                    error = "验证码发送失败，请重试"
-                )
+                    _uiState.value = _uiState.value.copy(
+                        isSendingCode = false,
+                        error = null
+                    )
+                }.onFailure { exception ->
+                    Log.e(TAG, "❌ 验证码发送失败: ${exception.message}")
+                    _uiState.value = _uiState.value.copy(
+                        isSendingCode = false,
+                        error = exception.message ?: "验证码发送失败，请重试"
+                    )
+                }
             }
         }
     }
@@ -272,39 +269,28 @@ class RegisterViewModel @Inject constructor(
 
         viewModelScope.launch {
             _authState.value = AuthState.Loading
-            val request = RegisterRequest(
+
+            authRepository.register(
                 phone = phone,
                 email = email,
                 password = password,
                 confirmPassword = confirmPassword,
-                verificationCode = verificationCode,
-                agreeToTerms = agreeToTerms
-            )
-            val result = authRepository.register(request)
-
-            when (result) {
-                is AuthState.LoggedIn -> {
+                verificationCode = verificationCode
+            ).collect { result ->
+                result.onSuccess { user ->
                     Log.d(TAG, "✓ 注册成功，导航到首页")
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isRegisterSuccess = true
                     )
-                    _authState.value = result
-                }
-                is AuthState.Error -> {
-                    Log.e(TAG, "❌ 注册失败: ${result.message}")
+                    _authState.value = AuthState.LoggedIn(user)
+                }.onFailure { exception ->
+                    Log.e(TAG, "❌ 注册失败: ${exception.message}")
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = result.message
+                        error = exception.message ?: "注册失败，请重试"
                     )
-                    _authState.value = result
-                }
-                else -> {
-                    Log.e(TAG, "❌ 未知的注册状态")
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = "注册失败，请重试"
-                    )
+                    _authState.value = AuthState.Error(exception.message ?: "注册失败，请重试")
                 }
             }
         }

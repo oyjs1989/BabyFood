@@ -71,34 +71,50 @@ fun MainScreen(
 
     Scaffold(
         topBar = {
-            // 在所有页面显示统一的 AppHeader
-            com.example.babyfood.presentation.ui.common.AppHeader(
-                config = com.example.babyfood.presentation.ui.common.AppHeaderConfig(
-                    currentRoute = currentDestination?.route,
-                    onAppLogoClick = {
-                        // 点击应用名称跳转到首页
-                        if (currentDestination?.route != "home") {
-                            navController.navigate("home") {
-                                popUpTo("home") { inclusive = true }
+            // 在登录和注册页面隐藏 AppHeader
+            if (currentDestination?.route !in listOf("login", "register")) {
+                com.example.babyfood.presentation.ui.common.AppHeader(
+                    config = com.example.babyfood.presentation.ui.common.AppHeaderConfig(
+                        currentRoute = currentDestination?.route,
+                        onAppLogoClick = {
+                            // 点击应用名称跳转到首页
+                            if (currentDestination?.route != "home") {
+                                navController.navigate("home") {
+                                    popUpTo("home") { inclusive = true }
+                                }
                             }
                         }
+                    ),
+                    authRepository = mainViewModel.getAuthRepository(),
+                    babyRepository = mainViewModel.getBabyRepository(),
+                    onLoginClick = {
+                        navController.navigate("login")
+                    },
+                    onRegisterClick = {
+                        navController.navigate("register")
+                    },
+                    onSettingsClick = {
+                        // TODO: 导航到个人设置页面
+                    },
+                    onSwitchBabyClick = {
+                        // TODO: 导航到切换宝宝页面
+                    },
+                    onLogoutClick = {
+                        // 调用 MainViewModel 的 logout 方法
+                        mainViewModel.logout(
+                            onSuccess = {
+                                // 登出成功，导航到登录页面并清除导航栈
+                                navController.navigate("login") {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            },
+                            onFailure = {
+                                // 登出失败，可以显示错误提示
+                            }
+                        )
                     }
-                ),
-                authRepository = mainViewModel.getAuthRepository(),
-                babyRepository = mainViewModel.getBabyRepository(),
-                onLoginClick = {
-                    navController.navigate("login")
-                },
-                onRegisterClick = {
-                    navController.navigate("register")
-                },
-                onSettingsClick = {
-                    // TODO: 导航到个人设置页面
-                },
-                onSwitchBabyClick = {
-                    // TODO: 导航到切换宝宝页面
-                }
-            )
+                )
+            }
         },
         bottomBar = {
             if (currentDestination?.route in listOf("home", "recipes", "plans", "inventory", "baby")) {

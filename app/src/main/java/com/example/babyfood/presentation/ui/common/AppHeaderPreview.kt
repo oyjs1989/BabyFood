@@ -65,8 +65,8 @@ fun AppHeaderPreview_NotLoggedIn() {
                         email = "test@example.com",
                         nickname = "测试用户",
                         avatar = "",
-                        createdAt = "",
-                        updatedAt = "",
+                        createdAt = 0L,
+                        updatedAt = 0L,
                         isEmailVerified = true,
                         isPhoneVerified = true
                     )
@@ -107,8 +107,8 @@ fun AppHeaderPreview_LoggedIn() {
                         email = "test@example.com",
                         nickname = "测试用户",
                         avatar = "",
-                        createdAt = "",
-                        updatedAt = "",
+                        createdAt = 0L,
+                        updatedAt = 0L,
                         isEmailVerified = true,
                         isPhoneVerified = true
                     )

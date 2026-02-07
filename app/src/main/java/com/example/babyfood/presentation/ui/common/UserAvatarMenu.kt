@@ -37,6 +37,7 @@ import kotlinx.coroutines.launch
  * @param babyRepository 宝宝仓库
  * @param onSettingsClick 个人设置点击回调
  * @param onSwitchBabyClick 切换宝宝点击回调
+ * @param onLogoutClick 退出登录点击回调
  * @param modifier 修饰符
  */
 @Composable
@@ -45,6 +46,7 @@ fun UserAvatarMenu(
     babyRepository: BabyRepository,
     onSettingsClick: () -> Unit,
     onSwitchBabyClick: () -> Unit,
+    onLogoutClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -146,9 +148,7 @@ fun UserAvatarMenu(
             },
             onClick = {
                 expanded = false
-                // 这里应该在 ViewModel 中处理登出逻辑
-                // 简化实现：只是触发回调
-                onSettingsClick() // 临时复用，后续应该有单独的 onLogoutClick
+                onLogoutClick()
             }
         )
     }

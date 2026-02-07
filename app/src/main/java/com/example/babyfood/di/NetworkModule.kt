@@ -4,11 +4,13 @@ import android.content.Context
 import com.example.babyfood.BuildConfig
 import com.example.babyfood.data.ai.DashScopeImageRecognitionStrategy
 import com.example.babyfood.data.ai.ImageRecognitionService
+import com.example.babyfood.data.local.TokenStorage
 import com.example.babyfood.data.remote.api.AuthApiService
 import com.example.babyfood.data.remote.api.BabyApiService
 import com.example.babyfood.data.remote.api.PlanApiService
 import com.example.babyfood.data.remote.api.RecipeApiService
 import com.example.babyfood.data.remote.api.SyncApiService
+import com.example.babyfood.data.remote.interceptor.JwtAuthInterceptor
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
 import dagger.Provides
@@ -17,7 +19,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
-import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -70,43 +71,29 @@ object NetworkModule {
     }
 
     /**
-     * 认证拦截器
-     * TODO: 实现实际的认证逻辑（如 JWT Token）
+     * JWT 认证拦截器
+     * 自动为所有请求添加 JWT Token 到 Authorization 头
      */
     @Provides
     @Singleton
-    fun provideAuthInterceptor(): Interceptor {
-        return Interceptor { chain ->
-            val originalRequest = chain.request()
-            // TODO: 从本地存储获取 Token
-            val token = "" // SharedPreferences 或 SecureStorage
-
-            val authenticatedRequest = if (token.isNotEmpty()) {
-                originalRequest.newBuilder()
-                    .header("Authorization", "Bearer $token")
-                    .build()
-            } else {
-                originalRequest
-            }
-
-            chain.proceed(authenticatedRequest)
-        }
+    fun provideJwtAuthInterceptor(tokenStorage: TokenStorage): JwtAuthInterceptor {
+        return JwtAuthInterceptor(tokenStorage = tokenStorage)
     }
 
     /**
      * OkHttp 客户端
-     * 连接超时 10 秒，读取超时 30 秒（符合行业最佳实践）
+     * 连接超时 30 秒，读取超时 30 秒，写入超时 30 秒
      */
     @Provides
     @Singleton
     fun provideOkHttpClient(
         loggingInterceptor: HttpLoggingInterceptor,
-        authInterceptor: Interceptor
+        jwtAuthInterceptor: JwtAuthInterceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
-            .addInterceptor(authInterceptor)
-            .connectTimeout(10, TimeUnit.SECONDS)
+            .addInterceptor(jwtAuthInterceptor)
+            .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
