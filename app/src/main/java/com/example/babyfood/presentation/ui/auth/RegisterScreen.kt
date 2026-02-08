@@ -2,6 +2,8 @@ package com.example.babyfood.presentation.ui.auth
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +41,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,6 +76,8 @@ import com.example.babyfood.presentation.theme.components.BabyFoodPrimaryButton
 fun RegisterScreen(
     onRegisterSuccess: () -> Unit = {},
     onBackToLogin: () -> Unit = {},
+    onViewTermsOfService: () -> Unit = {},
+    onViewPrivacyPolicy: () -> Unit = {},
     viewModel: RegisterViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -450,12 +455,17 @@ fun RegisterScreen(
                             } else {
                                 SurfaceVariant
                             }
+                        )
+                        .clickable(
+                            onClick = { viewModel.toggleAgreeToTerms() },
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
                         ),
                     contentAlignment = Alignment.Center
                 ) {
                     if (uiState.agreeToTerms) {
                         Icon(
-                            imageVector = AppIcons.VerificationCode,
+                            imageVector = Icons.Default.CheckCircle,
                             contentDescription = "已同意",
                             tint = Color.White,
                             modifier = Modifier.size(16.dp)
@@ -465,14 +475,40 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
+                Text(
+                    text = "我已阅读并同意",
+                    fontSize = 13.sp,
+                    color = OnSurface
+                )
+
                 TextButton(
-                    onClick = { viewModel.toggleAgreeToTerms() },
+                    onClick = onViewTermsOfService,
                     colors = ButtonDefaults.textButtonColors(
-                        contentColor = OnSurface
-                    )
+                        contentColor = Primary
+                    ),
+                    modifier = Modifier.padding(horizontal = 0.dp)
                 ) {
                     Text(
-                        text = "我已阅读并同意服务条款和隐私政策",
+                        text = "服务条款",
+                        fontSize = 13.sp
+                    )
+                }
+
+                Text(
+                    text = "和",
+                    fontSize = 13.sp,
+                    color = OnSurface
+                )
+
+                TextButton(
+                    onClick = onViewPrivacyPolicy,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = Primary
+                    ),
+                    modifier = Modifier.padding(horizontal = 0.dp)
+                ) {
+                    Text(
+                        text = "隐私政策",
                         fontSize = 13.sp
                     )
                 }

@@ -7,6 +7,7 @@ import com.example.babyfood.data.local.database.dao.UserDao
 import com.example.babyfood.data.local.database.entity.UserEntity
 import com.example.babyfood.data.remote.api.AuthApiService
 import com.example.babyfood.data.remote.dto.RegisterRequest
+import com.example.babyfood.data.remote.dto.RegisterResponse
 import com.example.babyfood.data.remote.dto.VerificationCodeResponse
 import com.example.babyfood.domain.model.AuthState
 import com.example.babyfood.domain.model.LoginRequest
@@ -325,6 +326,17 @@ class AuthRepository @Inject constructor(
                 emit(Result.failure(Exception(response.errorMessage ?: "注册失败")))
             }
             android.util.Log.d(TAG, "========== 用户注册结束 ==========")
+        } catch (e: HttpException) {
+            // 尝试解析 HTTP 错误响应
+            val errorMessage = parseHttpErrorMessage(e, "注册")
+            android.util.Log.e(TAG, "❌ 注册失败: $errorMessage")
+            emit(Result.failure(Exception(errorMessage)))
+        } catch (e: SocketTimeoutException) {
+            android.util.Log.e(TAG, "❌ 连接超时: ${e.message}")
+            emit(Result.failure(Exception("请求超时，请检查网络后重试")))
+        } catch (e: IOException) {
+            android.util.Log.e(TAG, "❌ 网络错误: ${e.message}")
+            emit(Result.failure(Exception("网络错误，请检查网络连接")))
         } catch (e: Exception) {
             android.util.Log.e(TAG, "❌ 网络请求失败: ${e.message}", e)
             emit(Result.failure(e))
@@ -436,6 +448,92 @@ class AuthRepository @Inject constructor(
             }
         }
         return AuthState.Error("${operationName}失败，请稍后重试")
+    }
+
+    /**
+     * 解析 HTTP 错误响应中的错误消息
+     * @param e HTTP 异常
+     * @param operationName 操作名称
+     * @return 错误消息
+     */
+    private fun parseHttpErrorMessage(e: HttpException, operationName: String): String {
+        Log.e(TAG, "❌ HTTP错误: ${e.code()} - ${e.message()}")
+        Log.e(TAG, "异常堆栈: ", e)
+
+        val errorBody = e.response()?.errorBody()?.string()
+        if (errorBody != null) {
+            try {
+                // 尝试解析为 RegisterResponse
+                val errorResponse = Json.decodeFromString<RegisterResponse>(errorBody)
+                if (!errorResponse.errorMessage.isNullOrBlank()) {
+                    // 翻译错误消息
+                    return translateErrorMessage(errorResponse.errorMessage)
+                }
+            } catch (parseException: Exception) {
+                Log.e(TAG, "❌ 解析 RegisterResponse 失败: ${parseException.message}")
+            }
+
+            try {
+                // 尝试解析为 LoginResponse
+                val errorResponse = Json.decodeFromString<LoginResponse>(errorBody)
+                if (!errorResponse.errorMessage.isNullOrBlank()) {
+                    // 翻译错误消息
+                    return translateErrorMessage(errorResponse.errorMessage)
+                }
+            } catch (parseException: Exception) {
+                Log.e(TAG, "❌ 解析 LoginResponse 失败: ${parseException.message}")
+            }
+        }
+
+        // 根据状态码返回默认错误消息
+        return when (e.code()) {
+            409 -> "账号已被注册，请直接登录"
+            400 -> "请求参数错误，请检查输入"
+            401 -> "认证失败，请重新登录"
+            403 -> "权限不足"
+            404 -> "资源不存在"
+            429 -> "请求过于频繁，请稍后再试"
+            500 -> "服务器错误，请稍后重试"
+            else -> "${operationName}失败，请稍后重试"
+        }
+    }
+
+    /**
+     * 翻译错误消息
+     * @param errorMessage 原始错误消息
+     * @return 翻译后的错误消息
+     */
+    private fun translateErrorMessage(errorMessage: String): String {
+        return when (errorMessage) {
+            // 注册相关错误
+            "Phone number already registered." -> "手机号已被注册，请使用其他手机号或直接登录"
+            "Email address already registered." -> "邮箱已被注册，请使用其他邮箱或直接登录"
+            "Invalid phone number format." -> "手机号格式不正确"
+            "Invalid email format." -> "邮箱格式不正确"
+            "Password is required." -> "密码不能为空"
+            "Password must be at least 6 characters." -> "密码至少需要6个字符"
+            "Passwords do not match." -> "两次输入的密码不一致"
+            "Verification code is required." -> "验证码不能为空"
+            "Invalid verification code." -> "验证码无效"
+            "Verification code has expired." -> "验证码已过期，请重新获取"
+            "You must agree to the terms and privacy policy." -> "请同意服务条款和隐私政策"
+
+            // 登录相关错误
+            "Account not found." -> "账号不存在"
+            "Incorrect password." -> "密码错误"
+            "Account is locked." -> "账号已被锁定，请30分钟后再试"
+            "Account is disabled." -> "账号已被禁用"
+            "Invalid credentials." -> "账号或密码错误，请检查后重试"
+
+            // 验证码相关错误
+            "Verification code not found." -> "验证码不存在或已过期"
+            "Too many verification code requests." -> "验证码请求过于频繁，请稍后再试"
+
+            // 通用错误
+            "Internal server error." -> "服务器内部错误，请稍后重试"
+            "Service unavailable." -> "服务暂时不可用，请稍后重试"
+            else -> errorMessage // 如果没有对应的翻译，返回原始消息
+        }
     }
 
     private fun saveToken(token: String?, refreshToken: String?) {

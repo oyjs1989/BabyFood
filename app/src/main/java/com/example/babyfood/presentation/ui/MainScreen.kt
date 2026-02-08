@@ -71,8 +71,8 @@ fun MainScreen(
 
     Scaffold(
         topBar = {
-            // 在登录和注册页面隐藏 AppHeader
-            if (currentDestination?.route !in listOf("login", "register")) {
+            // 在登录、注册、服务条款和隐私政策页面隐藏 AppHeader
+            if (currentDestination?.route !in listOf("login", "register", "legal/terms", "legal/privacy")) {
                 com.example.babyfood.presentation.ui.common.AppHeader(
                     config = com.example.babyfood.presentation.ui.common.AppHeaderConfig(
                         currentRoute = currentDestination?.route,
@@ -86,7 +86,6 @@ fun MainScreen(
                         }
                     ),
                     authRepository = mainViewModel.getAuthRepository(),
-                    babyRepository = mainViewModel.getBabyRepository(),
                     onLoginClick = {
                         navController.navigate("login")
                     },
@@ -95,9 +94,6 @@ fun MainScreen(
                     },
                     onSettingsClick = {
                         // TODO: 导航到个人设置页面
-                    },
-                    onSwitchBabyClick = {
-                        // TODO: 导航到切换宝宝页面
                     },
                     onLogoutClick = {
                         // 调用 MainViewModel 的 logout 方法
@@ -184,6 +180,36 @@ fun MainScreen(
                         }
                     },
                     onBackToLogin = {
+                        navController.popBackStack()
+                    },
+                    onViewTermsOfService = {
+                        navController.navigate("legal/terms")
+                    },
+                    onViewPrivacyPolicy = {
+                        navController.navigate("legal/privacy")
+                    }
+                )
+            }
+
+            // 服务条款
+            composable("legal/terms") {
+                com.example.babyfood.presentation.ui.common.legal.TermsOfServiceScreen(
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onAgree = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            // 隐私政策
+            composable("legal/privacy") {
+                com.example.babyfood.presentation.ui.common.legal.PrivacyPolicyScreen(
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onAgree = {
                         navController.popBackStack()
                     }
                 )

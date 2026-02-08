@@ -24,7 +24,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.babyfood.data.repository.AuthRepository
-import com.example.babyfood.data.repository.BabyRepository
 import com.example.babyfood.domain.model.AuthState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -41,11 +40,9 @@ import javax.inject.Inject
  *
  * @param config Header 配置
  * @param authRepository 认证仓库
- * @param babyRepository 宝宝仓库
  * @param onLoginClick 登录按钮点击回调
  * @param onRegisterClick 注册按钮点击回调
  * @param onSettingsClick 个人设置点击回调
- * @param onSwitchBabyClick 切换宝宝点击回调
  * @param onLogoutClick 退出登录点击回调
  * @param modifier 修饰符（可选）
  * @param windowInsets 系统栏内边距（可选）
@@ -54,11 +51,9 @@ import javax.inject.Inject
 fun AppHeader(
     config: AppHeaderConfig,
     authRepository: AuthRepository,
-    babyRepository: BabyRepository,
     onLoginClick: () -> Unit,
     onRegisterClick: () -> Unit,
     onSettingsClick: () -> Unit = {},
-    onSwitchBabyClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     windowInsets: WindowInsets = WindowInsets(0, 0, 0, 0)
@@ -111,9 +106,7 @@ fun AppHeader(
                     // 已登录：显示用户头像和菜单
                     UserAvatarMenu(
                         authRepository = authRepository,
-                        babyRepository = babyRepository,
                         onSettingsClick = onSettingsClick,
-                        onSwitchBabyClick = onSwitchBabyClick,
                         onLogoutClick = onLogoutClick
                     )
                 }
