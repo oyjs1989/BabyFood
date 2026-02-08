@@ -69,4 +69,22 @@ interface UserDao {
      */
     @Query("SELECT * FROM users")
     fun getAllUsers(): Flow<List<UserEntity>>
+
+    /**
+     * 更新用户昵称
+     */
+    @Query("UPDATE users SET nickname = :nickname WHERE id = :userId")
+    suspend fun updateNickname(userId: Long, nickname: String)
+
+    /**
+     * 更新用户头像
+     */
+    @Query("UPDATE users SET avatar = :avatar WHERE id = :userId")
+    suspend fun updateAvatar(userId: Long, avatar: String)
+
+    /**
+     * 更新用户主题设置
+     */
+    @Query("UPDATE users SET theme = :theme WHERE id = :userId")
+    suspend fun updateTheme(userId: Long, theme: String)
 }

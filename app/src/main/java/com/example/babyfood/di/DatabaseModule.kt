@@ -17,6 +17,7 @@ import com.example.babyfood.data.local.database.MIGRATION_11_12
 import com.example.babyfood.data.local.database.MIGRATION_12_13
 import com.example.babyfood.data.local.database.MIGRATION_13_14
 import com.example.babyfood.data.local.database.MIGRATION_14_15
+import com.example.babyfood.data.local.database.MIGRATION_15_16
 import com.example.babyfood.data.local.database.dao.NutritionDataDao
 import com.example.babyfood.data.ai.recommendation.IronRichStrategy
 import com.example.babyfood.data.preferences.PreferencesManager
@@ -45,7 +46,8 @@ object DatabaseModule {
         MIGRATION_11_12,
         MIGRATION_12_13,
         MIGRATION_13_14,
-        MIGRATION_14_15
+        MIGRATION_14_15,
+        MIGRATION_15_16
     )
 
     @Provides

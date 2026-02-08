@@ -19,5 +19,6 @@ data class UserEntity(
     val isEmailVerified: Boolean = false,
     val isPhoneVerified: Boolean = false,
     val isLoggedIn: Boolean = false, // 当前登录状态
-    val lastLoginTime: String? = null // 最后登录时间
+    val lastLoginTime: String? = null, // 最后登录时间
+    val theme: String? = "light" // 主题设置：light/dark/auto
 )

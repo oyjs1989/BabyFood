@@ -93,7 +93,7 @@ fun MainScreen(
                         navController.navigate("register")
                     },
                     onSettingsClick = {
-                        // TODO: 导航到个人设置页面
+                        navController.navigate("user/settings")
                     },
                     onLogoutClick = {
                         // 调用 MainViewModel 的 logout 方法
@@ -492,6 +492,65 @@ fun MainScreen(
             composable("ai/recommendation") {
                 com.example.babyfood.presentation.ui.ai.RecommendationScreen(
                     onBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            // 个人设置主页面
+            composable("user/settings") {
+                com.example.babyfood.presentation.ui.user.SettingsScreen(
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onEditNickname = {
+                        navController.navigate("user/settings/nickname")
+                    },
+                    onChangePassword = {
+                        navController.navigate("user/settings/password")
+                    },
+                    onSelectAvatar = {
+                        navController.navigate("user/settings/avatar")
+                    },
+                    onLogout = {
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            // 修改昵称页面
+            composable("user/settings/nickname") {
+                com.example.babyfood.presentation.ui.user.EditNicknameScreen(
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onSaveSuccess = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            // 修改密码页面
+            composable("user/settings/password") {
+                com.example.babyfood.presentation.ui.user.ChangePasswordScreen(
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onChangeSuccess = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            // 头像选择页面
+            composable("user/settings/avatar") {
+                com.example.babyfood.presentation.ui.user.AvatarPickerScreen(
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onAvatarSelected = {
                         navController.popBackStack()
                     }
                 )

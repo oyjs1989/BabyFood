@@ -433,7 +433,7 @@ val MIGRATION_14_15 = object : Migration(14, 15) {
                 vitaminC REAL NOT NULL,
                 FOREIGN KEY(babyId) REFERENCES babies(id) ON DELETE CASCADE
             )
-            """.trimIndent()
+        """.trimIndent()
         )
 
         // 4. 创建 nutrition_data 表
@@ -448,7 +448,7 @@ val MIGRATION_14_15 = object : Migration(14, 15) {
                 calciumContent REAL NOT NULL,
                 vitaminCContent REAL NOT NULL
             )
-            """.trimIndent()
+        """.trimIndent()
         )
 
         // 5. 创建 user_warning_ignores 表
@@ -463,7 +463,7 @@ val MIGRATION_14_15 = object : Migration(14, 15) {
                 ignoreCount INTEGER NOT NULL DEFAULT 1,
                 FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
             )
-            """.trimIndent()
+        """.trimIndent()
         )
 
         // 6. 扩展 recipes 表
@@ -486,6 +486,14 @@ val MIGRATION_14_15 = object : Migration(14, 15) {
     }
 }
 
+// 数据库迁移：从版本 15 到版本 16
+// 为 users 表添加 theme 字段，支持用户主题偏好设置
+val MIGRATION_15_16 = object : Migration(15, 16) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // 为 users 表添加 theme 字段，默认值为 'light'（可为空）
+        database.execSQL("ALTER TABLE users ADD COLUMN theme TEXT DEFAULT 'light'")
+    }
+}
 @Database(
     entities = [
         BabyEntity::class,
@@ -501,7 +509,7 @@ val MIGRATION_14_15 = object : Migration(14, 15) {
         NutritionDataEntity::class,
         UserWarningIgnoreEntity::class
     ],
-    version = 15,  // 升级到版本 15（优化辅食选择功能 - 营养指南）
+    version = 16,  // 升级到版本 16（添加个人设置功能）
     exportSchema = false
 )
 @TypeConverters(Converters::class)

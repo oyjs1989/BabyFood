@@ -278,9 +278,17 @@ fun getScaleByState(state: AnimationState): Float {
 
 @Composable
 fun BabyFoodTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themePreference: String? = null,  // null 表示跟随系统，"light" 表示浅色，"dark" 表示深色
     content: @Composable () -> Unit
 ) {
+    // 根据主题偏好决定使用哪个主题
+    val darkTheme = when (themePreference) {
+        "light" -> false
+        "dark" -> true
+        "auto", null -> isSystemInDarkTheme()
+        else -> isSystemInDarkTheme()
+    }
+
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
     // 页面背景渐变：从橙色到白色的垂直渐变（三色渐变确保底部纯白）

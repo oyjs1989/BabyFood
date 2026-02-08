@@ -22,5 +22,6 @@ data class User(
     val createdAt: Long = 0L,
     @SerialName("updated_at")
     val updatedAt: Long = 0L,
-    val role: String = "user"
+    val role: String = "user",
+    val theme: String = "light"
 )

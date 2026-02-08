@@ -499,6 +499,140 @@ class AuthRepository @Inject constructor(
     }
 
     /**
+     * 更新用户昵称
+     * @param nickname 新昵称
+     * @return Result<User> 更新结果
+     */
+    suspend fun updateNickname(nickname: String): Result<User> {
+        Log.d(TAG, "========== 开始更新昵称 ==========")
+        Log.d(TAG, "新昵称: $nickname")
+
+        return try {
+            val userId = tokenStorage.getUserId()
+            if (userId == -1L) {
+                Log.e(TAG, "❌ 用户未登录")
+                return Result.failure(Exception("用户未登录"))
+            }
+
+            userDao.updateNickname(userId, nickname)
+            
+            // 获取更新后的用户信息
+            val updatedUser = userDao.getUserById(userId)?.toDomainModel()
+            if (updatedUser != null) {
+                Log.d(TAG, "✓ 昵称更新成功")
+                Log.d(TAG, "========== 昵称更新完成 ==========")
+                Result.success(updatedUser)
+            } else {
+                Log.e(TAG, "❌ 获取更新后的用户信息失败")
+                Result.failure(Exception("更新失败"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ 昵称更新失败: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * 修改密码
+     * @param oldPassword 旧密码
+     * @param newPassword 新密码
+     * @return Result<Unit> 修改结果
+     */
+    suspend fun changePassword(oldPassword: String, newPassword: String): Result<Unit> {
+        Log.d(TAG, "========== 开始修改密码 ==========")
+
+        return try {
+            val userId = tokenStorage.getUserId()
+            if (userId == -1L) {
+                Log.e(TAG, "❌ 用户未登录")
+                return Result.failure(Exception("用户未登录"))
+            }
+
+            // 验证新密码格式
+            if (!validatePassword(newPassword)) {
+                Log.e(TAG, "❌ 新密码格式不正确")
+                return Result.failure(Exception("密码至少需要6个字符"))
+            }
+
+            // TODO: 等待后端 API 实现后，通过 API 来验证旧密码和更新密码
+            // 暂时返回未实现错误
+            Log.e(TAG, "❌ 修改密码功能暂未实现")
+            Result.failure(Exception("修改密码功能暂未实现，请联系管理员"))
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ 密码修改失败: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * 更新用户头像
+     * @param avatar 头像 URL
+     * @return Result<User> 更新结果
+     */
+    suspend fun updateAvatar(avatar: String): Result<User> {
+        Log.d(TAG, "========== 开始更新头像 ==========")
+        Log.d(TAG, "新头像: $avatar")
+
+        return try {
+            val userId = tokenStorage.getUserId()
+            if (userId == -1L) {
+                Log.e(TAG, "❌ 用户未登录")
+                return Result.failure(Exception("用户未登录"))
+            }
+
+            userDao.updateAvatar(userId, avatar)
+            
+            // 获取更新后的用户信息
+            val updatedUser = userDao.getUserById(userId)?.toDomainModel()
+            if (updatedUser != null) {
+                Log.d(TAG, "✓ 头像更新成功")
+                Log.d(TAG, "========== 头像更新完成 ==========")
+                Result.success(updatedUser)
+            } else {
+                Log.e(TAG, "❌ 获取更新后的用户信息失败")
+                Result.failure(Exception("更新失败"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ 头像更新失败: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * 更新用户主题设置
+     * @param theme 主题设置（light/dark/auto）
+     * @return Result<User> 更新结果
+     */
+    suspend fun updateTheme(theme: String): Result<User> {
+        Log.d(TAG, "========== 开始更新主题设置 ==========")
+        Log.d(TAG, "新主题: $theme")
+
+        return try {
+            val userId = tokenStorage.getUserId()
+            if (userId == -1L) {
+                Log.e(TAG, "❌ 用户未登录")
+                return Result.failure(Exception("用户未登录"))
+            }
+
+            userDao.updateTheme(userId, theme)
+            
+            // 获取更新后的用户信息
+            val updatedUser = userDao.getUserById(userId)?.toDomainModel()
+            if (updatedUser != null) {
+                Log.d(TAG, "✓ 主题设置更新成功")
+                Log.d(TAG, "========== 主题设置更新完成 ==========")
+                Result.success(updatedUser)
+            } else {
+                Log.e(TAG, "❌ 获取更新后的用户信息失败")
+                Result.failure(Exception("更新失败"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ 主题设置更新失败: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
      * 翻译错误消息
      * @param errorMessage 原始错误消息
      * @return 翻译后的错误消息
@@ -594,6 +728,7 @@ class AuthRepository @Inject constructor(
         updatedAt = updatedAt.toLongOrNull() ?: 0L,
         isEmailVerified = isEmailVerified,
         isPhoneVerified = isPhoneVerified,
-        role = "user"
+        role = "user",
+        theme = theme ?: "light"
     )
 }
