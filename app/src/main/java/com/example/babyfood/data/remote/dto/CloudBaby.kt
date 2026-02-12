@@ -1,9 +1,11 @@
 package com.example.babyfood.data.remote.dto
 
+import com.example.babyfood.data.remote.dto.serializers.LocalDateSerializer
 import com.example.babyfood.domain.model.AllergyItem
 import com.example.babyfood.domain.model.NutritionGoal
 import com.example.babyfood.domain.model.PreferenceItem
 import kotlinx.serialization.Serializable
+import java.time.LocalDate
 
 /**
  * 云端宝宝数据模型（脱敏版本）
@@ -12,8 +14,10 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class CloudBaby(
     val cloudId: String,                        // 云端唯一标识
-    val preferences: List<CloudPreferenceItem>, // 偏好食材（非敏感）
-    val nutritionGoal: CloudNutritionGoal?,     // 营养目标（非敏感）
+    val gender: String? = null,                 // 性别（新增）
+    val preferences: List<CloudPreferenceItem> = emptyList(), // 偏好食材（非敏感）
+    val nutritionGoal: CloudNutritionGoal? = null,     // 营养目标（非敏感）
+    val avatarUrl: String? = null,              // 头像URL（新增）
     val createdAt: Long,                        // 创建时间（毫秒时间戳）
     val updatedAt: Long,                        // 更新时间（毫秒时间戳）
     val version: Int                            // 版本号（用于冲突检测）

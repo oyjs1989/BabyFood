@@ -14,7 +14,11 @@ data class CloudPlan(
     val plannedDate: String,                    // 计划日期（ISO-8601 格式）
     val mealPeriod: String,                     // 餐段时间（BREAKFAST、LUNCH、DINNER、SNACK）
     val status: String,                         // 状态（PLANNED、TRIED、SKIPPED）
-    val notes: String?,                         // 备注
+    // 新增字段
+    val mealTime: String? = null,               // 用餐时间（HH:MM 格式）
+    val feedbackStatus: String? = null,         // 反馈状态（FINISHED、HALF、DISLIKED、ALLERGY）
+    val feedbackTime: Long? = null,             // 反馈时间（毫秒时间戳）
+    val notes: String? = null,                  // 备注
     val createdAt: Long,                        // 创建时间（毫秒时间戳）
     val updatedAt: Long,                        // 更新时间（毫秒时间戳）
     val version: Int                            // 版本号（用于冲突检测）

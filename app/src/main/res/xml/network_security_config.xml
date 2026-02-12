@@ -2,7 +2,15 @@
 <network-security-config>
     <!-- 允许指定域名使用明文 HTTP 通信（仅用于开发环境） -->
     <domain-config cleartextTrafficPermitted="true">
-        <!-- 后端服务器 IP 地址 -->
+        <!-- 远程后端服务器 IP 地址 -->
         <domain includeSubdomains="false">39.108.143.232</domain>
+        <!-- 本地测试环境（Android 模拟器访问本机） -->
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <!-- 本地测试环境（常见局域网 IP 段） -->
+        <domain includeSubdomains="false">192.168.1.14</domain>
+        <domain includeSubdomains="false">192.168.1.100</domain>
+        <domain includeSubdomains="false">192.168.0.100</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
     </domain-config>
 </network-security-config>
