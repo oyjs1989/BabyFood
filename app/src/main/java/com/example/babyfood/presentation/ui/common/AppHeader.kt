@@ -106,8 +106,10 @@ fun AppHeader(
                     // 已登录：显示用户头像和菜单
                     UserAvatarMenu(
                         authRepository = authRepository,
+                        currentBalance = config.pointsBalance,
                         onSettingsClick = onSettingsClick,
-                        onLogoutClick = onLogoutClick
+                        onLogoutClick = onLogoutClick,
+                        onPointsClick = config.onPointsClick
                     )
                 }
                 is AuthState.NotLoggedIn -> {

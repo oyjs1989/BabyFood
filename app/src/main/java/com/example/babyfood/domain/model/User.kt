@@ -23,5 +23,9 @@ data class User(
     @SerialName("updated_at")
     val updatedAt: Long = 0L,
     val role: String = "user",
-    val theme: String = "light"
+    val theme: String = "light",
+    @SerialName("points_balance")
+    val pointsBalance: Int = 0,
+    @SerialName("last_check_in_date")
+    val lastCheckInDate: Long? = null
 )

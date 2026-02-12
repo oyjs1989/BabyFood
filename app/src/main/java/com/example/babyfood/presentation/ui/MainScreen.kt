@@ -83,7 +83,11 @@ fun MainScreen(
                                     popUpTo("home") { inclusive = true }
                                 }
                             }
-                        }
+                        },
+                        onPointsClick = {
+                            navController.navigate("points")
+                        },
+                        pointsBalance = 0
                     ),
                     authRepository = mainViewModel.getAuthRepository(),
                     onLoginClick = {
@@ -495,6 +499,12 @@ fun MainScreen(
                         navController.popBackStack()
                     }
                 )
+            }
+
+
+            // 积分页面
+            composable("points") {
+                com.example.babyfood.presentation.ui.points.PointsScreen()
             }
 
             // 个人设置主页面

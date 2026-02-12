@@ -8,6 +8,7 @@ import com.example.babyfood.data.local.TokenStorage
 import com.example.babyfood.data.remote.api.AuthApiService
 import com.example.babyfood.data.remote.api.BabyApiService
 import com.example.babyfood.data.remote.api.PlanApiService
+import com.example.babyfood.data.remote.api.PointsApiService
 import com.example.babyfood.data.remote.api.RecipeApiService
 import com.example.babyfood.data.remote.api.SyncApiService
 import com.example.babyfood.data.remote.interceptor.JwtAuthInterceptor
@@ -181,6 +182,15 @@ object NetworkModule {
     @Singleton
     fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
         return retrofit.create(AuthApiService::class.java)
+    }
+
+    /**
+     * Points API 服务
+     */
+    @Provides
+    @Singleton
+    fun providePointsApiService(retrofit: Retrofit): PointsApiService {
+        return retrofit.create(PointsApiService::class.java)
     }
 
     // ==================== AI 服务 ====================
