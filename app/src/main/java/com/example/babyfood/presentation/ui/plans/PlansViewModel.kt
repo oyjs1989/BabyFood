@@ -1,7 +1,6 @@
 package com.example.babyfood.presentation.ui.plans
 
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.babyfood.data.ai.RecommendationService
 import com.example.babyfood.data.repository.BabyRepository
@@ -14,26 +13,23 @@ import com.example.babyfood.domain.model.Plan
 import com.example.babyfood.domain.model.PlanConflict
 import com.example.babyfood.domain.model.PlanStatus
 import com.example.babyfood.domain.model.PlannedMeal
-import com.example.babyfood.domain.model.RecommendationConstraints
 import com.example.babyfood.domain.model.RecommendationRequest
 import com.example.babyfood.domain.model.Recipe
 import com.example.babyfood.domain.model.SaveResult
 import com.example.babyfood.domain.model.WeeklyMealPlan
+import com.example.babyfood.presentation.ui.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.LocalDate
 import javax.inject.Inject
 
 /**
  * 计划与食谱的合并数据类
- * 用于在 UI 层直接显示计划及其关联的食谱信息
  */
 data class PlanWithRecipe(
     val plan: Plan,
@@ -47,7 +43,9 @@ class PlansViewModel @Inject constructor(
     private val recipeRepository: RecipeRepository,
     private val recommendationService: RecommendationService,
     private val savedStateHandle: SavedStateHandle
-) : ViewModel() {
+) : BaseViewModel() {
+
+    override val logTag: String = "PlansViewModel"
 
     companion object {
         private const val KEY_RECOMMENDATION_AVAILABLE = "recommendation_available"
@@ -60,16 +58,16 @@ class PlansViewModel @Inject constructor(
     val uiState: StateFlow<PlansUiState> = _uiState.asStateFlow()
 
     init {
-        android.util.Log.d("PlansViewModel", "========== PlansViewModel 初始化 ==========")
+        logMethodStart("PlansViewModel 初始化")
         loadBabies()
         loadRecipes()
     }
 
     private fun loadBabies() {
-        android.util.Log.d("PlansViewModel", "开始加载宝宝列表")
+        logMethodStart("加载宝宝列表")
         viewModelScope.launch {
             babyRepository.getAllBabies().collect { babies ->
-                android.util.Log.d("PlansViewModel", "✓ 宝宝列表加载完成: ${babies.size}个")
+                logSuccess("宝宝列表加载完成: ${babies.size}个")
                 _uiState.value = _uiState.value.copy(
                     babies = babies,
                     selectedBaby = babies.firstOrNull()
@@ -80,21 +78,16 @@ class PlansViewModel @Inject constructor(
     }
 
     private fun loadRecipes() {
-        android.util.Log.d("PlansViewModel", "开始加载食谱列表")
+        logMethodStart("加载食谱列表")
         viewModelScope.launch {
             recipeRepository.getAllRecipes().collect { recipes ->
-                android.util.Log.d("PlansViewModel", "✓ 食谱列表加载完成: ${recipes.size}个")
+                logSuccess("食谱列表加载完成: ${recipes.size}个")
                 _uiState.value = _uiState.value.copy(recipes = recipes)
-                // 更新合并后的列表
                 updatePlansWithRecipe()
             }
         }
     }
 
-    /**
-     * 合并 plans 和 recipes 数据
-     * 当 plans 或 recipes 任一数据更新时，自动重新计算合并后的列表
-     */
     private fun updatePlansWithRecipe() {
         val plans = _uiState.value.plans
         val recipes = _uiState.value.recipes
@@ -105,68 +98,60 @@ class PlansViewModel @Inject constructor(
             )
         }
         _uiState.value = _uiState.value.copy(plansWithRecipe = plansWithRecipe)
-        android.util.Log.d("PlansViewModel", "✓ plansWithRecipe 更新完成: ${plansWithRecipe.size}个")
+        logD("plansWithRecipe 更新完成: ${plansWithRecipe.size}个")
     }
 
-    /**
-     * 从 SavedStateHandle 恢复推荐数据
-     * 如果 SavedStateHandle 中有推荐标记，则重新生成推荐
-     */
     suspend fun restoreRecommendationFromSavedState(): WeeklyMealPlan? {
-        android.util.Log.d("PlansViewModel", "========== 开始恢复推荐数据 ==========")
-        
+        logMethodStart("恢复推荐数据")
+
         val hasRecommendation = savedStateHandle.get<Boolean>(KEY_RECOMMENDATION_AVAILABLE) ?: false
         if (!hasRecommendation) {
-            android.util.Log.d("PlansViewModel", "⚠️ SavedStateHandle 中没有推荐标记")
+            logD("SavedStateHandle 中没有推荐标记")
             return null
         }
-        
+
         val babyId = savedStateHandle.get<Long>(KEY_RECOMMENDATION_BABY_ID)
         val startDateStr = savedStateHandle.get<String>(KEY_RECOMMENDATION_START_DATE)
         val days = savedStateHandle.get<Int>(KEY_RECOMMENDATION_DAYS) ?: 7
-        
+
         if (babyId == null || startDateStr == null) {
-            android.util.Log.e("PlansViewModel", "❌ SavedStateHandle 中推荐数据不完整: babyId=$babyId, startDate=$startDateStr")
+            logError("SavedStateHandle 中推荐数据不完整")
             clearRecommendation()
             return null
         }
-        
-        android.util.Log.d("PlansViewModel", "从 SavedStateHandle 恢复推荐: babyId=$babyId, startDate=$startDateStr, days=$days")
-        
-        val startDate = kotlinx.datetime.LocalDate.parse(startDateStr)
-        
-        // 重新生成推荐
+
+        logD("从 SavedStateHandle 恢复推荐: babyId=$babyId, startDate=$startDateStr, days=$days")
+
+        val startDate = LocalDate.parse(startDateStr)
         val result = generateRecommendation(babyId, startDate, days)
-        
-        // 清除标记，避免重复恢复
+
         savedStateHandle[KEY_RECOMMENDATION_AVAILABLE] = false
-        android.util.Log.d("PlansViewModel", "✓ 推荐标记已清除")
-        
+        logD("推荐标记已清除")
+
         return result
     }
 
     private fun loadPlans() {
-        val selectedBaby = _uiState.value.selectedBaby
-        if (selectedBaby != null) {
-            android.util.Log.d("PlansViewModel", "开始加载宝宝 ${selectedBaby.name} 的计划列表")
-            viewModelScope.launch {
-                planRepository.getPlansByBaby(selectedBaby.id).collect { plans ->
-                    android.util.Log.d("PlansViewModel", "✓ 计划列表加载完成: ${plans.size}个")
-                    _uiState.value = _uiState.value.copy(
-                        plans = plans,
-                        isLoading = false
-                    )
-                    // 更新合并后的列表
-                    updatePlansWithRecipe()
-                }
+        val selectedBaby = _uiState.value.selectedBaby ?: run {
+            logWarning("未选择宝宝，跳过加载计划")
+            return
+        }
+
+        logMethodStart("加载计划列表")
+        viewModelScope.launch {
+            planRepository.getPlansByBaby(selectedBaby.id).collect { plans ->
+                logSuccess("计划列表加载完成: ${plans.size}个")
+                _uiState.value = _uiState.value.copy(
+                    plans = plans,
+                    isLoading = false
+                )
+                updatePlansWithRecipe()
             }
-        } else {
-            android.util.Log.w("PlansViewModel", "⚠️ 未选择宝宝，跳过加载计划")
         }
     }
 
     fun selectBaby(baby: Baby) {
-        android.util.Log.d("PlansViewModel", "选择宝宝: ${baby.name} (ID: ${baby.id})")
+        logD("选择宝宝: ${baby.name} (ID: ${baby.id})")
         _uiState.value = _uiState.value.copy(selectedBaby = baby)
         loadPlans()
     }
@@ -174,152 +159,103 @@ class PlansViewModel @Inject constructor(
     fun createPlan(
         babyId: Long,
         recipeId: Long,
-        plannedDate: kotlinx.datetime.LocalDate,
+        plannedDate: LocalDate,
         mealPeriod: com.example.babyfood.domain.model.MealPeriod,
         notes: String?
     ) {
-        android.util.Log.d("PlansViewModel", "创建计划: babyId=$babyId, recipeId=$recipeId, date=$plannedDate, period=$mealPeriod")
-        viewModelScope.launch {
-            try {
-                val plan = Plan(
-                    babyId = babyId,
-                    recipeId = recipeId,
-                    plannedDate = plannedDate,
-                    mealPeriod = mealPeriod.name,
-                    status = PlanStatus.PLANNED,
-                    notes = notes
-                )
-                planRepository.insert(plan)
-                android.util.Log.d("PlansViewModel", "✓ 计划创建成功: ID=${plan.id}")
-                _uiState.value = _uiState.value.copy(
-                    isSaved = true,
-                    error = null
-                )
-            } catch (e: Exception) {
-                android.util.Log.e("PlansViewModel", "❌ 计划创建失败: ${e.message}")
-                _uiState.value = _uiState.value.copy(
-                    error = e.message
-                )
-            }
+        logMethodStart("创建计划")
+        logD("babyId=$babyId, recipeId=$recipeId, date=$plannedDate, period=$mealPeriod")
+
+        safeLaunch("创建计划") {
+            val plan = Plan(
+                babyId = babyId,
+                recipeId = recipeId,
+                plannedDate = plannedDate,
+                mealPeriod = mealPeriod.name,
+                status = PlanStatus.PLANNED,
+                notes = notes
+            )
+            planRepository.insert(plan)
+            logSuccess("计划创建成功: ID=${plan.id}")
+            _uiState.value = _uiState.value.copy(isSaved = true, error = null)
+            logMethodEnd("创建计划")
         }
     }
 
     fun updatePlan(plan: Plan) {
-        android.util.Log.d("PlansViewModel", "更新计划: ID=${plan.id}, date=${plan.plannedDate}, period=${plan.mealPeriod}")
-        viewModelScope.launch {
-            try {
-                planRepository.update(plan)
-                android.util.Log.d("PlansViewModel", "✓ 计划更新成功")
-                _uiState.value = _uiState.value.copy(
-                    isSaved = true,
-                    error = null
-                )
-            } catch (e: Exception) {
-                android.util.Log.e("PlansViewModel", "❌ 计划更新失败: ${e.message}")
-                _uiState.value = _uiState.value.copy(
-                    error = e.message
-                )
-            }
+        logMethodStart("更新计划")
+        logD("ID=${plan.id}, date=${plan.plannedDate}, period=${plan.mealPeriod}")
+
+        safeLaunch("更新计划") {
+            planRepository.update(plan)
+            logSuccess("计划更新成功")
+            _uiState.value = _uiState.value.copy(isSaved = true, error = null)
+            logMethodEnd("更新计划")
         }
     }
 
     fun updatePlanRecipe(planId: Long, newRecipeId: Long) {
-        android.util.Log.d("PlansViewModel", "更新计划食谱: planId=$planId, newRecipeId=$newRecipeId")
-        viewModelScope.launch {
-            try {
-                val plan = _uiState.value.plans.find { it.id == planId }
-                if (plan != null) {
-                    planRepository.update(plan.copy(recipeId = newRecipeId))
-                    android.util.Log.d("PlansViewModel", "✓ 计划食谱更新成功")
-                    _uiState.value = _uiState.value.copy(
-                        isSaved = true,
-                        error = null
-                    )
-                } else {
-                    android.util.Log.w("PlansViewModel", "⚠️ 未找到计划: ID=$planId")
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("PlansViewModel", "❌ 计划食谱更新失败: ${e.message}")
-                _uiState.value = _uiState.value.copy(
-                    error = e.message
-                )
-            }
+        logMethodStart("更新计划食谱")
+        logD("planId=$planId, newRecipeId=$newRecipeId")
+
+        safeLaunch("更新计划食谱") {
+            val plan = _uiState.value.plans.find { it.id == planId }
+            plan?.let {
+                planRepository.update(it.copy(recipeId = newRecipeId))
+                logSuccess("计划食谱更新成功")
+                _uiState.value = _uiState.value.copy(isSaved = true, error = null)
+            } ?: logWarning("未找到计划: ID=$planId")
+            logMethodEnd("更新计划食谱")
         }
     }
 
     fun updatePlanStatus(planId: Long, status: PlanStatus) {
-        android.util.Log.d("PlansViewModel", "更新计划状态: ID=$planId, status=$status")
-        viewModelScope.launch {
-            try {
-                val plan = _uiState.value.plans.find { it.id == planId }
-                if (plan != null) {
-                    planRepository.update(plan.copy(status = status))
-                    android.util.Log.d("PlansViewModel", "✓ 计划状态更新成功")
-                } else {
-                    android.util.Log.w("PlansViewModel", "⚠️ 未找到计划: ID=$planId")
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("PlansViewModel", "❌ 计划状态更新失败: ${e.message}")
-                _uiState.value = _uiState.value.copy(
-                    error = e.message
-                )
-            }
+        logD("更新计划状态: ID=$planId, status=$status")
+
+        safeLaunch("更新计划状态") {
+            val plan = _uiState.value.plans.find { it.id == planId }
+            plan?.let {
+                planRepository.update(it.copy(status = status))
+                logSuccess("计划状态更新成功")
+            } ?: logWarning("未找到计划: ID=$planId")
         }
     }
 
     fun deletePlan(plan: Plan) {
-        android.util.Log.d("PlansViewModel", "删除计划: ID=${plan.id}, date=${plan.plannedDate}, period=${plan.mealPeriod}")
-        viewModelScope.launch {
-            try {
-                planRepository.delete(plan)
-                android.util.Log.d("PlansViewModel", "✓ 计划删除成功")
-            } catch (e: Exception) {
-                android.util.Log.e("PlansViewModel", "❌ 计划删除失败: ${e.message}")
-                _uiState.value = _uiState.value.copy(
-                    error = e.message
-                )
-            }
+        logMethodStart("删除计划")
+        logD("ID=${plan.id}, date=${plan.plannedDate}, period=${plan.mealPeriod}")
+
+        safeLaunch("删除计划") {
+            planRepository.delete(plan)
+            logSuccess("计划删除成功")
+            logMethodEnd("删除计划")
         }
     }
 
-    /**
-     * 生成AI推荐（单日）
-     */
-    suspend fun generateDailyRecommendation(babyId: Long, date: kotlinx.datetime.LocalDate): WeeklyMealPlan? {
-        android.util.Log.d("PlansViewModel", "========== 开始生成单日推荐 ==========")
-        android.util.Log.d("PlansViewModel", "宝宝ID: $babyId")
-        android.util.Log.d("PlansViewModel", "日期: $date")
+    suspend fun generateDailyRecommendation(babyId: Long, date: LocalDate): WeeklyMealPlan? {
+        logMethodStart("生成单日推荐")
+        logD("宝宝ID: $babyId, 日期: $date")
         return generateRecommendation(babyId, date, 1)
     }
 
-    /**
-     * 生成AI推荐（多日）
-     */
-    suspend fun generateWeeklyRecommendation(babyId: Long, startDate: kotlinx.datetime.LocalDate, days: Int): WeeklyMealPlan? {
-        android.util.Log.d("PlansViewModel", "========== 开始生成周推荐 ==========")
-        android.util.Log.d("PlansViewModel", "宝宝ID: $babyId")
-        android.util.Log.d("PlansViewModel", "开始日期: $startDate")
-        android.util.Log.d("PlansViewModel", "计划天数: $days")
+    suspend fun generateWeeklyRecommendation(babyId: Long, startDate: LocalDate, days: Int): WeeklyMealPlan? {
+        logMethodStart("生成周推荐")
+        logD("宝宝ID: $babyId, 开始日期: $startDate, 计划天数: $days")
         return generateRecommendation(babyId, startDate, days)
     }
 
-    private suspend fun generateRecommendation(babyId: Long, startDate: kotlinx.datetime.LocalDate, days: Int): WeeklyMealPlan? {
-        android.util.Log.d("PlansViewModel", "========== 开始生成推荐 ==========")
-        android.util.Log.d("PlansViewModel", "宝宝ID: $babyId")
-        android.util.Log.d("PlansViewModel", "开始日期: $startDate")
-        android.util.Log.d("PlansViewModel", "计划天数: $days")
-        
+    private suspend fun generateRecommendation(babyId: Long, startDate: LocalDate, days: Int): WeeklyMealPlan? {
         _uiState.value = _uiState.value.copy(isGenerating = true, error = null)
-        
+
         return try {
             val baby = babyRepository.getById(babyId)
                 ?: throw Exception("宝宝不存在")
-            
-            android.util.Log.d("PlansViewModel", "宝宝信息: ${baby.name}, ${baby.ageInMonths}个月")
-            
+
+            logD("宝宝信息: ${baby.name}, ${baby.ageInMonths}个月")
+
             val constraints = recommendationService.getRecommendedConstraints(babyId)
-            android.util.Log.d("PlansViewModel", "约束条件: 每周最多鱼类${constraints.maxFishPerWeek}次, 每周最多蛋类${constraints.maxEggPerWeek}次")
-            
+            logD("约束条件: 每周最多鱼类${constraints.maxFishPerWeek}次, 每周最多蛋类${constraints.maxEggPerWeek}次")
+
             val request = RecommendationRequest(
                 babyId = babyId,
                 ageInMonths = baby.ageInMonths,
@@ -329,203 +265,119 @@ class PlansViewModel @Inject constructor(
                 constraints = constraints,
                 startDate = startDate
             )
-            
-            android.util.Log.d("PlansViewModel", "调用 RecommendationService.generateRecommendation()...")
+
+            logD("调用 RecommendationService.generateRecommendation()...")
             val response = recommendationService.generateRecommendation(request)
-            
-            // 打印 AI 接口返回值的详细信息
-            android.util.Log.d("PlansViewModel", "========== AI 接口返回值 ==========")
-            android.util.Log.d("PlansViewModel", "success: ${response.success}")
-            android.util.Log.d("PlansViewModel", "errorMessage: ${response.errorMessage}")
-            if (response.weeklyPlan != null) {
-                android.util.Log.d("PlansViewModel", "weeklyPlan.startDate: ${response.weeklyPlan.startDate}")
-                android.util.Log.d("PlansViewModel", "weeklyPlan.endDate: ${response.weeklyPlan.endDate}")
-                android.util.Log.d("PlansViewModel", "weeklyPlan.dailyPlans.size: ${response.weeklyPlan.dailyPlans.size}")
-                response.weeklyPlan.dailyPlans.forEachIndexed { index, dailyPlan ->
-                    android.util.Log.d("PlansViewModel", "  Day ${index + 1} (${dailyPlan.date}): ${dailyPlan.meals.size} meals")
-                    dailyPlan.meals.forEach { meal ->
-                        android.util.Log.d("PlansViewModel", "    - ${meal.mealPeriod.displayName}: ${meal.recipe.name} (ID: ${meal.recipe.id})")
-                    }
-                }
-                android.util.Log.d("PlansViewModel", "nutritionSummary.dailyAverage:")
-                android.util.Log.d("PlansViewModel", "  - calories: ${response.weeklyPlan.nutritionSummary.dailyAverage.calories}")
-                android.util.Log.d("PlansViewModel", "  - protein: ${response.weeklyPlan.nutritionSummary.dailyAverage.protein}")
-                android.util.Log.d("PlansViewModel", "  - calcium: ${response.weeklyPlan.nutritionSummary.dailyAverage.calcium}")
-                android.util.Log.d("PlansViewModel", "  - iron: ${response.weeklyPlan.nutritionSummary.dailyAverage.iron}")
-                android.util.Log.d("PlansViewModel", "warnings: ${response.warnings.joinToString("; ")}")
-            }
-            android.util.Log.d("PlansViewModel", "========== AI 接口返回值结束 ==========")
-            
+
             if (response.success && response.weeklyPlan != null) {
-                android.util.Log.d("PlansViewModel", "✓ 推荐生成成功")
-                android.util.Log.d("PlansViewModel", "周计划天数: ${response.weeklyPlan.dailyPlans.size}")
-                
-                // 如果天数少于7天，截取前n天的计划
+                logSuccess("推荐生成成功，周计划天数: ${response.weeklyPlan.dailyPlans.size}")
+
                 val filteredDailyPlans = response.weeklyPlan.dailyPlans.take(days)
                 val filteredPlan = response.weeklyPlan.copy(
                     dailyPlans = filteredDailyPlans,
-                    endDate = kotlinx.datetime.LocalDate.fromEpochDays(startDate.toEpochDays() + (days - 1))
+                    endDate = LocalDate.fromEpochDays(startDate.toEpochDays() + (days - 1))
                 )
-                
-                android.util.Log.d("PlansViewModel", "过滤后计划天数: ${filteredPlan.dailyPlans.size}")
-                
-                // 保存到 UI 状态
-                _uiState.value = _uiState.value.copy(
-                    recommendation = filteredPlan,
-                    isGenerating = false
-                )
-                
-                // 保存推荐标记和基本信息到 SavedStateHandle
+
+                _uiState.value = _uiState.value.copy(recommendation = filteredPlan, isGenerating = false)
+
                 savedStateHandle[KEY_RECOMMENDATION_AVAILABLE] = true
                 savedStateHandle[KEY_RECOMMENDATION_BABY_ID] = babyId
                 savedStateHandle[KEY_RECOMMENDATION_START_DATE] = startDate.toString()
                 savedStateHandle[KEY_RECOMMENDATION_DAYS] = days
-                android.util.Log.d("PlansViewModel", "✓ 推荐标记已保存到 SavedStateHandle")
-                
-                android.util.Log.d("PlansViewModel", "✓ 推荐数据已设置到 UI 状态")
-                android.util.Log.d("PlansViewModel", "========== 推荐生成完成 ==========")
-                
+                logD("推荐标记已保存到 SavedStateHandle")
+
                 filteredPlan
             } else {
-                android.util.Log.e("PlansViewModel", "❌ 推荐生成失败: ${response.errorMessage}")
+                logError("推荐生成失败: ${response.errorMessage}")
                 _uiState.value = _uiState.value.copy(
                     isGenerating = false,
                     error = response.errorMessage ?: "生成推荐失败"
                 )
-                android.util.Log.d("PlansViewModel", "========== 推荐生成失败 ==========")
                 null
             }
         } catch (e: Exception) {
-            android.util.Log.e("PlansViewModel", "❌ 推荐生成异常: ${e.message}")
-            android.util.Log.e("PlansViewModel", "异常堆栈: ", e)
-            _uiState.value = _uiState.value.copy(
-                isGenerating = false,
-                error = e.message
-            )
-            android.util.Log.d("PlansViewModel", "========== 推荐生成异常 ==========")
+            logError("推荐生成异常: ${e.message}", e)
+            _uiState.value = _uiState.value.copy(isGenerating = false, error = e.message)
             null
         }
     }
 
-    /**
-     * 检测推荐结果的冲突
-     */
     suspend fun detectRecommendationConflicts(babyId: Long, weeklyPlan: WeeklyMealPlan): List<PlanConflict> {
-        android.util.Log.d("PlansViewModel", "开始检测推荐冲突: babyId=$babyId")
+        logD("开始检测推荐冲突: babyId=$babyId")
         val newPlans = weeklyPlanToPlans(babyId, weeklyPlan)
-        android.util.Log.d("PlansViewModel", "待检测计划数: ${newPlans.size}")
+        logD("待检测计划数: ${newPlans.size}")
         val conflicts = planRepository.detectConflicts(babyId, newPlans)
-        android.util.Log.d("PlansViewModel", "✓ 冲突检测完成: ${conflicts.size}个冲突")
+        logSuccess("冲突检测完成: ${conflicts.size}个冲突")
         return conflicts
     }
 
-    /**
-     * 更新冲突状态
-     */
     suspend fun updateConflicts(babyId: Long, weeklyPlan: WeeklyMealPlan) {
-        android.util.Log.d("PlansViewModel", "更新冲突状态: babyId=$babyId")
+        logD("更新冲突状态: babyId=$babyId")
         val conflicts = detectRecommendationConflicts(babyId, weeklyPlan)
         _uiState.value = _uiState.value.copy(conflicts = conflicts)
-        android.util.Log.d("PlansViewModel", "✓ 冲突状态已更新: ${conflicts.size}个冲突")
+        logSuccess("冲突状态已更新: ${conflicts.size}个冲突")
     }
 
-    /**
-     * 保存推荐结果（带冲突处理）
-     */
     suspend fun saveRecommendation(
         babyId: Long,
         weeklyPlan: WeeklyMealPlan,
         conflictResolution: ConflictResolution,
         editedPlans: List<PlannedMeal>? = null
     ): SaveResult {
-        android.util.Log.d("PlansViewModel", "========== 开始保存推荐 ==========")
-        android.util.Log.d("PlansViewModel", "宝宝ID: $babyId")
-        android.util.Log.d("PlansViewModel", "冲突解决方式: $conflictResolution")
-        android.util.Log.d("PlansViewModel", "编辑后的计划数: ${editedPlans?.size ?: 0}")
-        
+        logMethodStart("保存推荐")
+        logD("宝宝ID: $babyId, 冲突解决方式: $conflictResolution, 编辑后的计划数: ${editedPlans?.size ?: 0}")
+
         _uiState.value = _uiState.value.copy(isSaving = true, error = null)
-        
+
         return try {
-            // 使用编辑后的计划（如果有）
             val plansToSave = if (editedPlans != null) {
-                android.util.Log.d("PlansViewModel", "使用编辑后的计划")
+                logD("使用编辑后的计划")
                 val updatedDailyPlans = weeklyPlan.dailyPlans.map { dailyPlan ->
                     val editedMeals = editedPlans.filter { meal ->
                         meal.mealPeriod == dailyPlan.meals.firstOrNull()?.mealPeriod
                     }
-                    if (editedMeals.isNotEmpty()) {
-                        dailyPlan.copy(meals = editedMeals)
-                    } else {
-                        dailyPlan
-                    }
+                    if (editedMeals.isNotEmpty()) dailyPlan.copy(meals = editedMeals) else dailyPlan
                 }
                 weeklyPlanToPlans(babyId, weeklyPlan.copy(dailyPlans = updatedDailyPlans))
             } else {
-                android.util.Log.d("PlansViewModel", "使用原始推荐计划")
+                logD("使用原始推荐计划")
                 weeklyPlanToPlans(babyId, weeklyPlan)
             }
-            
-            android.util.Log.d("PlansViewModel", "待保存计划数: ${plansToSave.size}")
+
+            logD("待保存计划数: ${plansToSave.size}")
             val result = planRepository.saveRecommendation(babyId, plansToSave, conflictResolution)
-            
-            android.util.Log.d("PlansViewModel", "✓ 推荐保存完成: success=${result.success}")
-            if (!result.success) {
-                android.util.Log.e("PlansViewModel", "保存失败原因: ${result.error}")
-            }
-            
-            _uiState.value = _uiState.value.copy(
-                isSaving = false,
-                saveResult = result
-            )
-            
-            android.util.Log.d("PlansViewModel", "========== 推荐保存完成 ==========")
+
+            logSuccess("推荐保存完成: success=${result.success}")
+            _uiState.value = _uiState.value.copy(isSaving = false, saveResult = result)
+            logMethodEnd("保存推荐")
             result
         } catch (e: Exception) {
-            android.util.Log.e("PlansViewModel", "❌ 推荐保存异常: ${e.message}")
-            android.util.Log.e("PlansViewModel", "异常堆栈: ", e)
-            _uiState.value = _uiState.value.copy(
-                isSaving = false,
-                error = e.message
-            )
-            android.util.Log.d("PlansViewModel", "========== 推荐保存异常 ==========")
+            logError("推荐保存异常: ${e.message}", e)
+            _uiState.value = _uiState.value.copy(isSaving = false, error = e.message)
             SaveResult(success = false, error = e.message)
         }
     }
 
-    /**
-     * 获取指定日期范围的计划
-     */
-    fun getPlansByDateRange(startDate: kotlinx.datetime.LocalDate, endDate: kotlinx.datetime.LocalDate): kotlinx.coroutines.flow.Flow<List<Plan>> {
+    fun getPlansByDateRange(startDate: LocalDate, endDate: LocalDate): Flow<List<Plan>> {
         val selectedBaby = _uiState.value.selectedBaby
-        return if (selectedBaby != null) {
-            planRepository.getPlansByBabyAndDateRange(selectedBaby.id, startDate, endDate)
-        } else {
-            kotlinx.coroutines.flow.flowOf(emptyList())
-        }
+        return selectedBaby?.let {
+            planRepository.getPlansByBabyAndDateRange(it.id, startDate, endDate)
+        } ?: flowOf(emptyList())
     }
 
-    /**
-     * 将WeeklyMealPlan转换为List<Plan>
-     */
     private fun weeklyPlanToPlans(babyId: Long, weeklyPlan: WeeklyMealPlan): List<Plan> {
-        val plans = mutableListOf<Plan>()
-        
-        for (dailyPlan in weeklyPlan.dailyPlans) {
-            for (meal in dailyPlan.meals) {
-                plans.add(
-                    Plan(
-                        babyId = babyId,
-                        recipeId = meal.recipe.id,
-                        plannedDate = dailyPlan.date,
-                        mealPeriod = meal.mealPeriod.name,
-                        status = PlanStatus.PLANNED,
-                        notes = meal.nutritionNotes
-                    )
+        return weeklyPlan.dailyPlans.flatMap { dailyPlan ->
+            dailyPlan.meals.map { meal ->
+                Plan(
+                    babyId = babyId,
+                    recipeId = meal.recipe.id,
+                    plannedDate = dailyPlan.date,
+                    mealPeriod = meal.mealPeriod.name,
+                    status = PlanStatus.PLANNED,
+                    notes = meal.nutritionNotes
                 )
             }
         }
-        
-        return plans
     }
 
     fun clearError() {
@@ -537,7 +389,7 @@ class PlansViewModel @Inject constructor(
     }
 
     fun clearRecommendation() {
-        android.util.Log.d("PlansViewModel", "清除推荐数据")
+        logMethodStart("清除推荐数据")
         _uiState.value = _uiState.value.copy(
             recommendation = null,
             conflicts = emptyList(),
@@ -547,24 +399,18 @@ class PlansViewModel @Inject constructor(
         savedStateHandle.remove<Long>(KEY_RECOMMENDATION_BABY_ID)
         savedStateHandle.remove<String>(KEY_RECOMMENDATION_START_DATE)
         savedStateHandle.remove<Int>(KEY_RECOMMENDATION_DAYS)
-        android.util.Log.d("PlansViewModel", "✓ 推荐数据已清除")
-        android.util.Log.d("PlansViewModel", "✓ SavedStateHandle 已清除")
+        logSuccess("推荐数据和 SavedStateHandle 已清除")
+        logMethodEnd("清除推荐数据")
     }
 
     fun showRecipeSelector(planId: Long) {
-        android.util.Log.d("PlansViewModel", "显示食谱选择器: planId=$planId")
-        _uiState.value = _uiState.value.copy(
-            showRecipeSelector = true,
-            selectedPlanId = planId
-        )
+        logD("显示食谱选择器: planId=$planId")
+        _uiState.value = _uiState.value.copy(showRecipeSelector = true, selectedPlanId = planId)
     }
 
     fun dismissRecipeSelector() {
-        android.util.Log.d("PlansViewModel", "关闭食谱选择器")
-        _uiState.value = _uiState.value.copy(
-            showRecipeSelector = false,
-            selectedPlanId = null
-        )
+        logD("关闭食谱选择器")
+        _uiState.value = _uiState.value.copy(showRecipeSelector = false, selectedPlanId = null)
     }
 }
 

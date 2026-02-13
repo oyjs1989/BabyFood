@@ -7,11 +7,11 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class LoginResponse(
-    val success: Boolean,
-    val errorMessage: String? = null,
-    val errorCode: String? = null, // 错误代码
+    override val success: Boolean,
+    override val errorMessage: String? = null,
+    val errorCode: String? = null,
     val token: String? = null,
     val refreshToken: String? = null,
     val user: User? = null,
-    val expiresIn: Long = 0 // token过期时间（秒）
-)
+    val expiresIn: Long = 0
+) : ApiResponse

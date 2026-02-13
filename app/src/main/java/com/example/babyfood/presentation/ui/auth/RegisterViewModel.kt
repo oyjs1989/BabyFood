@@ -1,17 +1,17 @@
 package com.example.babyfood.presentation.ui.auth
 
-import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.babyfood.data.repository.AuthRepository
 import com.example.babyfood.domain.model.AuthState
+import com.example.babyfood.presentation.ui.BaseViewModel
+import com.example.babyfood.util.ValidationUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import javax.inject.Inject
 
 /**
@@ -20,10 +20,11 @@ import javax.inject.Inject
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
     private val authRepository: AuthRepository
-) : ViewModel() {
+) : BaseViewModel() {
+
+    override val logTag: String = "RegisterViewModel"
 
     companion object {
-        private const val TAG = "RegisterViewModel"
         private const val COUNTDOWN_TIME = 60 // 倒计时时间（秒）
     }
 
@@ -36,7 +37,7 @@ class RegisterViewModel @Inject constructor(
     private var countdownJob: Job? = null
 
     init {
-        Log.d(TAG, "========== 初始化 RegisterViewModel ==========")
+        logMethodStart("初始化 RegisterViewModel")
     }
 
     /**
@@ -104,21 +105,13 @@ class RegisterViewModel @Inject constructor(
      * 发送验证码
      */
     fun sendVerificationCode() {
-        Log.d(TAG, "========== 发送验证码 ==========")
+        logMethodStart("发送验证码")
         val account = _uiState.value.account.trim()
 
         // 验证账号
-        if (account.isEmpty()) {
-            _uiState.value = _uiState.value.copy(
-                accountError = "请输入手机号或邮箱"
-            )
-            return
-        }
-
-        if (!authRepository.validateAccount(account)) {
-            _uiState.value = _uiState.value.copy(
-                accountError = "请输入有效的手机号或邮箱"
-            )
+        val accountValidation = validateAccount(account)
+        if (accountValidation != null) {
+            _uiState.value = _uiState.value.copy(accountError = accountValidation)
             return
         }
 
@@ -132,6 +125,8 @@ class RegisterViewModel @Inject constructor(
             accountError = null
         )
 
+        logD("发送验证码到 $accountType: $account")
+
         viewModelScope.launch {
             val flow = if (isPhone) {
                 authRepository.sendSmsVerificationCode(account)
@@ -141,23 +136,33 @@ class RegisterViewModel @Inject constructor(
 
             flow.collect { result ->
                 result.onSuccess {
-                    Log.d(TAG, "✓ 验证码发送成功到 $accountType: $account")
-
+                    logSuccess("验证码发送成功到 $accountType: $account")
                     // 开始倒计时
                     startCountdown()
-
                     _uiState.value = _uiState.value.copy(
                         isSendingCode = false,
                         error = null
                     )
                 }.onFailure { exception ->
-                    Log.e(TAG, "❌ 验证码发送失败: ${exception.message}")
+                    logError("验证码发送失败: ${exception.message}")
                     _uiState.value = _uiState.value.copy(
                         isSendingCode = false,
                         error = exception.message ?: "验证码发送失败，请重试"
                     )
                 }
             }
+        }
+    }
+
+    /**
+     * 验证账号
+     * @return 错误信息，验证通过返回 null
+     */
+    private fun validateAccount(account: String): String? {
+        return when {
+            account.isEmpty() -> "请输入手机号或邮箱"
+            !authRepository.validateAccount(account) -> "请输入有效的手机号或邮箱"
+            else -> null
         }
     }
 
@@ -181,81 +186,25 @@ class RegisterViewModel @Inject constructor(
      * 注册
      */
     fun register() {
-        Log.d(TAG, "========== 开始注册流程 ==========")
+        logMethodStart("注册流程")
+
+        // 验证表单
+        val validationError = validateRegisterForm()
+        if (validationError != null) {
+            logError("表单验证失败: $validationError")
+            return
+        }
+
         val account = _uiState.value.account.trim()
         val password = _uiState.value.password
-        val confirmPassword = _uiState.value.confirmPassword
         val verificationCode = _uiState.value.verificationCode.trim()
-        val agreeToTerms = _uiState.value.agreeToTerms
 
         // 判断账号类型
         val isPhone = !account.contains("@")
         val phone = if (isPhone) account else null
         val email = if (!isPhone) account else null
 
-        // 表单验证
-        if (account.isEmpty()) {
-            _uiState.value = _uiState.value.copy(
-                accountError = "请输入手机号或邮箱"
-            )
-            return
-        }
-
-        if (!authRepository.validateAccount(account)) {
-            _uiState.value = _uiState.value.copy(
-                accountError = "请输入有效的手机号或邮箱"
-            )
-            return
-        }
-
-        if (verificationCode.isEmpty()) {
-            _uiState.value = _uiState.value.copy(
-                verificationCodeError = "请输入验证码"
-            )
-            return
-        }
-
-        if (verificationCode.length != 6) {
-            _uiState.value = _uiState.value.copy(
-                verificationCodeError = "验证码格式错误"
-            )
-            return
-        }
-
-        if (password.isEmpty()) {
-            _uiState.value = _uiState.value.copy(
-                passwordError = "请输入密码"
-            )
-            return
-        }
-
-        if (!authRepository.validatePassword(password)) {
-            _uiState.value = _uiState.value.copy(
-                passwordError = if (password.length < 6) "密码至少6位" else "密码过长，请缩短密码（不超过72字节）"
-            )
-            return
-        }
-
-        if (confirmPassword.isEmpty()) {
-            _uiState.value = _uiState.value.copy(
-                confirmPasswordError = "请确认密码"
-            )
-            return
-        }
-
-        if (password != confirmPassword) {
-            _uiState.value = _uiState.value.copy(
-                confirmPasswordError = "两次输入的密码不一致"
-            )
-            return
-        }
-
-        if (!agreeToTerms) {
-            _uiState.value = _uiState.value.copy(
-                agreeToTermsError = "请同意服务条款和隐私政策"
-            )
-            return
-        }
+        logD("注册信息: 类型=${if (isPhone) "手机" else "邮箱"}, 账号=$account")
 
         // 开始注册
         _uiState.value = _uiState.value.copy(
@@ -274,18 +223,18 @@ class RegisterViewModel @Inject constructor(
                 phone = phone,
                 email = email,
                 password = password,
-                confirmPassword = confirmPassword,
+                confirmPassword = _uiState.value.confirmPassword,
                 verificationCode = verificationCode
             ).collect { result ->
                 result.onSuccess { user ->
-                    Log.d(TAG, "✓ 注册成功，导航到首页")
+                    logSuccess("注册成功，导航到首页")
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isRegisterSuccess = true
                     )
                     _authState.value = AuthState.LoggedIn(user)
                 }.onFailure { exception ->
-                    Log.e(TAG, "❌ 注册失败: ${exception.message}")
+                    logError("注册失败: ${exception.message}")
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         error = exception.message ?: "注册失败，请重试"
@@ -294,6 +243,72 @@ class RegisterViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    /**
+     * 验证注册表单
+     * @return 错误信息，验证通过返回 null
+     */
+    private fun validateRegisterForm(): String? {
+        val state = _uiState.value
+        val account = state.account.trim()
+        val password = state.password
+        val confirmPassword = state.confirmPassword
+        val verificationCode = state.verificationCode.trim()
+        val agreeToTerms = state.agreeToTerms
+
+        // 验证账号
+        if (account.isEmpty()) {
+            _uiState.value = state.copy(accountError = "请输入手机号或邮箱")
+            return "账号为空"
+        }
+        if (!authRepository.validateAccount(account)) {
+            _uiState.value = state.copy(accountError = "请输入有效的手机号或邮箱")
+            return "账号格式无效"
+        }
+
+        // 验证验证码
+        if (verificationCode.isEmpty()) {
+            _uiState.value = state.copy(verificationCodeError = "请输入验证码")
+            return "验证码为空"
+        }
+        if (verificationCode.length != ValidationUtils.VERIFICATION_CODE_LENGTH) {
+            _uiState.value = state.copy(verificationCodeError = "验证码格式错误")
+            return "验证码格式错误"
+        }
+
+        // 验证密码
+        if (password.isEmpty()) {
+            _uiState.value = state.copy(passwordError = "请输入密码")
+            return "密码为空"
+        }
+        if (!authRepository.validatePassword(password)) {
+            _uiState.value = state.copy(
+                passwordError = if (password.length < ValidationUtils.MIN_PASSWORD_LENGTH)
+                    "密码至少${ValidationUtils.MIN_PASSWORD_LENGTH}位"
+                else
+                    "密码过长，请缩短密码（不超过${ValidationUtils.MAX_PASSWORD_BYTES}字节）"
+            )
+            return "密码格式无效"
+        }
+
+        // 验证确认密码
+        if (confirmPassword.isEmpty()) {
+            _uiState.value = state.copy(confirmPasswordError = "请确认密码")
+            return "确认密码为空"
+        }
+        if (password != confirmPassword) {
+            _uiState.value = state.copy(confirmPasswordError = "两次输入的密码不一致")
+            return "密码不匹配"
+        }
+
+        // 验证同意条款
+        if (!agreeToTerms) {
+            _uiState.value = state.copy(agreeToTermsError = "请同意服务条款和隐私政策")
+            return "未同意条款"
+        }
+
+        return null
     }
 
     /**
@@ -351,7 +366,8 @@ class RegisterViewModel @Inject constructor(
         val isAccountValid = account.isNotEmpty() && authRepository.validateAccount(account)
         val isPasswordValid = password.isNotEmpty() && authRepository.validatePassword(password)
         val isConfirmPasswordValid = confirmPassword.isNotEmpty() && password == confirmPassword
-        val isVerificationCodeValid = verificationCode.isNotEmpty() && verificationCode.length == 6
+        val isVerificationCodeValid = verificationCode.isNotEmpty() &&
+            verificationCode.length == ValidationUtils.VERIFICATION_CODE_LENGTH
 
         _uiState.value = _uiState.value.copy(
             isFormValid = isAccountValid &&

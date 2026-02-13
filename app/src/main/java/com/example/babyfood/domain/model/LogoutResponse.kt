@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class LogoutResponse(
-    val success: Boolean,
-    val errorMessage: String? = null,
+    override val success: Boolean,
+    override val errorMessage: String? = null,
     val errorCode: String? = null
-)
+) : ApiResponse

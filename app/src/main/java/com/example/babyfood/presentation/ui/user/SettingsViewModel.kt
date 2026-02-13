@@ -1,10 +1,9 @@
 package com.example.babyfood.presentation.ui.user
 
-import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.babyfood.data.repository.AuthRepository
 import com.example.babyfood.domain.model.User
+import com.example.babyfood.presentation.ui.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,11 +18,9 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val authRepository: AuthRepository
-) : ViewModel() {
+) : BaseViewModel() {
 
-    companion object {
-        private const val TAG = "SettingsViewModel"
-    }
+    override val logTag: String = "SettingsViewModel"
 
     // UI 状态
     private val _uiState = MutableStateFlow<SettingsUiState>(SettingsUiState.Loading)
@@ -34,7 +31,7 @@ class SettingsViewModel @Inject constructor(
     val operationState: StateFlow<OperationState> = _operationState.asStateFlow()
 
     init {
-        android.util.Log.d(TAG, "========== SettingsViewModel 初始化 ==========")
+        logMethodStart("SettingsViewModel 初始化")
         loadUserInfo()
     }
 
@@ -42,19 +39,18 @@ class SettingsViewModel @Inject constructor(
      * 加载用户信息
      */
     fun loadUserInfo() {
-        android.util.Log.d(TAG, "========== 开始加载用户信息 ==========")
+        logMethodStart("加载用户信息")
         viewModelScope.launch {
             authRepository.getCurrentUser().collect { user ->
                 if (user != null) {
                     _uiState.value = SettingsUiState.Success(user)
-                    android.util.Log.d(TAG, "✓ 用户信息加载成功")
-                    android.util.Log.d(TAG, "用户昵称: ${user.nickname}")
-                    android.util.Log.d(TAG, "用户主题: ${user.theme}")
+                    logSuccess("用户信息加载成功")
+                    logD("用户昵称: ${user.nickname}, 主题: ${user.theme}")
                 } else {
                     _uiState.value = SettingsUiState.NotLoggedIn
-                    android.util.Log.w(TAG, "⚠️ 用户未登录")
+                    logWarning("用户未登录")
                 }
-                android.util.Log.d(TAG, "========== 用户信息加载完成 ==========")
+                logMethodEnd("加载用户信息")
             }
         }
     }
@@ -64,23 +60,24 @@ class SettingsViewModel @Inject constructor(
      * @param nickname 新昵称
      */
     fun updateNickname(nickname: String) {
-        android.util.Log.d(TAG, "========== 开始更新昵称 ==========")
-        android.util.Log.d(TAG, "新昵称: $nickname")
+        logMethodStart("更新昵称")
+        logD("新昵称: $nickname")
 
-        viewModelScope.launch {
+        safeLaunch("更新昵称", onError = { _operationState.value = OperationState.Error(it.message ?: "更新失败") }) {
             _operationState.value = OperationState.Loading
 
-            val result = authRepository.updateNickname(nickname)
-            result.onSuccess { user ->
-                _uiState.value = SettingsUiState.Success(user)
-                _operationState.value = OperationState.Success("昵称更新成功")
-                android.util.Log.d(TAG, "✓ 昵称更新成功")
-            }.onFailure { error ->
-                _operationState.value = OperationState.Error(error.message ?: "更新失败")
-                android.util.Log.e(TAG, "❌ 昵称更新失败: ${error.message}")
-            }
+            authRepository.updateNickname(nickname)
+                .onSuccess { user ->
+                    _uiState.value = SettingsUiState.Success(user)
+                    _operationState.value = OperationState.Success("昵称更新成功")
+                    logSuccess("昵称更新成功")
+                }
+                .onFailure { error ->
+                    _operationState.value = OperationState.Error(error.message ?: "更新失败")
+                    logError("昵称更新失败", error as? Exception)
+                }
 
-            android.util.Log.d(TAG, "========== 昵称更新完成 ==========")
+            logMethodEnd("更新昵称")
         }
     }
 
@@ -90,21 +87,22 @@ class SettingsViewModel @Inject constructor(
      * @param newPassword 新密码
      */
     fun changePassword(oldPassword: String, newPassword: String) {
-        android.util.Log.d(TAG, "========== 开始修改密码 ==========")
+        logMethodStart("修改密码")
 
-        viewModelScope.launch {
+        safeLaunch("修改密码", onError = { _operationState.value = OperationState.Error(it.message ?: "修改失败") }) {
             _operationState.value = OperationState.Loading
 
-            val result = authRepository.changePassword(oldPassword, newPassword)
-            result.onSuccess {
-                _operationState.value = OperationState.Success("密码修改成功")
-                android.util.Log.d(TAG, "✓ 密码修改成功")
-            }.onFailure { error ->
-                _operationState.value = OperationState.Error(error.message ?: "修改失败")
-                android.util.Log.e(TAG, "❌ 密码修改失败: ${error.message}")
-            }
+            authRepository.changePassword(oldPassword, newPassword)
+                .onSuccess {
+                    _operationState.value = OperationState.Success("密码修改成功")
+                    logSuccess("密码修改成功")
+                }
+                .onFailure { error ->
+                    _operationState.value = OperationState.Error(error.message ?: "修改失败")
+                    logError("密码修改失败", error as? Exception)
+                }
 
-            android.util.Log.d(TAG, "========== 密码修改完成 ==========")
+            logMethodEnd("修改密码")
         }
     }
 
@@ -113,23 +111,24 @@ class SettingsViewModel @Inject constructor(
      * @param avatar 头像 URL
      */
     fun updateAvatar(avatar: String) {
-        android.util.Log.d(TAG, "========== 开始更新头像 ==========")
-        android.util.Log.d(TAG, "新头像: $avatar")
+        logMethodStart("更新头像")
+        logD("新头像: $avatar")
 
-        viewModelScope.launch {
+        safeLaunch("更新头像", onError = { _operationState.value = OperationState.Error(it.message ?: "更新失败") }) {
             _operationState.value = OperationState.Loading
 
-            val result = authRepository.updateAvatar(avatar)
-            result.onSuccess { user ->
-                _uiState.value = SettingsUiState.Success(user)
-                _operationState.value = OperationState.Success("头像更新成功")
-                android.util.Log.d(TAG, "✓ 头像更新成功")
-            }.onFailure { error ->
-                _operationState.value = OperationState.Error(error.message ?: "更新失败")
-                android.util.Log.e(TAG, "❌ 头像更新失败: ${error.message}")
-            }
+            authRepository.updateAvatar(avatar)
+                .onSuccess { user ->
+                    _uiState.value = SettingsUiState.Success(user)
+                    _operationState.value = OperationState.Success("头像更新成功")
+                    logSuccess("头像更新成功")
+                }
+                .onFailure { error ->
+                    _operationState.value = OperationState.Error(error.message ?: "更新失败")
+                    logError("头像更新失败", error as? Exception)
+                }
 
-            android.util.Log.d(TAG, "========== 头像更新完成 ==========")
+            logMethodEnd("更新头像")
         }
     }
 
@@ -138,23 +137,24 @@ class SettingsViewModel @Inject constructor(
      * @param theme 主题设置（light/dark/auto）
      */
     fun updateTheme(theme: String) {
-        android.util.Log.d(TAG, "========== 开始更新主题设置 ==========")
-        android.util.Log.d(TAG, "新主题: $theme")
+        logMethodStart("更新主题设置")
+        logD("新主题: $theme")
 
-        viewModelScope.launch {
+        safeLaunch("更新主题设置", onError = { _operationState.value = OperationState.Error(it.message ?: "更新失败") }) {
             _operationState.value = OperationState.Loading
 
-            val result = authRepository.updateTheme(theme)
-            result.onSuccess { user ->
-                _uiState.value = SettingsUiState.Success(user)
-                _operationState.value = OperationState.Success("主题设置已更新")
-                android.util.Log.d(TAG, "✓ 主题设置更新成功")
-            }.onFailure { error ->
-                _operationState.value = OperationState.Error(error.message ?: "更新失败")
-                android.util.Log.e(TAG, "❌ 主题设置更新失败: ${error.message}")
-            }
+            authRepository.updateTheme(theme)
+                .onSuccess { user ->
+                    _uiState.value = SettingsUiState.Success(user)
+                    _operationState.value = OperationState.Success("主题设置已更新")
+                    logSuccess("主题设置更新成功")
+                }
+                .onFailure { error ->
+                    _operationState.value = OperationState.Error(error.message ?: "更新失败")
+                    logError("主题设置更新失败", error as? Exception)
+                }
 
-            android.util.Log.d(TAG, "========== 主题设置更新完成 ==========")
+            logMethodEnd("更新主题设置")
         }
     }
 
@@ -169,12 +169,12 @@ class SettingsViewModel @Inject constructor(
      * 用户登出
      */
     fun logout(onLogoutSuccess: () -> Unit) {
-        android.util.Log.d(TAG, "========== 开始登出 ==========")
+        logMethodStart("登出")
         viewModelScope.launch {
             authRepository.logout()
             onLogoutSuccess()
-            android.util.Log.d(TAG, "✓ 登出成功")
-            android.util.Log.d(TAG, "========== 登出完成 ==========")
+            logSuccess("登出成功")
+            logMethodEnd("登出")
         }
     }
 }

@@ -1,7 +1,5 @@
 package com.example.babyfood.presentation.ui.points
 
-import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.babyfood.data.remote.api.PointsApiService
 import com.example.babyfood.data.repository.AuthRepository
@@ -9,6 +7,7 @@ import com.example.babyfood.domain.model.CheckInResponse
 import com.example.babyfood.domain.model.PointsHistoryResponse
 import com.example.babyfood.domain.model.PointsInfo
 import com.example.babyfood.domain.model.PointsTransaction
+import com.example.babyfood.presentation.ui.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,10 +23,11 @@ import javax.inject.Inject
 class PointsViewModel @Inject constructor(
     private val pointsApiService: PointsApiService,
     private val authRepository: AuthRepository
-) : ViewModel() {
+) : BaseViewModel() {
+
+    override val logTag: String = "PointsViewModel"
 
     companion object {
-        private const val TAG = "PointsViewModel"
         const val AI_RECOMMENDATION_COST = 50  // AI推荐消耗积分
     }
 
@@ -59,39 +59,37 @@ class PointsViewModel @Inject constructor(
      * 加载积分信息
      */
     fun loadPointsInfo() {
-        viewModelScope.launch {
-            Log.d(TAG, "========== 加载积分信息 ==========")
-            _isLoading.value = true
-            _errorMessage.value = null
+        logMethodStart("加载积分信息")
+        _isLoading.value = true
+        _errorMessage.value = null
 
-            try {
-                // 检查是否已登录（通过同步方式）
-                val isLoggedIn = authRepository.isLoggedIn()
-                if (!isLoggedIn) {
-                    Log.e(TAG, "❌ 未登录，无法获取积分信息")
-                    _errorMessage.value = "请先登录"
-                    _isLoading.value = false
-                    return@launch
-                }
-
-                val response = pointsApiService.getPointsInfo()
-                if (response.success) {
-                    _pointsInfo.value = response
-                    Log.d(TAG, "✓ 积分信息加载成功")
-                    Log.d(TAG, "当前积分: ${response.currentBalance}")
-                    Log.d(TAG, "今日已签到: ${response.todayCheckedIn}")
-                } else {
-                    Log.e(TAG, "❌ 积分信息加载失败: ${response.errorMessage}")
-                    _errorMessage.value = response.errorMessage ?: "加载积分信息失败"
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ 加载积分信息异常: ${e.message}")
-                Log.e(TAG, "异常堆栈: ", e)
+        safeLaunch(
+            errorMessage = "加载积分信息",
+            onError = {
                 _errorMessage.value = "网络错误，请稍后重试"
-            } finally {
                 _isLoading.value = false
-                Log.d(TAG, "========== 积分信息加载完成 ==========")
+                logMethodEnd("加载积分信息")
             }
+        ) {
+            // 检查登录状态
+            if (!authRepository.isLoggedIn()) {
+                logError("未登录，无法获取积分信息")
+                _errorMessage.value = "请先登录"
+                _isLoading.value = false
+                return@safeLaunch
+            }
+
+            val response = pointsApiService.getPointsInfo()
+            if (response.success) {
+                _pointsInfo.value = response
+                logSuccess("积分信息加载成功")
+                logD("当前积分: ${response.currentBalance}, 今日已签到: ${response.todayCheckedIn}")
+            } else {
+                logError("积分信息加载失败: ${response.errorMessage}")
+                _errorMessage.value = response.errorMessage ?: "加载积分信息失败"
+            }
+            _isLoading.value = false
+            logMethodEnd("加载积分信息")
         }
     }
 
@@ -99,43 +97,40 @@ class PointsViewModel @Inject constructor(
      * 每日签到
      */
     fun dailyCheckIn() {
-        viewModelScope.launch {
-            Log.d(TAG, "========== 每日签到 ==========")
-            _isLoading.value = true
-            _errorMessage.value = null
+        logMethodStart("每日签到")
+        _isLoading.value = true
+        _errorMessage.value = null
 
-            try {
-                // 检查是否已登录（通过同步方式）
-                val isLoggedIn = authRepository.isLoggedIn()
-                if (!isLoggedIn) {
-                    Log.e(TAG, "❌ 未登录，无法签到")
-                    _errorMessage.value = "请先登录"
-                    _isLoading.value = false
-                    return@launch
-                }
-
-                val response = pointsApiService.dailyCheckIn()
-                _checkInResponse.value = response
-
-                if (response.success) {
-                    Log.d(TAG, "✓ 签到成功")
-                    Log.d(TAG, "获得积分: ${response.pointsEarned}")
-                    Log.d(TAG, "当前积分: ${response.currentBalance}")
-                    Log.d(TAG, "连续签到天数: ${response.consecutiveDays}")
-                    // 重新加载积分信息
-                    loadPointsInfo()
-                } else {
-                    Log.e(TAG, "❌ 签到失败: ${response.errorMessage}")
-                    _errorMessage.value = response.errorMessage ?: "签到失败"
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ 签到异常: ${e.message}")
-                Log.e(TAG, "异常堆栈: ", e)
+        safeLaunch(
+            errorMessage = "每日签到",
+            onError = {
                 _errorMessage.value = "网络错误，请稍后重试"
-            } finally {
                 _isLoading.value = false
-                Log.d(TAG, "========== 签到完成 ==========")
+                logMethodEnd("每日签到")
             }
+        ) {
+            // 检查登录状态
+            if (!authRepository.isLoggedIn()) {
+                logError("未登录，无法签到")
+                _errorMessage.value = "请先登录"
+                _isLoading.value = false
+                return@safeLaunch
+            }
+
+            val response = pointsApiService.dailyCheckIn()
+            _checkInResponse.value = response
+
+            if (response.success) {
+                logSuccess("签到成功")
+                logD("获得积分: ${response.pointsEarned}, 当前积分: ${response.currentBalance}, 连续签到: ${response.consecutiveDays}")
+                // 重新加载积分信息
+                loadPointsInfo()
+            } else {
+                logError("签到失败: ${response.errorMessage}")
+                _errorMessage.value = response.errorMessage ?: "签到失败"
+            }
+            _isLoading.value = false
+            logMethodEnd("每日签到")
         }
     }
 
@@ -145,40 +140,38 @@ class PointsViewModel @Inject constructor(
      * @param offset 偏移量
      */
     fun loadPointsHistory(limit: Int = 20, offset: Int = 0) {
-        viewModelScope.launch {
-            Log.d(TAG, "========== 加载积分历史 ==========")
-            Log.d(TAG, "限制: $limit, 偏移: $offset")
-            _isLoading.value = true
-            _errorMessage.value = null
+        logMethodStart("加载积分历史")
+        logD("限制: $limit, 偏移: $offset")
+        _isLoading.value = true
+        _errorMessage.value = null
 
-            try {
-                // 检查是否已登录（通过同步方式）
-                val isLoggedIn = authRepository.isLoggedIn()
-                if (!isLoggedIn) {
-                    Log.e(TAG, "❌ 未登录，无法获取积分历史")
-                    _errorMessage.value = "请先登录"
-                    _isLoading.value = false
-                    return@launch
-                }
-
-                val response = pointsApiService.getPointsHistory(limit, offset)
-                if (response.success) {
-                    _pointsHistory.value = response.transactions
-                    Log.d(TAG, "✓ 积分历史加载成功")
-                    Log.d(TAG, "交易记录数: ${response.transactions.size}")
-                    Log.d(TAG, "总数: ${response.total}")
-                } else {
-                    Log.e(TAG, "❌ 积分历史加载失败: ${response.errorMessage}")
-                    _errorMessage.value = response.errorMessage ?: "加载积分历史失败"
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ 加载积分历史异常: ${e.message}")
-                Log.e(TAG, "异常堆栈: ", e)
+        safeLaunch(
+            errorMessage = "加载积分历史",
+            onError = {
                 _errorMessage.value = "网络错误，请稍后重试"
-            } finally {
                 _isLoading.value = false
-                Log.d(TAG, "========== 积分历史加载完成 ==========")
+                logMethodEnd("加载积分历史")
             }
+        ) {
+            // 检查登录状态
+            if (!authRepository.isLoggedIn()) {
+                logError("未登录，无法获取积分历史")
+                _errorMessage.value = "请先登录"
+                _isLoading.value = false
+                return@safeLaunch
+            }
+
+            val response = pointsApiService.getPointsHistory(limit, offset)
+            if (response.success) {
+                _pointsHistory.value = response.transactions
+                logSuccess("积分历史加载成功")
+                logD("交易记录数: ${response.transactions.size}, 总数: ${response.total}")
+            } else {
+                logError("积分历史加载失败: ${response.errorMessage}")
+                _errorMessage.value = response.errorMessage ?: "加载积分历史失败"
+            }
+            _isLoading.value = false
+            logMethodEnd("加载积分历史")
         }
     }
 

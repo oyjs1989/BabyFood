@@ -1,9 +1,9 @@
 package com.example.babyfood.presentation.ui.recipes
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.babyfood.data.repository.RecipeRepository
 import com.example.babyfood.domain.model.Recipe
+import com.example.babyfood.presentation.ui.BaseViewModel
 import com.example.babyfood.presentation.ui.clearError
 import com.example.babyfood.presentation.ui.clearErrorAndSaved
 import com.example.babyfood.presentation.ui.setError
@@ -18,16 +18,20 @@ import javax.inject.Inject
 @HiltViewModel
 class RecipesViewModel @Inject constructor(
     private val recipeRepository: RecipeRepository
-) : ViewModel() {
+) : BaseViewModel() {
+
+    override val logTag: String = "RecipesViewModel"
 
     private val _uiState = MutableStateFlow(RecipesUiState())
     val uiState: StateFlow<RecipesUiState> = _uiState.asStateFlow()
 
     init {
+        logMethodStart("RecipesViewModel 初始化")
         loadRecipes()
     }
 
     fun loadRecipes() {
+        logMethodStart("加载食谱列表")
         viewModelScope.launch {
             recipeRepository.getAllRecipes().collect { recipes ->
                 _uiState.value = _uiState.value.copy(
@@ -35,22 +39,27 @@ class RecipesViewModel @Inject constructor(
                     filteredRecipes = recipes,
                     isLoading = false
                 )
+                logSuccess("食谱列表加载完成，共 ${recipes.size} 个食谱")
+                logMethodEnd("加载食谱列表")
             }
         }
     }
 
     fun filterByAge(ageMonths: Int) {
+        logD("按年龄筛选: $ageMonths 个月")
         viewModelScope.launch {
             recipeRepository.getRecipesByAge(ageMonths).collect { recipes ->
                 _uiState.value = _uiState.value.copy(
                     filteredRecipes = recipes,
                     selectedAge = ageMonths
                 )
+                logD("筛选结果: ${recipes.size} 个食谱")
             }
         }
     }
 
     fun searchRecipes(query: String) {
+        logD("搜索食谱: $query")
         val filtered = if (query.isEmpty()) {
             _uiState.value.recipes
         } else {
@@ -64,9 +73,11 @@ class RecipesViewModel @Inject constructor(
             filteredRecipes = filtered,
             searchQuery = query
         )
+        logD("搜索结果: ${filtered.size} 个食谱")
     }
 
     fun clearFilters() {
+        logD("清除筛选")
         _uiState.value = _uiState.value.copy(
             filteredRecipes = _uiState.value.recipes,
             selectedAge = null,
@@ -76,12 +87,14 @@ class RecipesViewModel @Inject constructor(
     }
 
     fun filterByCategory(category: String) {
+        logD("按分类筛选: $category")
         viewModelScope.launch {
             recipeRepository.getRecipesByCategory(category).collect { recipes ->
                 _uiState.value = _uiState.value.copy(
                     filteredRecipes = recipes,
                     selectedCategory = category
                 )
+                logD("筛选结果: ${recipes.size} 个食谱")
             }
         }
     }
@@ -99,35 +112,38 @@ class RecipesViewModel @Inject constructor(
     }
 
     fun addRecipe(recipe: Recipe) {
-        viewModelScope.launch {
-            try {
-                recipeRepository.insert(recipe)
-                _uiState.clearErrorAndSaved { error, isSaved -> copy(error = error, isSaved = isSaved) }
-            } catch (e: Exception) {
-                _uiState.setError("添加食谱失败: ${e.message}") { error -> copy(error = error) }
-            }
+        logMethodStart("添加食谱")
+        logD("食谱名称: ${recipe.name}")
+
+        safeLaunch("添加食谱") {
+            recipeRepository.insert(recipe)
+            _uiState.clearErrorAndSaved { error, isSaved -> copy(error = error, isSaved = isSaved) }
+            logSuccess("食谱添加成功")
+            logMethodEnd("添加食谱")
         }
     }
 
     fun updateRecipe(recipe: Recipe) {
-        viewModelScope.launch {
-            try {
-                recipeRepository.update(recipe)
-                _uiState.clearErrorAndSaved { error, isSaved -> copy(error = error, isSaved = isSaved) }
-            } catch (e: Exception) {
-                _uiState.setError("更新食谱失败: ${e.message}") { error -> copy(error = error) }
-            }
+        logMethodStart("更新食谱")
+        logD("食谱 ID: ${recipe.id}, 名称: ${recipe.name}")
+
+        safeLaunch("更新食谱") {
+            recipeRepository.update(recipe)
+            _uiState.clearErrorAndSaved { error, isSaved -> copy(error = error, isSaved = isSaved) }
+            logSuccess("食谱更新成功")
+            logMethodEnd("更新食谱")
         }
     }
 
     fun deleteRecipe(recipeId: Long) {
-        viewModelScope.launch {
-            try {
-                recipeRepository.deleteRecipeById(recipeId)
-                _uiState.clearErrorAndSaved { error, isSaved -> copy(error = error, isSaved = isSaved) }
-            } catch (e: Exception) {
-                _uiState.setError("删除食谱失败: ${e.message}") { error -> copy(error = error) }
-            }
+        logMethodStart("删除食谱")
+        logD("食谱 ID: $recipeId")
+
+        safeLaunch("删除食谱") {
+            recipeRepository.deleteRecipeById(recipeId)
+            _uiState.clearErrorAndSaved { error, isSaved -> copy(error = error, isSaved = isSaved) }
+            logSuccess("食谱删除成功")
+            logMethodEnd("删除食谱")
         }
     }
 

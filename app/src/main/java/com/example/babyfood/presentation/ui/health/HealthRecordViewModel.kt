@@ -1,9 +1,9 @@
 package com.example.babyfood.presentation.ui.health
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.babyfood.data.repository.HealthRecordRepository
 import com.example.babyfood.domain.model.HealthRecord
+import com.example.babyfood.presentation.ui.BaseViewModel
 import com.example.babyfood.presentation.ui.clearError
 import com.example.babyfood.presentation.ui.clearErrorAndSaved
 import com.example.babyfood.presentation.ui.setError
@@ -18,44 +18,55 @@ import javax.inject.Inject
 @HiltViewModel
 class HealthRecordViewModel @Inject constructor(
     private val healthRecordRepository: HealthRecordRepository
-) : ViewModel() {
+) : BaseViewModel() {
+
+    override val logTag: String = "HealthRecordViewModel"
 
     private val _uiState = MutableStateFlow(HealthRecordUiState())
     val uiState: StateFlow<HealthRecordUiState> = _uiState.asStateFlow()
 
     fun loadHealthRecords(babyId: Long) {
+        logMethodStart("加载体检记录")
+        logD("宝宝 ID: $babyId")
+
         viewModelScope.launch {
             healthRecordRepository.getHealthRecordsByBaby(babyId).collect { records ->
                 _uiState.value = _uiState.value.copy(
                     healthRecords = records,
                     isLoading = false
                 )
+                logSuccess("体检记录加载完成，共 ${records.size} 条记录")
+                logMethodEnd("加载体检记录")
             }
         }
     }
 
     fun saveHealthRecord(record: HealthRecord) {
-        viewModelScope.launch {
-            try {
-                if (record.id == 0L) {
-                    healthRecordRepository.insertHealthRecord(record)
-                } else {
-                    healthRecordRepository.update(record)
-                }
-                _uiState.clearErrorAndSaved { error, isSaved -> copy(error = error, isSaved = isSaved) }
-            } catch (e: Exception) {
-                _uiState.setError(e.message) { error -> copy(error = error) }
+        logMethodStart("保存体检记录")
+        logD("记录 ID: ${record.id}, 日期: ${record.recordDate}")
+
+        safeLaunch("保存体检记录") {
+            if (record.id == 0L) {
+                healthRecordRepository.insertHealthRecord(record)
+                logSuccess("体检记录创建成功")
+            } else {
+                healthRecordRepository.update(record)
+                logSuccess("体检记录更新成功")
             }
+            _uiState.clearErrorAndSaved { error, isSaved -> copy(error = error, isSaved = isSaved) }
+            logMethodEnd("保存体检记录")
         }
     }
 
     fun deleteHealthRecord(record: HealthRecord) {
-        viewModelScope.launch {
-            try {
-                healthRecordRepository.delete(record)
-            } catch (e: Exception) {
-                _uiState.setError(e.message) { error -> copy(error = error) }
-            }
+        logMethodStart("删除体检记录")
+        logD("记录 ID: ${record.id}")
+
+        safeLaunch("删除体检记录") {
+            healthRecordRepository.delete(record)
+            _uiState.clearErrorAndSaved { error, isSaved -> copy(error = error, isSaved = isSaved) }
+            logSuccess("体检记录删除成功")
+            logMethodEnd("删除体检记录")
         }
     }
 

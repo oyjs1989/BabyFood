@@ -11,13 +11,13 @@ data class ImageRecognitionResponse(
     /**
      * 识别是否成功
      */
-    val success: Boolean,
+    override val success: Boolean,
 
     /**
      * 错误信息
      * 如果 success 为 true，此字段为 null
      */
-    val errorMessage: String? = null,
+    override val errorMessage: String? = null,
 
     /**
      * 食材名称
@@ -82,7 +82,7 @@ data class ImageRecognitionResponse(
      * 可选字段
      */
     val notes: String? = null
-)
+) : ApiResponse
 
 /**
  * 营养信息

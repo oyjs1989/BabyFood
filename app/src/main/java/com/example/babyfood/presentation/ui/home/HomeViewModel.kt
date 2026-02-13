@@ -1,6 +1,5 @@
 package com.example.babyfood.presentation.ui.home
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.babyfood.data.preferences.PreferencesManager
 import com.example.babyfood.data.repository.BabyRepository
@@ -12,22 +11,20 @@ import com.example.babyfood.domain.model.MealPeriod
 import com.example.babyfood.domain.model.NutritionGoal
 import com.example.babyfood.domain.model.NutritionIntake
 import com.example.babyfood.domain.model.Plan
+import com.example.babyfood.domain.model.PlanStatus
 import com.example.babyfood.domain.model.Recipe
+import com.example.babyfood.presentation.ui.BaseViewModel
+import com.example.babyfood.util.DateTimeUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.plus
 import javax.inject.Inject
-import kotlin.random.Random
-import android.util.Log
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -36,11 +33,9 @@ class HomeViewModel @Inject constructor(
     private val recipeRepository: RecipeRepository,
     private val healthRecordRepository: HealthRecordRepository,
     private val preferencesManager: PreferencesManager
-) : ViewModel() {
+) : BaseViewModel() {
 
-    companion object {
-        private const val TAG = "HomeViewModel"
-    }
+    override val logTag: String = "HomeViewModel"
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -50,105 +45,90 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun loadData() {
-        Log.d(TAG, "========== 开始加载数据 ==========")
+        logMethodStart("加载数据")
         viewModelScope.launch {
-            // 加载宝宝信息
             babyRepository.getAllBabies().collect { babies ->
-                Log.d(TAG, "宝宝列表加载完成，共 ${babies.size} 个宝宝")
+                logD("宝宝列表加载完成，共 ${babies.size} 个宝宝")
 
-                // 从 SharedPreferences 加载之前选中的宝宝 ID
                 val savedBabyId = preferencesManager.getSelectedBabyId()
-                Log.d(TAG, "保存的宝宝 ID: $savedBabyId")
+                logD("保存的宝宝 ID: $savedBabyId")
 
-                // 尝试找到保存的宝宝
                 val selectedBaby = if (savedBabyId != -1L) {
                     babies.find { it.id == savedBabyId } ?: babies.firstOrNull()
                 } else {
                     babies.firstOrNull()
                 }
 
-                if (selectedBaby != null) {
-                    Log.d(TAG, "选中的宝宝: ${selectedBaby.name} (ID: ${selectedBaby.id})")
-                } else {
-                    Log.d(TAG, "未选中任何宝宝")
-                }
+                selectedBaby?.let { logD("选中的宝宝: ${it.name} (ID: ${it.id})") }
+                    ?: logD("未选中任何宝宝")
 
                 _uiState.value = _uiState.value.copy(
                     babies = babies,
                     selectedBaby = selectedBaby
                 )
                 loadTodayPlans()
-                Log.d(TAG, "✓ 数据加载完成 ==========")
+                logSuccess("数据加载完成")
+                logMethodEnd("加载数据")
             }
         }
     }
 
     private fun loadTodayPlans() {
-        val selectedBaby = _uiState.value.selectedBaby
-        if (selectedBaby != null) {
-            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val selectedBaby = _uiState.value.selectedBaby ?: run {
+            _uiState.value = _uiState.value.copy(isLoading = false)
+            return
+        }
 
-            viewModelScope.launch {
-                // 加载今日计划
-                planRepository.getPlansByBabyAndDate(selectedBaby.id, today).collect { plans ->
-                    // 加载食谱详情
-                    val plansWithRecipes = plans.map { plan ->
-                        val recipe = recipeRepository.getById(plan.recipeId)
-                        PlanWithRecipe(plan, recipe)
-                    }
+        val today = DateTimeUtils.today()
 
-                    // 计算营养摄入
-                    val nutritionIntake = calculateNutritionIntake(plansWithRecipes)
+        viewModelScope.launch {
+            planRepository.getPlansByBabyAndDate(selectedBaby.id, today).collect { plans ->
+                val plansWithRecipes = loadPlansWithRecipes(plans)
+                val nutritionIntake = calculateNutritionIntake(plansWithRecipes)
+                val weeklyPlans = loadWeeklyPlans(selectedBaby.id, today)
+                val latestRecord = healthRecordRepository.getLatestHealthRecord(selectedBaby.id)
 
-                    // 加载未来一周的计划
-                    val weeklyPlans = loadWeeklyPlans(selectedBaby.id, today)
-
-                    // 加载最新的体检数据
-                    val latestRecord = healthRecordRepository.getLatestHealthRecord(selectedBaby.id)
-
-                    _uiState.value = _uiState.value.copy(
-                        todayPlans = plansWithRecipes,
-                        weeklyPlans = weeklyPlans,
-                        nutritionGoal = selectedBaby.getEffectiveNutritionGoal(),
-                        nutritionIntake = nutritionIntake,
-                        latestHealthRecord = latestRecord,
-                        isLoading = false
-                    )
-                }
+                _uiState.value = _uiState.value.copy(
+                    todayPlans = plansWithRecipes,
+                    weeklyPlans = weeklyPlans,
+                    nutritionGoal = selectedBaby.getEffectiveNutritionGoal(),
+                    nutritionIntake = nutritionIntake,
+                    latestHealthRecord = latestRecord,
+                    isLoading = false
+                )
             }
-        } else {
-            // 没有宝宝时，设置加载完成
-            _uiState.value = _uiState.value.copy(
-                isLoading = false
-            )
+        }
+    }
+
+    private suspend fun loadPlansWithRecipes(plans: List<Plan>): List<PlanWithRecipe> {
+        return plans.map { plan ->
+            val recipe = recipeRepository.getById(plan.recipeId)
+            PlanWithRecipe(plan, recipe)
         }
     }
 
     private suspend fun loadWeeklyPlans(babyId: Long, startDate: LocalDate): Map<LocalDate, List<PlanWithRecipe>> {
         return (1..7).associate { dayOffset ->
-            val date = startDate.plus(dayOffset, kotlinx.datetime.DateTimeUnit.DAY)
+            val date = startDate.plus(dayOffset, DateTimeUnit.DAY)
             val plans = planRepository.getPlansByBabyAndDate(babyId, date).first()
-            val plansWithRecipes = plans.map { plan ->
-                val recipe = recipeRepository.getById(plan.recipeId)
-                PlanWithRecipe(plan, recipe)
-            }
+            val plansWithRecipes = loadPlansWithRecipes(plans)
             date to plansWithRecipes
         }
     }
 
     /**
      * 计算今日营养摄入
-     * 仅计算已反馈的餐次
      */
     private fun calculateNutritionIntake(plans: List<PlanWithRecipe>): NutritionIntake {
-        Log.d(TAG, "========== 开始计算营养摄入 ==========")
+        logMethodStart("计算营养摄入")
 
-        val filteredPlans: List<Pair<com.example.babyfood.domain.model.Nutrition, Float>> = plans
+        val filteredPlans = plans
             .filter { it.plan.feedbackStatus != null && it.recipe != null }
             .mapNotNull { planWithRecipe ->
-                val ratio = com.example.babyfood.domain.model.FeedbackRatio.getRatio(planWithRecipe.plan.feedbackStatus!!)
+                val ratio = com.example.babyfood.domain.model.FeedbackRatio
+                    .getRatio(planWithRecipe.plan.feedbackStatus!!)
                 if (ratio > 0f) {
-                    Log.d(TAG, "餐次: ${planWithRecipe.plan.mealPeriod}, 食谱: ${planWithRecipe.recipe!!.name}, 反馈: ${planWithRecipe.plan.feedbackStatus}, 比例: ${ratio * 100}%")
+                    logD("餐次: ${planWithRecipe.plan.mealPeriod}, 食谱: ${planWithRecipe.recipe!!.name}, 反馈: ${planWithRecipe.plan.feedbackStatus}, 比例: ${ratio * 100}%")
                     Pair(planWithRecipe.recipe!!.nutrition, ratio)
                 } else {
                     null
@@ -177,15 +157,11 @@ class HomeViewModel @Inject constructor(
             feedbackCount = feedbackCount
         )
 
-        Log.d(TAG, "✓ 营养摄入计算完成: $intake")
-        Log.d(TAG, "========== 计算完成 ==========")
-
+        logD("营养摄入计算完成: $intake")
+        logMethodEnd("计算营养摄入")
         return intake
     }
 
-    /**
-     * 营养总量辅助数据类
-     */
     private data class NutritionTotals(
         val calories: Float = 0f,
         val protein: Float = 0f,
@@ -194,86 +170,82 @@ class HomeViewModel @Inject constructor(
     )
 
     fun selectBaby(baby: Baby) {
-        Log.d(TAG, "========== 切换宝宝 ==========")
-        Log.d(TAG, "切换到宝宝: ${baby.name} (ID: ${baby.id})")
+        logMethodStart("切换宝宝")
+        logD("切换到宝宝: ${baby.name} (ID: ${baby.id})")
 
         _uiState.value = _uiState.value.copy(selectedBaby = baby)
-
-        // 保存到 SharedPreferences
         preferencesManager.saveSelectedBabyId(baby.id)
-
         loadTodayPlans()
-        Log.d(TAG, "✓ 切换完成 ==========")
+
+        logSuccess("切换完成")
+        logMethodEnd("切换宝宝")
     }
 
-    // 换一换功能
+    /**
+     * 换一换功能
+     */
     fun shuffleMealPeriod(period: MealPeriod) {
         val selectedBaby = _uiState.value.selectedBaby ?: return
-        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val today = DateTimeUtils.today()
 
         viewModelScope.launch {
-            // 获取当前计划的食谱ID（用于排除）
             val currentPlan = _uiState.value.todayPlans.find { it.plan.mealPeriod == period.name }
             val excludeRecipeIds = currentPlan?.recipe?.id?.let { listOf(it) } ?: emptyList()
 
-            // 获取适合该月龄的所有食谱
             val recipes = recipeRepository.getRecipesByAge(selectedBaby.ageInMonths).first()
+            val filteredRecipes = filterRecipesByAllergies(recipes, selectedBaby)
+            val availableRecipes = filteredRecipes.filter { it.id !in excludeRecipeIds }
 
-            // 排除过敏原
-            val filteredRecipes = recipes.filter { recipe ->
-                recipe.ingredients.none { ingredient ->
-                    selectedBaby.getEffectiveAllergies().contains(ingredient.name)
-                }
-            }
-
-            // 排除已使用的食谱
-            val availableRecipes = filteredRecipes.filter { recipe ->
-                recipe.id !in excludeRecipeIds
-            }
-
-            // 随机选择一个食谱
             if (availableRecipes.isNotEmpty()) {
                 val newRecipe = availableRecipes.random()
-
-                // 替换该餐段的计划
                 planRepository.replacePlanForPeriod(
                     babyId = selectedBaby.id,
                     date = today,
                     period = period,
                     newRecipeId = newRecipe.id
                 )
-
-                // 重新加载计划
                 loadTodayPlans()
+                logD("换一换成功: ${period.name} -> ${newRecipe.name}")
             }
         }
     }
 
-    // 更新营养目标
-    fun updateNutritionGoal(goal: NutritionGoal) {
-        val selectedBaby = _uiState.value.selectedBaby ?: return
-        android.util.Log.d(TAG, "========== 更新营养目标 ==========")
-        android.util.Log.d(TAG, "宝宝 ID: ${selectedBaby.id}")
-        android.util.Log.d(TAG, "营养目标: $goal")
-        viewModelScope.launch {
-            babyRepository.updateNutritionGoal(selectedBaby.id, goal)
-            android.util.Log.d(TAG, "✓ 营养目标更新完成 ==========")
+    private fun filterRecipesByAllergies(recipes: List<Recipe>, baby: Baby): List<Recipe> {
+        val allergies = baby.getEffectiveAllergies()
+        return recipes.filter { recipe ->
+            recipe.ingredients.none { ingredient ->
+                allergies.contains(ingredient.name)
+            }
         }
     }
 
-    // 生成营养目标推荐（AI 推荐标准值 + 体检数据微调）
+    /**
+     * 更新营养目标
+     */
+    fun updateNutritionGoal(goal: NutritionGoal) {
+        val selectedBaby = _uiState.value.selectedBaby ?: return
+        logMethodStart("更新营养目标")
+        logD("宝宝 ID: ${selectedBaby.id}, 营养目标: $goal")
+
+        viewModelScope.launch {
+            babyRepository.updateNutritionGoal(selectedBaby.id, goal)
+            logSuccess("营养目标更新完成")
+            logMethodEnd("更新营养目标")
+        }
+    }
+
+    /**
+     * 生成营养目标智能推荐
+     */
     fun generateNutritionGoalRecommendation(): NutritionGoal? {
         val selectedBaby = _uiState.value.selectedBaby ?: return null
         val latestHealthRecord = _uiState.value.latestHealthRecord
 
-        android.util.Log.d(TAG, "========== 开始生成营养目标智能推荐 ==========")
-        android.util.Log.d(TAG, "宝宝 ID: ${selectedBaby.id}")
-        android.util.Log.d(TAG, "宝宝月龄: ${selectedBaby.ageInMonths} 个月")
-        android.util.Log.d(TAG, "当前体重: ${selectedBaby.weight ?: "无数据"} kg")
-        android.util.Log.d(TAG, "当前身高: ${selectedBaby.height ?: "无数据"} cm")
-        android.util.Log.d(TAG, "最新体检数据: ${latestHealthRecord?.recordDate ?: "无数据"}")
+        logMethodStart("生成营养目标智能推荐")
+        logD("宝宝 ID: ${selectedBaby.id}, 月龄: ${selectedBaby.ageInMonths} 个月")
+        logD("当前体重: ${selectedBaby.weight ?: "无数据"} kg, 身高: ${selectedBaby.height ?: "无数据"} cm")
+        logD("最新体检数据: ${latestHealthRecord?.recordDate ?: "无数据"}")
 
-        // 使用最新体检数据进行智能推荐
         val recommended = NutritionGoal.calculateWithHealthData(
             ageInMonths = selectedBaby.ageInMonths,
             currentWeight = selectedBaby.weight,
@@ -283,28 +255,23 @@ class HomeViewModel @Inject constructor(
             calciumLevel = latestHealthRecord?.calciumLevel
         )
 
-        android.util.Log.d(TAG, "✓ 智能推荐生成完成 ==========")
+        logSuccess("智能推荐生成完成: $recommended")
+        logMethodEnd("生成营养目标智能推荐")
         return recommended
     }
 
-    // 获取适合的食谱列表（用于选择）
+    /**
+     * 获取适合的食谱列表
+     */
     suspend fun getAvailableRecipes(): List<Recipe> {
         val selectedBaby = _uiState.value.selectedBaby ?: return emptyList()
-
-        // 获取适合该月龄的所有食谱
         val recipes = recipeRepository.getRecipesByAge(selectedBaby.ageInMonths).first()
-
-        // 排除过敏原
-        val filteredRecipes = recipes.filter { recipe ->
-            recipe.ingredients.none { ingredient ->
-                selectedBaby.getEffectiveAllergies().contains(ingredient.name)
-            }
-        }
-
-        return filteredRecipes
+        return filterRecipesByAllergies(recipes, selectedBaby)
     }
 
-    // 选择食谱并添加到计划
+    /**
+     * 选择食谱并添加到计划
+     */
     fun selectRecipeForMealPeriod(recipeId: Long, period: MealPeriod, date: LocalDate) {
         val selectedBaby = _uiState.value.selectedBaby ?: return
 
@@ -315,13 +282,13 @@ class HomeViewModel @Inject constructor(
                 period = period,
                 newRecipeId = recipeId
             )
-
-            // 重新加载计划
             loadTodayPlans()
         }
     }
 
-    // 显示食谱选择器
+    /**
+     * 显示食谱选择器
+     */
     fun showRecipeSelector(period: MealPeriod, date: LocalDate) {
         viewModelScope.launch {
             val recipes = getAvailableRecipes()
@@ -334,7 +301,9 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    // 隐藏食谱选择器
+    /**
+     * 隐藏食谱选择器
+     */
     fun hideRecipeSelector() {
         _uiState.value = _uiState.value.copy(
             showRecipeSelector = false,
@@ -343,42 +312,41 @@ class HomeViewModel @Inject constructor(
         )
     }
 
-    // 更新餐食时间
+    /**
+     * 更新餐食时间
+     */
     fun updateMealTime(period: MealPeriod, newTime: String) {
         val selectedBaby = _uiState.value.selectedBaby ?: return
-        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val today = DateTimeUtils.today()
 
         viewModelScope.launch {
-            // 获取当前计划
             val currentPlan = planRepository.getPlansByBabyDateAndPeriod(
                 selectedBaby.id,
                 today,
                 period
             )
 
-            if (currentPlan != null) {
-                // 更新计划的用餐时间
-                val updatedPlan = currentPlan.copy(mealTime = newTime)
+            currentPlan?.let {
+                val updatedPlan = it.copy(mealTime = newTime)
                 planRepository.update(updatedPlan)
-
-                // 重新加载计划
                 loadTodayPlans()
             }
         }
     }
 
-    // 显示时间选择器
+    /**
+     * 显示时间选择器
+     */
     fun showMealTimePicker(period: MealPeriod) {
-        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val selectedBaby = _uiState.value.selectedBaby ?: return
+        val today = DateTimeUtils.today()
 
         viewModelScope.launch {
-            // 获取当前计划的时间
             val currentPlan = planRepository.getPlansByBabyDateAndPeriod(
-                _uiState.value.selectedBaby?.id ?: return@launch,
+                selectedBaby.id,
                 today,
                 period
             )
-
             val currentTime = currentPlan?.mealTime ?: getMealTime(period)
 
             _uiState.value = _uiState.value.copy(
@@ -389,7 +357,9 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    // 隐藏时间选择器
+    /**
+     * 隐藏时间选择器
+     */
     fun hideMealTimePicker() {
         _uiState.value = _uiState.value.copy(
             showMealTimePicker = false,
@@ -398,161 +368,127 @@ class HomeViewModel @Inject constructor(
         )
     }
 
-    // 显示反馈对话框
+    /**
+     * 显示反馈对话框
+     */
     fun showFeedbackDialog(period: MealPeriod) {
-        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
         val selectedBaby = _uiState.value.selectedBaby ?: return
+        val today = DateTimeUtils.today()
 
         viewModelScope.launch {
-            // 获取当前计划
             val currentPlan = planRepository.getPlansByBabyDateAndPeriod(
                 selectedBaby.id,
                 today,
                 period
             )
 
-            if (currentPlan != null) {
-                // 获取已有的反馈状态
-                val existingFeedback = currentPlan.feedbackStatus?.let { feedbackValue ->
+            currentPlan?.let { plan ->
+                val existingFeedback = plan.feedbackStatus?.let { feedbackValue ->
                     com.example.babyfood.domain.model.MealFeedbackOption.fromValue(feedbackValue)
                 }
-
-                // 获取食谱的食材列表
-                val recipe = recipeRepository.getById(currentPlan.recipeId)
+                val recipe = recipeRepository.getById(plan.recipeId)
                 val ingredients = recipe?.ingredients ?: emptyList()
 
                 _uiState.value = _uiState.value.copy(
                     showFeedbackDialog = true,
                     selectedMealPeriod = period,
                     selectedFeedback = existingFeedback,
-                    selectedPlanId = currentPlan.id,
+                    selectedPlanId = plan.id,
                     recipeIngredients = ingredients
                 )
             }
         }
     }
 
-    // 选择反馈选项
+    /**
+     * 选择反馈选项
+     */
     fun selectFeedback(option: com.example.babyfood.presentation.ui.home.components.MealFeedbackOption) {
-        // 将 UI 枚举转换为领域模型枚举
         val domainOption = when (option) {
-            com.example.babyfood.presentation.ui.home.components.MealFeedbackOption.FINISHED -> 
+            com.example.babyfood.presentation.ui.home.components.MealFeedbackOption.FINISHED ->
                 com.example.babyfood.domain.model.MealFeedbackOption.FINISHED
-            com.example.babyfood.presentation.ui.home.components.MealFeedbackOption.HALF -> 
+            com.example.babyfood.presentation.ui.home.components.MealFeedbackOption.HALF ->
                 com.example.babyfood.domain.model.MealFeedbackOption.HALF
-            com.example.babyfood.presentation.ui.home.components.MealFeedbackOption.DISLIKED -> 
+            com.example.babyfood.presentation.ui.home.components.MealFeedbackOption.DISLIKED ->
                 com.example.babyfood.domain.model.MealFeedbackOption.DISLIKED
-            com.example.babyfood.presentation.ui.home.components.MealFeedbackOption.ALLERGY -> 
+            com.example.babyfood.presentation.ui.home.components.MealFeedbackOption.ALLERGY ->
                 com.example.babyfood.domain.model.MealFeedbackOption.ALLERGY
         }
-        _uiState.value = _uiState.value.copy(
-            selectedFeedback = domainOption
-        )
+        _uiState.value = _uiState.value.copy(selectedFeedback = domainOption)
     }
 
-    // 提交反馈
+    /**
+     * 提交反馈
+     */
     fun submitFeedback() {
         val planId = _uiState.value.selectedPlanId ?: return
         val feedback = _uiState.value.selectedFeedback ?: return
 
         viewModelScope.launch {
-            // 获取当前计划
-            val currentPlan = planRepository.getById(planId)
+            val currentPlan = planRepository.getById(planId) ?: return@launch
 
-            if (currentPlan != null) {
-                // 生成反馈时间
-                val now = Clock.System.now()
-                val feedbackTime = now.toString()
+            val updatedPlan = currentPlan.copy(
+                feedbackStatus = feedback.value,
+                feedbackTime = DateTimeUtils.currentTimestamp().toString(),
+                status = PlanStatus.TRIED
+            )
 
-                // 更新计划
-                val updatedPlan = currentPlan.copy(
-                    feedbackStatus = feedback.value,
-                    feedbackTime = feedbackTime,
-                    status = com.example.babyfood.domain.model.PlanStatus.TRIED
-                )
-
-                planRepository.update(updatedPlan)
-
-                // 重新加载计划
-                loadTodayPlans()
-
-                // 隐藏对话框
-                _uiState.value = _uiState.value.copy(
-                    showFeedbackDialog = false,
-                    selectedMealPeriod = null,
-                    selectedFeedback = null,
-                    selectedPlanId = null
-                )
-            }
+            planRepository.update(updatedPlan)
+            loadTodayPlans()
+            hideFeedbackDialog()
         }
     }
 
-    // 提交反馈并添加食材到过敏或偏好列表
+    /**
+     * 提交反馈并添加食材到过敏或偏好列表
+     */
     fun submitFeedbackWithIngredients(ingredientNames: Set<String>) {
         val planId = _uiState.value.selectedPlanId ?: return
         val feedback = _uiState.value.selectedFeedback ?: return
         val selectedBaby = _uiState.value.selectedBaby ?: return
 
         viewModelScope.launch {
-            // 获取当前计划
-            val currentPlan = planRepository.getById(planId)
+            val currentPlan = planRepository.getById(planId) ?: return@launch
 
-            if (currentPlan != null) {
-                // 生成反馈时间
-                val now = Clock.System.now()
-                val feedbackTime = now.toString()
+            val updatedPlan = currentPlan.copy(
+                feedbackStatus = feedback.value,
+                feedbackTime = DateTimeUtils.currentTimestamp().toString(),
+                status = PlanStatus.TRIED
+            )
 
-                // 更新计划
-                val updatedPlan = currentPlan.copy(
-                    feedbackStatus = feedback.value,
-                    feedbackTime = feedbackTime,
-                    status = com.example.babyfood.domain.model.PlanStatus.TRIED
-                )
+            planRepository.update(updatedPlan)
 
-                planRepository.update(updatedPlan)
-
-                // 根据反馈类型添加到过敏或偏好列表
-                when (feedback) {
-                    com.example.babyfood.domain.model.MealFeedbackOption.DISLIKED -> {
-                        // 吐了/不爱吃 → 添加到偏好列表（不爱吃）
-                        val newPreferences = ingredientNames.map { ingredientName ->
-                            com.example.babyfood.domain.model.PreferenceItem.create(
-                                ingredient = ingredientName,
-                                expiryDays = 90  // 90天后过期
-                            )
-                        }
-                        babyRepository.addPreferences(selectedBaby.id, newPreferences)
+            // 根据反馈类型添加到过敏或偏好列表
+            when (feedback) {
+                com.example.babyfood.domain.model.MealFeedbackOption.DISLIKED -> {
+                    val newPreferences = ingredientNames.map { ingredientName ->
+                        com.example.babyfood.domain.model.PreferenceItem.create(
+                            ingredient = ingredientName,
+                            expiryDays = 90
+                        )
                     }
-                    com.example.babyfood.domain.model.MealFeedbackOption.ALLERGY -> {
-                        // 过敏 → 添加到过敏列表
-                        val newAllergies = ingredientNames.map { ingredientName ->
-                            com.example.babyfood.domain.model.AllergyItem.create(
-                                ingredient = ingredientName,
-                                expiryDays = null  // 永久不过期
-                            )
-                        }
-                        babyRepository.addAllergies(selectedBaby.id, newAllergies)
-                    }
-                    else -> {
-                        // 其他情况不添加
-                    }
+                    babyRepository.addPreferences(selectedBaby.id, newPreferences)
                 }
-
-                // 重新加载计划
-                loadTodayPlans()
-
-                // 隐藏对话框
-                _uiState.value = _uiState.value.copy(
-                    showFeedbackDialog = false,
-                    selectedMealPeriod = null,
-                    selectedFeedback = null,
-                    selectedPlanId = null
-                )
+                com.example.babyfood.domain.model.MealFeedbackOption.ALLERGY -> {
+                    val newAllergies = ingredientNames.map { ingredientName ->
+                        com.example.babyfood.domain.model.AllergyItem.create(
+                            ingredient = ingredientName,
+                            expiryDays = null
+                        )
+                    }
+                    babyRepository.addAllergies(selectedBaby.id, newAllergies)
+                }
+                else -> { /* 其他情况不添加 */ }
             }
+
+            loadTodayPlans()
+            hideFeedbackDialog()
         }
     }
 
-    // 隐藏反馈对话框
+    /**
+     * 隐藏反馈对话框
+     */
     fun hideFeedbackDialog() {
         _uiState.value = _uiState.value.copy(
             showFeedbackDialog = false,
@@ -562,7 +498,9 @@ class HomeViewModel @Inject constructor(
         )
     }
 
-    // 获取餐段默认时间
+    /**
+     * 获取餐段默认时间
+     */
     private fun getMealTime(period: MealPeriod): String = when (period) {
         MealPeriod.BREAKFAST -> "08:00"
         MealPeriod.LUNCH -> "12:00"
@@ -599,13 +537,8 @@ data class PlanWithRecipe(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
-
         other as PlanWithRecipe
-
-        if (plan != other.plan) return false
-        if (recipe?.id != other.recipe?.id) return false
-
-        return true
+        return plan == other.plan && recipe?.id == other.recipe?.id
     }
 
     override fun hashCode(): Int {

@@ -1,7 +1,5 @@
 package com.example.babyfood.presentation.ui
 
-import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.babyfood.data.repository.AuthRepository
 import com.example.babyfood.data.repository.BabyRepository
@@ -20,11 +18,9 @@ class MainViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val babyRepository: BabyRepository,
     private val healthRecordRepository: HealthRecordRepository
-) : ViewModel() {
+) : BaseViewModel() {
 
-    companion object {
-        private const val TAG = "MainViewModel"
-    }
+    override val logTag: String = "MainViewModel"
 
     /**
      * 获取认证仓库（供 AppHeader 使用）
@@ -42,17 +38,17 @@ class MainViewModel @Inject constructor(
      * @param onFailure 注销失败回调
      */
     fun logout(onSuccess: () -> Unit, onFailure: () -> Unit = {}) {
+        logMethodStart("注销")
         viewModelScope.launch {
-            Log.d(TAG, "========== 开始注销 ==========")
             val success = authRepository.logout()
             if (success) {
-                Log.d(TAG, "✓ 注销成功")
+                logSuccess("注销成功")
                 onSuccess()
             } else {
-                Log.e(TAG, "❌ 注销失败")
+                logError("注销失败")
                 onFailure()
             }
-            Log.d(TAG, "========== 注销完成 ==========")
+            logMethodEnd("注销")
         }
     }
 
@@ -60,17 +56,13 @@ class MainViewModel @Inject constructor(
      * 更新宝宝营养目标
      */
     fun updateBabyNutritionGoal(babyId: Long, goal: NutritionGoal) {
-        viewModelScope.launch {
-            Log.d(TAG, "========== 更新营养目标 ==========")
-            Log.d(TAG, "宝宝 ID: $babyId")
-            Log.d(TAG, "营养目标: $goal")
-            try {
-                babyRepository.updateNutritionGoal(babyId, goal)
-                Log.d(TAG, "✓ 营养目标更新成功")
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ 营养目标更新失败: ${e.message}")
-            }
-            Log.d(TAG, "========== 营养目标更新完成 ==========")
+        logMethodStart("更新营养目标")
+        logD("宝宝 ID: $babyId, 营养目标: $goal")
+
+        safeLaunch("更新营养目标") {
+            babyRepository.updateNutritionGoal(babyId, goal)
+            logSuccess("营养目标更新成功")
+            logMethodEnd("更新营养目标")
         }
     }
 
@@ -78,12 +70,13 @@ class MainViewModel @Inject constructor(
      * 生成营养目标推荐（结合体检数据）
      */
     suspend fun generateNutritionRecommendation(babyId: Long): NutritionGoal? {
-        Log.d(TAG, "========== 生成营养目标推荐 ==========")
-        Log.d(TAG, "宝宝 ID: $babyId")
+        logMethodStart("生成营养目标推荐")
+        logD("宝宝 ID: $babyId")
+
         return try {
             val baby = babyRepository.getById(babyId)
             if (baby == null) {
-                Log.e(TAG, "❌ 宝宝不存在")
+                logError("宝宝不存在")
                 return null
             }
 
@@ -100,13 +93,12 @@ class MainViewModel @Inject constructor(
                 calciumLevel = latestHealthRecord?.calciumLevel
             )
 
-            Log.d(TAG, "✓ 推荐生成成功: $recommendation")
-            Log.d(TAG, "========== 推荐生成完成 ==========")
+            logSuccess("推荐生成成功: $recommendation")
+            logMethodEnd("生成营养目标推荐")
             recommendation
         } catch (e: Exception) {
-            Log.e(TAG, "❌ 推荐生成失败: ${e.message}")
-            Log.e(TAG, "异常堆栈: ", e)
-            Log.d(TAG, "========== 推荐生成完成 ==========")
+            logError("推荐生成失败: ${e.message}", e)
+            logMethodEnd("生成营养目标推荐")
             null
         }
     }

@@ -32,8 +32,9 @@ enum class ConflictResolution {
  * 保存结果
  */
 data class SaveResult(
-    val success: Boolean,
+    override val success: Boolean,
+    override val errorMessage: String? = null,
     val savedCount: Int = 0,
     val skippedCount: Int = 0,
     val error: String? = null
-)
+) : ApiResponse

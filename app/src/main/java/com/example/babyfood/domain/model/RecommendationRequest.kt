@@ -102,13 +102,13 @@ data class DailyNutritionAverage(
  * 奥卡姆剃刀原则：包含AI的分析思路和营养目标，让用户理解AI的判断过程
  */
 data class RecommendationResponse(
-    val success: Boolean,
+    override val success: Boolean,
+    override val errorMessage: String? = null,
     val weeklyPlan: WeeklyMealPlan? = null,
-    val errorMessage: String? = null,
     val warnings: List<String> = emptyList(),
-    val analysisReasoning: String? = null,  // AI的分析思路
-    val nutritionGoals: NutritionGoalInfo? = null  // 营养目标
-)
+    val analysisReasoning: String? = null,
+    val nutritionGoals: NutritionGoalInfo? = null
+) : ApiResponse
 
 /**
  * 营养目标信息

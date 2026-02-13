@@ -8,25 +8,25 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class PointsInfo(
-    val success: Boolean = true,
+    override val success: Boolean = true,
     @SerialName("errorMessage")
-    val errorMessage: String? = null,
+    override val errorMessage: String? = null,
     @SerialName("currentBalance")
     val currentBalance: Int = 0,
     @SerialName("lastCheckInDate")
     val lastCheckInDate: Long? = null,
     @SerialName("todayCheckedIn")
     val todayCheckedIn: Boolean = false
-)
+) : ApiResponse
 
 /**
  * 签到响应
  */
 @Serializable
 data class CheckInResponse(
-    val success: Boolean = true,
+    override val success: Boolean = true,
     @SerialName("errorMessage")
-    val errorMessage: String? = null,
+    override val errorMessage: String? = null,
     @SerialName("pointsEarned")
     val pointsEarned: Int = 0,
     @SerialName("currentBalance")
@@ -35,7 +35,7 @@ data class CheckInResponse(
     val consecutiveDays: Int = 0,
     @SerialName("todayCheckedIn")
     val todayCheckedIn: Boolean = false
-)
+) : ApiResponse
 
 /**
  * 积分交易记录
@@ -61,12 +61,12 @@ data class PointsTransaction(
  */
 @Serializable
 data class PointsHistoryResponse(
-    val success: Boolean = true,
+    override val success: Boolean = true,
     @SerialName("errorMessage")
-    val errorMessage: String? = null,
+    override val errorMessage: String? = null,
     val transactions: List<PointsTransaction> = emptyList(),
     val total: Int = 0
-)
+) : ApiResponse
 
 /**
  * 积分交易类型枚举

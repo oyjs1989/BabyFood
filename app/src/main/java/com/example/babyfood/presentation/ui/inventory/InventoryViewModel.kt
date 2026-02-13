@@ -2,17 +2,16 @@ package com.example.babyfood.presentation.ui.inventory
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.babyfood.data.ai.ImageRecognitionService
 import com.example.babyfood.data.ai.ImageRecognitionException
+import com.example.babyfood.data.ai.ImageRecognitionService
 import com.example.babyfood.data.repository.InventoryRepository
 import com.example.babyfood.domain.model.ExpiryStatus
 import com.example.babyfood.domain.model.ImageRecognitionRequest
 import com.example.babyfood.domain.model.ImageRecognitionResponse
 import com.example.babyfood.domain.model.InventoryItem
 import com.example.babyfood.domain.model.StorageMethod
+import com.example.babyfood.presentation.ui.BaseViewModel
 import com.example.babyfood.util.ImageUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -27,32 +26,32 @@ class InventoryViewModel @Inject constructor(
     private val inventoryRepository: InventoryRepository,
     private val imageRecognitionService: ImageRecognitionService,
     @ApplicationContext private val context: Context
-) : ViewModel() {
+) : BaseViewModel() {
 
-    companion object {
-        private const val TAG = "InventoryViewModel"
-    }
+    override val logTag: String = "InventoryViewModel"
 
     private val _uiState = MutableStateFlow(InventoryUiState())
     val uiState: StateFlow<InventoryUiState> = _uiState.asStateFlow()
 
     init {
+        logMethodStart("InventoryViewModel 初始化")
         loadInventoryItems()
     }
 
     private fun loadInventoryItems() {
-        Log.d(TAG, "========== 开始加载仓库物品列表 ==========")
+        logMethodStart("加载仓库物品列表")
         viewModelScope.launch {
             inventoryRepository.getAllInventoryItems().collect { items ->
                 updateStateWithFilteredItems(items, isSearching = false)
-                Log.d(TAG, "✓ 仓库物品列表加载完成，共 ${items.size} 个物品 ==========")
+                logSuccess("仓库物品列表加载完成，共 ${items.size} 个物品")
+                logMethodEnd("加载仓库物品列表")
             }
         }
     }
 
     fun searchInventoryItems(query: String) {
-        Log.d(TAG, "========== 搜索仓库物品 ==========")
-        Log.d(TAG, "搜索关键词: $query")
+        logMethodStart("搜索仓库物品")
+        logD("搜索关键词: $query")
         _uiState.value = _uiState.value.copy(searchQuery = query, isSearching = true)
         viewModelScope.launch {
             if (query.isEmpty()) {
@@ -60,22 +59,21 @@ class InventoryViewModel @Inject constructor(
             } else {
                 inventoryRepository.searchInventoryItems(query).collect { items ->
                     updateStateWithFilteredItems(items, isSearching = false)
-                    Log.d(TAG, "✓ 搜索完成，找到 ${items.size} 个物品 ==========")
+                    logSuccess("搜索完成，找到 ${items.size} 个物品")
+                    logMethodEnd("搜索仓库物品")
                 }
             }
         }
     }
 
     fun filterByExpiryStatus(status: ExpiryStatus?) {
-        Log.d(TAG, "========== 按保质期状态筛选 ==========")
-        Log.d(TAG, "筛选状态: $status")
+        logD("按保质期状态筛选: $status")
         _uiState.value = _uiState.value.copy(selectedExpiryStatus = status)
         refreshFilters()
     }
 
     fun filterByStorageMethod(method: StorageMethod?) {
-        Log.d(TAG, "========== 按保存方式筛选 ==========")
-        Log.d(TAG, "筛选方式: $method")
+        logD("按保存方式筛选: $method")
         _uiState.value = _uiState.value.copy(selectedStorageMethod = method)
         refreshFilters()
     }
@@ -120,50 +118,36 @@ class InventoryViewModel @Inject constructor(
     }
 
     fun saveInventoryItem(item: InventoryItem) {
-        viewModelScope.launch {
-            try {
-                Log.d(TAG, "========== 保存仓库物品 ==========")
-                Log.d(TAG, "物品名称: ${item.foodName}")
+        logMethodStart("保存仓库物品")
+        logD("物品名称: ${item.foodName}")
 
-                if (item.id == 0L) {
-                    inventoryRepository.insert(item)
-                    Log.d(TAG, "✓ 新增物品成功")
-                } else {
-                    inventoryRepository.update(item)
-                    Log.d(TAG, "✓ 更新物品成功")
-                }
-
-                _uiState.value = _uiState.value.copy(
-                    isSaved = true,
-                    error = null
-                )
-                Log.d(TAG, "========== 保存完成 ==========")
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ 保存物品失败: ${e.message}")
-                _uiState.value = _uiState.value.copy(
-                    error = e.message
-                )
+        safeLaunch("保存仓库物品") {
+            if (item.id == 0L) {
+                inventoryRepository.insert(item)
+                logSuccess("新增物品成功")
+            } else {
+                inventoryRepository.update(item)
+                logSuccess("更新物品成功")
             }
+
+            _uiState.value = _uiState.value.copy(
+                isSaved = true,
+                error = null
+            )
+            logMethodEnd("保存仓库物品")
         }
     }
 
     fun deleteInventoryItem(item: InventoryItem) {
-        viewModelScope.launch {
-            try {
-                Log.d(TAG, "========== 删除仓库物品 ==========")
-                Log.d(TAG, "物品名称: ${item.foodName}")
-                _uiState.value = _uiState.value.copy(isDeleting = true)
-                inventoryRepository.delete(item)
-                _uiState.value = _uiState.value.copy(isDeleting = false)
-                Log.d(TAG, "✓ 删除物品成功")
-                Log.d(TAG, "========== 删除完成 ==========")
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ 删除物品失败: ${e.message}")
-                _uiState.value = _uiState.value.copy(
-                    isDeleting = false,
-                    error = e.message
-                )
-            }
+        logMethodStart("删除仓库物品")
+        logD("物品名称: ${item.foodName}")
+
+        safeLaunch("删除仓库物品") {
+            _uiState.value = _uiState.value.copy(isDeleting = true)
+            inventoryRepository.delete(item)
+            _uiState.value = _uiState.value.copy(isDeleting = false)
+            logSuccess("删除物品成功")
+            logMethodEnd("删除仓库物品")
         }
     }
 
@@ -193,15 +177,14 @@ class InventoryViewModel @Inject constructor(
 
     /**
      * 识别食材图片
-     *
      * @param imageUri 图片 URI
      */
     fun recognizeFood(imageUri: Uri) {
+        logMethodStart("识别食材")
+        logD("图片 URI: $imageUri")
+
         viewModelScope.launch {
             try {
-                Log.d(TAG, "========== 开始识别食材 ==========")
-                Log.d(TAG, "图片 URI: $imageUri")
-
                 _uiState.value = _uiState.value.copy(
                     isRecognizing = true,
                     recognizingImageUri = imageUri,
@@ -210,42 +193,38 @@ class InventoryViewModel @Inject constructor(
 
                 // 压缩图片并转换为 Base64
                 val base64 = ImageUtils.compressAndEncodeToBase64(context, imageUri)
-                Log.d(TAG, "✓ 图片压缩和编码完成")
+                logSuccess("图片压缩和编码完成")
 
                 // 调用 AI 识别
                 val request = ImageRecognitionRequest(imageBase64 = base64)
                 val response = imageRecognitionService.recognizeFood(request)
 
-                Log.d(TAG, "✓ 食材识别成功: ${response.foodName}")
-                Log.d(TAG, "置信度: ${response.confidence}")
-                Log.d(TAG, "保存方式: ${response.storageMethod}")
-                Log.d(TAG, "保质期: ${response.estimatedShelfLife}天")
+                logSuccess("食材识别成功: ${response.foodName}")
+                logD("置信度: ${response.confidence}, 保存方式: ${response.storageMethod}, 保质期: ${response.estimatedShelfLife}天")
 
                 _uiState.value = _uiState.value.copy(
                     isRecognizing = false,
                     recognitionResult = response
                 )
 
-                Log.d(TAG, "========== 识别完成 ==========")
+                logMethodEnd("识别食材")
 
                 // 清理临时文件
                 ImageUtils.deleteTempFile(context, imageUri)
 
             } catch (e: ImageRecognitionException) {
-                Log.e(TAG, "❌ 食材识别失败: ${e.message}")
+                logError("食材识别失败: ${e.message}")
                 _uiState.value = _uiState.value.copy(
                     isRecognizing = false,
                     recognitionError = e.message
                 )
-                // 清理临时文件
                 ImageUtils.deleteTempFile(context, imageUri)
             } catch (e: Exception) {
-                Log.e(TAG, "❌ 食材识别异常: ${e.message}")
+                logError("食材识别异常: ${e.message}", e)
                 _uiState.value = _uiState.value.copy(
                     isRecognizing = false,
                     recognitionError = "识别失败: ${e.message}"
                 )
-                // 清理临时文件
                 ImageUtils.deleteTempFile(context, imageUri)
             }
         }
@@ -286,7 +265,7 @@ data class InventoryUiState(
     val selectedStorageMethod: StorageMethod? = null,
     // 图像识别相关字段
     val isRecognizing: Boolean = false,
-    val recognizingImageUri: android.net.Uri? = null,  // 正在识别的图片URI
+    val recognizingImageUri: android.net.Uri? = null,
     val recognitionResult: ImageRecognitionResponse? = null,
     val recognitionError: String? = null,
     // 搜索加载状态
