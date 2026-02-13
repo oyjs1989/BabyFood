@@ -19,7 +19,7 @@ interface RecipeApiService {
      * @param category 可选，按分类筛选
      * @return 食谱列表
      */
-    @GET("recipes")
+    @GET("api/v1/recipes")
     suspend fun getRecipes(
         @Query("category") category: String? = null
     ): List<CloudRecipe>
@@ -29,7 +29,7 @@ interface RecipeApiService {
      * @param cloudId 云端食谱 ID
      * @return 食谱详情
      */
-    @GET("recipes/{cloudId}")
+    @GET("api/v1/recipes/{cloudId}")
     suspend fun getRecipe(
         @Path("cloudId") cloudId: String
     ): CloudRecipe
@@ -39,7 +39,7 @@ interface RecipeApiService {
      * @param recipe 食谱数据
      * @return 创建的食谱
      */
-    @POST("recipes")
+    @POST("api/v1/recipes")
     suspend fun createRecipe(
         @Body recipe: CloudRecipe
     ): CloudRecipe
@@ -50,7 +50,7 @@ interface RecipeApiService {
      * @param recipe 食谱数据
      * @return 更新后的食谱
      */
-    @PUT("recipes/{cloudId}")
+    @PUT("api/v1/recipes/{cloudId}")
     suspend fun updateRecipe(
         @Path("cloudId") cloudId: String,
         @Body recipe: CloudRecipe
@@ -60,7 +60,7 @@ interface RecipeApiService {
      * 删除食谱
      * @param cloudId 云端食谱 ID
      */
-    @DELETE("recipes/{cloudId}")
+    @DELETE("api/v1/recipes/{cloudId}")
     suspend fun deleteRecipe(
         @Path("cloudId") cloudId: String
     )

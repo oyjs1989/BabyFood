@@ -19,7 +19,7 @@ interface PlanApiService {
      * @param cloudBabyId 可选，按宝宝 ID 筛选
      * @return 计划列表
      */
-    @GET("plans")
+    @GET("api/v1/meal-plans")
     suspend fun getPlans(
         @Query("cloudBabyId") cloudBabyId: String? = null
     ): List<CloudPlan>
@@ -29,7 +29,7 @@ interface PlanApiService {
      * @param cloudId 云端计划 ID
      * @return 计划详情
      */
-    @GET("plans/{cloudId}")
+    @GET("api/v1/meal-plans/{cloudId}")
     suspend fun getPlan(
         @Path("cloudId") cloudId: String
     ): CloudPlan
@@ -39,7 +39,7 @@ interface PlanApiService {
      * @param plan 计划数据
      * @return 创建的计划
      */
-    @POST("plans")
+    @POST("api/v1/meal-plans")
     suspend fun createPlan(
         @Body plan: CloudPlan
     ): CloudPlan
@@ -50,7 +50,7 @@ interface PlanApiService {
      * @param plan 计划数据
      * @return 更新后的计划
      */
-    @PUT("plans/{cloudId}")
+    @PUT("api/v1/meal-plans/{cloudId}")
     suspend fun updatePlan(
         @Path("cloudId") cloudId: String,
         @Body plan: CloudPlan
@@ -60,7 +60,7 @@ interface PlanApiService {
      * 删除计划
      * @param cloudId 云端计划 ID
      */
-    @DELETE("plans/{cloudId}")
+    @DELETE("api/v1/meal-plans/{cloudId}")
     suspend fun deletePlan(
         @Path("cloudId") cloudId: String
     )

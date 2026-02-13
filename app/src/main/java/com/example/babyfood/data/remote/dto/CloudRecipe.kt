@@ -17,7 +17,18 @@ data class CloudRecipe(
     val nutrition: CloudNutrition,              // 营养信息
     val category: String,                       // 分类
     val isBuiltIn: Boolean,                     // 是否内置食谱
-    val imageUrl: String?,                      // 图片 URL
+    val imageUrl: String? = null,               // 图片 URL
+    // Phase 2: 新增字段
+    val cookingTime: Int? = null,               // 烹饪时间（分钟）
+    val difficulty: String? = null,             // 难度等级
+    val description: String? = null,            // 食谱描述
+    val tags: List<String>? = null,             // 标签列表
+    // 营养指导字段
+    val textureType: String? = null,            // 质地类型
+    val isIronRich: Boolean? = null,            // 是否高铁食谱
+    val ironContent: Float? = null,             // 铁含量（mg）
+    val riskLevelList: List<String>? = null,    // 风险等级列表
+    val safetyAdvice: String? = null,           // 安全建议
     val createdAt: Long,                        // 创建时间（毫秒时间戳）
     val updatedAt: Long,                        // 更新时间（毫秒时间戳）
     val version: Int                            // 版本号（用于冲突检测）
