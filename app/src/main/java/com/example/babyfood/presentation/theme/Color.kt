@@ -2,6 +2,18 @@ package com.example.babyfood.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 
+// ===== Avocado Design System (New v2.0) =====
+val AvocadoPrimary = Color(0xFF98FB98)
+val AvocadoDark = Color(0xFF2D5A27)
+val AvocadoBackgroundLight = Color(0xFFF5F8F5)
+val AvocadoBackgroundDark = Color(0xFF102210)
+val AvocadoCream = Color(0xFFFDFDF5)
+
+// 文字颜色 (v2.0)
+val AvocadoTextPrimary = Color(0xFF0F172A) // Slate 900
+val AvocadoTextSecondary = Color(0xFF64748B) // Slate 500
+val AvocadoTextDarkPrimary = Color(0xFFF1F5F9) // Slate 100
+
 // ===== 基础颜色定义 =====
 
 // 页面主背景渐变：从橙色到白色的垂直渐变（三色渐变确保底部纯白）

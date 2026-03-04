@@ -14,9 +14,17 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * 远程健康分析策略
- * 调用阿里云 DashScope API（通义千问）进行智能健康分析
+ * 远程健康分析策略（已弃用）
+ * 
+ * ⚠️ 警告：此类直接调用 DashScope API，会暴露 API Key，存在安全风险
+ * 请使用 [BackendAiProxyStrategy] 替代，通过后端代理调用 AI 服务
+ * 
+ * @deprecated 使用 [BackendAiProxyStrategy] 替代
  */
+@Deprecated(
+    message = "直接调用 DashScope API 会暴露 API Key，请使用 BackendAiProxyStrategy",
+    replaceWith = ReplaceWith("BackendAiProxyStrategy", "com.example.babyfood.data.ai.BackendAiProxyStrategy")
+)
 @Singleton
 class RemoteHealthAnalysisStrategy @Inject constructor() : HealthAnalysisService {
 
@@ -136,18 +144,24 @@ class RemoteHealthAnalysisStrategy @Inject constructor() : HealthAnalysisService
 
     /**
      * 获取 API Key
-     * 从环境变量或本地配置中读取
+     * 从环境变量读取
+     * 
+     * ⚠️ 注意：此方法已弃用，请使用 BackendAiProxyStrategy 通过后端代理调用
      */
+    @Deprecated("直接使用 API Key 不安全，请使用 BackendAiProxyStrategy")
     private fun getApiKey(): String {
-        // 优先从环境变量读取
+        // 仅从环境变量读取
         val envApiKey = System.getenv("DASHSCOPE_API_KEY")
         if (!envApiKey.isNullOrBlank()) {
             return envApiKey
         }
 
-        // 从本地配置读取（用于开发测试）
-        // TODO: 在生产环境中应该使用环境变量或安全的密钥管理方案
-        return "sk-aa30af1a40a643cbb8f43881c1ebbb49"
+        // 没有配置 API Key，抛出异常
+        throw IllegalStateException(
+            "DASHSCOPE_API_KEY 环境变量未设置。" +
+            "请使用 BackendAiProxyStrategy 通过后端代理调用 AI 服务，" +
+            "或在环境变量中配置 DASHSCOPE_API_KEY（不推荐）。"
+        )
     }
 }
 

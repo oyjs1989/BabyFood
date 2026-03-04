@@ -5,6 +5,7 @@ import com.example.babyfood.BuildConfig
 import com.example.babyfood.data.ai.BackendImageRecognitionStrategy
 import com.example.babyfood.data.ai.ImageRecognitionService
 import com.example.babyfood.data.local.TokenStorage
+import com.example.babyfood.data.remote.api.AiProxyApiService
 import com.example.babyfood.data.remote.api.AuthApiService
 import com.example.babyfood.data.remote.api.BabyApiService
 import com.example.babyfood.data.remote.api.GrowthRecordsApiService
@@ -251,6 +252,16 @@ object NetworkModule {
     @Singleton
     fun provideIngredientTrialsApiService(retrofit: Retrofit): IngredientTrialsApiService {
         return retrofit.create(IngredientTrialsApiService::class.java)
+    }
+
+    /**
+     * AI Proxy API 服务
+     * 用于代理调用 AI 服务（健康分析、推荐等），避免在前端暴露 API Key
+     */
+    @Provides
+    @Singleton
+    fun provideAiProxyApiService(retrofit: Retrofit): AiProxyApiService {
+        return retrofit.create(AiProxyApiService::class.java)
     }
 
     // ==================== AI 服务 ====================

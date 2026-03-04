@@ -1,0 +1,679 @@
+openapi: 3.0.3
+info:
+  title: BabyFood Architecture Optimization API
+  description: API contracts for architecture optimization features
+  version: 1.0.0
+  contact:
+    name: BabyFood Team
+
+servers:
+  - url: http://{server}:{port}/api/v1
+    description: Backend server
+    variables:
+      server:
+        default: 39.108.143.232
+      port:
+        default: '8080'
+
+tags:
+  - name: AI Proxy
+    description: AI service proxy endpoints
+  - name: Sync
+    description: Data synchronization endpoints
+
+paths:
+  /ai/health-analysis:
+    post:
+      tags:
+        - AI Proxy
+      summary: Health analysis via backend proxy
+      description: |
+        Proxies health analysis requests to AI service (DashScope).
+        The API key is managed server-side, never exposed to client.
+      operationId: analyzeHealth
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HealthAnalysisRequest'
+      responses:
+        '200':
+          description: Successful analysis
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthAnalysisResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: AI service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ai/recommendation:
+    post:
+      tags:
+        - AI Proxy
+      summary: Recipe recommendation via backend proxy
+      description: |
+        Proxies recommendation requests to AI service.
+        Generates weekly meal plans based on baby profile.
+      operationId: generateRecommendation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecommendationRequest'
+      responses:
+        '200':
+          description: Successful recommendation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: AI service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sync/pull:
+    get:
+      tags:
+        - Sync
+      summary: Pull updates from server
+      description: |
+        Pulls all entity updates since last sync time.
+        Returns babies, plans, recipes with their sync metadata.
+      operationId: pullSync
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: lastSyncTime
+          in: query
+          description: Last sync timestamp (epoch milliseconds)
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: entityTypes
+          in: query
+          description: Comma-separated entity types to sync
+          required: false
+          schema:
+            type: string
+            example: 'BABY,PLAN,RECIPE'
+      responses:
+        '200':
+          description: Sync data retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncPullResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sync/push:
+    post:
+      tags:
+        - Sync
+      summary: Push local changes to server
+      description: |
+        Pushes local entity changes to server.
+        Supports conflict detection and resolution.
+      operationId: pushSync
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncPushRequest'
+      responses:
+        '200':
+          description: Sync successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncPushResponse'
+        '409':
+          description: Conflicts detected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncConflictResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from authentication
+
+  schemas:
+    HealthAnalysisRequest:
+      type: object
+      required:
+        - babyId
+        - healthRecord
+      properties:
+        babyId:
+          type: integer
+          format: int64
+          description: Local baby ID
+        healthRecord:
+          $ref: '#/components/schemas/HealthRecord'
+
+    HealthRecord:
+      type: object
+      properties:
+        weight:
+          type: number
+          format: double
+          description: Weight in kg
+        height:
+          type: number
+          format: double
+          description: Height in cm
+        headCircumference:
+          type: number
+          format: double
+          description: Head circumference in cm
+        hemoglobin:
+          type: number
+          format: double
+          description: Hemoglobin level in g/L
+        iron:
+          type: number
+          format: double
+          description: Iron level
+        calcium:
+          type: number
+          format: double
+          description: Calcium level
+        recordDate:
+          type: string
+          format: date
+          description: Record date
+
+    HealthAnalysisResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        analysis:
+          type: string
+          description: Health analysis text
+        recommendations:
+          type: array
+          items:
+            type: string
+          description: List of recommendations
+        riskLevel:
+          type: string
+          enum: [LOW, MEDIUM, HIGH]
+          description: Overall risk level
+
+    RecommendationRequest:
+      type: object
+      required:
+        - babyId
+        - ageInMonths
+      properties:
+        babyId:
+          type: integer
+          format: int64
+        ageInMonths:
+          type: integer
+          minimum: 6
+          maximum: 36
+        allergies:
+          type: array
+          items:
+            type: string
+          description: List of allergy ingredients
+        preferences:
+          type: array
+          items:
+            type: string
+          description: List of preferred ingredients
+        availableIngredients:
+          type: array
+          items:
+            type: string
+        constraints:
+          $ref: '#/components/schemas/RecommendationConstraints'
+        startDate:
+          type: string
+          format: date
+        days:
+          type: integer
+          minimum: 1
+          maximum: 7
+          default: 7
+
+    RecommendationConstraints:
+      type: object
+      properties:
+        maxFishPerWeek:
+          type: integer
+          default: 2
+        maxEggPerWeek:
+          type: integer
+          default: 3
+        breakfastComplexity:
+          type: string
+          enum: [SIMPLE, MODERATE, COMPLEX]
+          default: MODERATE
+        maxDailyMeals:
+          type: integer
+          default: 4
+
+    RecommendationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        errorMessage:
+          type: string
+          nullable: true
+        weeklyPlan:
+          $ref: '#/components/schemas/WeeklyPlan'
+        warnings:
+          type: array
+          items:
+            type: string
+
+    WeeklyPlan:
+      type: object
+      properties:
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        dailyPlans:
+          type: array
+          items:
+            $ref: '#/components/schemas/DailyPlan'
+        nutritionSummary:
+          $ref: '#/components/schemas/NutritionSummary'
+
+    DailyPlan:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        meals:
+          type: array
+          items:
+            $ref: '#/components/schemas/MealPlan'
+
+    MealPlan:
+      type: object
+      properties:
+        mealPeriod:
+          type: string
+          enum: [BREAKFAST, LUNCH, DINNER, SNACK]
+        recipeId:
+          type: integer
+          format: int64
+        recipeName:
+          type: string
+        nutritionNotes:
+          type: string
+        childFriendlyText:
+          type: string
+
+    NutritionSummary:
+      type: object
+      properties:
+        weeklyCalories:
+          type: number
+        weeklyProtein:
+          type: number
+        weeklyCalcium:
+          type: number
+        weeklyIron:
+          type: number
+        dailyAverage:
+          $ref: '#/components/schemas/DailyNutrition'
+        highlights:
+          type: array
+          items:
+            type: string
+
+    DailyNutrition:
+      type: object
+      properties:
+        calories:
+          type: number
+        protein:
+          type: number
+        calcium:
+          type: number
+        iron:
+          type: number
+
+    SyncPullResponse:
+      type: object
+      properties:
+        lastSyncTime:
+          type: integer
+          format: int64
+          description: Server timestamp for next sync
+        babies:
+          type: array
+          items:
+            $ref: '#/components/schemas/CloudBaby'
+        plans:
+          type: array
+          items:
+            $ref: '#/components/schemas/CloudPlan'
+        recipes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CloudRecipe'
+        hasMore:
+          type: boolean
+        offlineWarning:
+          type: boolean
+          description: True if device was offline > 30 days
+
+    CloudBaby:
+      type: object
+      properties:
+        cloudId:
+          type: string
+          format: uuid
+        nickname:
+          type: string
+        gender:
+          type: string
+          enum: [MALE, FEMALE]
+        avatarUrl:
+          type: string
+          format: uri
+        nutritionGoal:
+          $ref: '#/components/schemas/NutritionGoal'
+        version:
+          type: integer
+        updatedAt:
+          type: integer
+          format: int64
+        isDeleted:
+          type: boolean
+
+    NutritionGoal:
+      type: object
+      properties:
+        calories:
+          type: number
+        protein:
+          type: number
+        calcium:
+          type: number
+        iron:
+          type: number
+
+    CloudPlan:
+      type: object
+      properties:
+        cloudId:
+          type: string
+          format: uuid
+        babyCloudId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        mealPeriod:
+          type: string
+          enum: [BREAKFAST, LUNCH, DINNER, SNACK]
+        mealTime:
+          type: string
+          description: Time in HH:mm format
+        recipeCloudId:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          type: string
+          enum: [PLANNED, COMPLETED, SKIPPED]
+        feedbackStatus:
+          type: string
+          enum: [NONE, POSITIVE, NEGATIVE, PARTIAL]
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        version:
+          type: integer
+        updatedAt:
+          type: integer
+          format: int64
+        isDeleted:
+          type: boolean
+
+    CloudRecipe:
+      type: object
+      properties:
+        cloudId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [BREAKFAST, LUNCH, DINNER, SNACK]
+        minAgeMonths:
+          type: integer
+        maxAgeMonths:
+          type: integer
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecipeIngredient'
+        steps:
+          type: array
+          items:
+            type: string
+        nutritionInfo:
+          $ref: '#/components/schemas/NutritionInfo'
+        cookingTime:
+          type: integer
+          description: Cooking time in minutes
+        isBuiltIn:
+          type: boolean
+        version:
+          type: integer
+        updatedAt:
+          type: integer
+          format: int64
+        isDeleted:
+          type: boolean
+
+    RecipeIngredient:
+      type: object
+      properties:
+        name:
+          type: string
+        amount:
+          type: string
+        isAllergen:
+          type: boolean
+
+    NutritionInfo:
+      type: object
+      properties:
+        calories:
+          type: number
+        protein:
+          type: number
+        fat:
+          type: number
+        carbohydrates:
+          type: number
+        fiber:
+          type: number
+        calcium:
+          type: number
+        iron:
+          type: number
+
+    SyncPushRequest:
+      type: object
+      properties:
+        babies:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncEntityWrapper'
+        plans:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncEntityWrapper'
+        recipes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncEntityWrapper'
+
+    SyncEntityWrapper:
+      type: object
+      properties:
+        cloudId:
+          type: string
+          format: uuid
+          nullable: true
+        localId:
+          type: integer
+          format: int64
+        version:
+          type: integer
+        updatedAt:
+          type: integer
+          format: int64
+        isDeleted:
+          type: boolean
+        data:
+          type: object
+          additionalProperties: true
+
+    SyncPushResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        syncedEntities:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncedEntity'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncError'
+
+    SyncedEntity:
+      type: object
+      properties:
+        localId:
+          type: integer
+          format: int64
+        cloudId:
+          type: string
+          format: uuid
+        version:
+          type: integer
+        updatedAt:
+          type: integer
+          format: int64
+
+    SyncConflictResponse:
+      type: object
+      properties:
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConflictInfo'
+
+    ConflictInfo:
+      type: object
+      properties:
+        entityType:
+          type: string
+          enum: [BABY, PLAN, RECIPE]
+        cloudId:
+          type: string
+          format: uuid
+        localVersion:
+          type: integer
+        serverVersion:
+          type: integer
+        localUpdatedAt:
+          type: integer
+          format: int64
+        serverUpdatedAt:
+          type: integer
+          format: int64
+
+    SyncError:
+      type: object
+      properties:
+        localId:
+          type: integer
+          format: int64
+        entityType:
+          type: string
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string

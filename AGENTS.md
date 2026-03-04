@@ -1,6 +1,6 @@
 # BabyFood Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-02-01
+Auto-generated from all feature plans. Last updated: 2026-03-04
 
 ## Active Technologies
 - Kotlin 2.0.21 + Jetpack Compose + Material Design 3 (003-remove-page-back-and-titles)
@@ -11,6 +11,8 @@ Auto-generated from all feature plans. Last updated: 2026-02-01
 - Flavor Diversity Tracking (005-optimize-app-food-guidelines)
 - Freshness & Cooking Method Advisor (005-optimize-app-food-guidelines)
 - Nutrition Goal Matching (005-optimize-app-food-guidelines)
+- Backend AI Proxy (001-architecture-optimization)
+- Real-time Sync with ID Mapping (001-architecture-optimization)
 
 ## Project Structure
 ```
@@ -57,6 +59,11 @@ tests/
 - Dependency Injection: Use Hilt
 
 ## Recent Changes
+- 001-architecture-optimization: Architecture optimization and security enhancement
+  - User Story 1: Remove hardcoded API Key via backend proxy
+  - User Story 2: Complete SyncManager with ID mapping and conflict resolution
+  - User Story 3: Unify Entity mapping code location
+  - User Story 4: Simplify BaseUiViewModel abstract design
 - 005-optimize-app-food-guidelines: Complete nutrition guidance optimization system
   - User Story 1: Iron-priority recipe recommendations with IronRichStrategy
   - User Story 2: Texture adaptation guidance (4 texture types, 5 developmental stages)
@@ -85,10 +92,10 @@ tests/
 - Room for local database
 
 ### Database
-- Room database version: 15
-- Supports migrations up to version 15
+- Room database version: 17
+- Supports migrations up to version 17
 - TypeConverters for complex types (LocalDate, enums)
-- New tables: safety_risks, ingredient_trials, nutrition_goals, nutrition_data, user_warning_ignores
+- New tables: safety_risks, ingredient_trials, nutrition_goals, nutrition_data, user_warning_ignores, id_mappings
 
 ### Nutrition Guidance System (005-optimize-app-food-guidelines)
 

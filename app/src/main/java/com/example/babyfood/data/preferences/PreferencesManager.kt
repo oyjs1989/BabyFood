@@ -19,6 +19,7 @@ class PreferencesManager @Inject constructor(
     companion object {
         private const val TAG = "PreferencesManager"
         private const val KEY_SELECTED_BABY_ID = "selected_baby_id"
+        private const val KEY_LAST_SYNC_TIME = "last_sync_time"
     }
 
     /**
@@ -50,6 +51,42 @@ class PreferencesManager @Inject constructor(
     fun clearSelectedBabyId() {
         Log.d(TAG, "========== 清除选中的宝宝 ID ==========")
         prefs.edit().remove(KEY_SELECTED_BABY_ID).apply()
+        Log.d(TAG, "✓ 清除成功")
+        Log.d(TAG, "========== 清除完成 ==========")
+    }
+
+    // ==================== 同步相关 ====================
+
+    /**
+     * 保存最后同步时间
+     * @param time 同步时间戳（毫秒）
+     */
+    fun saveLastSyncTime(time: Long) {
+        Log.d(TAG, "========== 保存最后同步时间 ==========")
+        Log.d(TAG, "同步时间: $time")
+        prefs.edit().putLong(KEY_LAST_SYNC_TIME, time).apply()
+        Log.d(TAG, "✓ 保存成功")
+        Log.d(TAG, "========== 保存完成 ==========")
+    }
+
+    /**
+     * 获取最后同步时间
+     * @return 同步时间戳（毫秒），如果没有同步过则返回 null
+     */
+    fun getLastSyncTime(): Long? {
+        val time = prefs.getLong(KEY_LAST_SYNC_TIME, -1L)
+        Log.d(TAG, "========== 获取最后同步时间 ==========")
+        Log.d(TAG, "同步时间: ${if (time == -1L) "从未同步" else time}")
+        Log.d(TAG, "========== 获取完成 ==========")
+        return if (time == -1L) null else time
+    }
+
+    /**
+     * 清除最后同步时间
+     */
+    fun clearLastSyncTime() {
+        Log.d(TAG, "========== 清除最后同步时间 ==========")
+        prefs.edit().remove(KEY_LAST_SYNC_TIME).apply()
         Log.d(TAG, "✓ 清除成功")
         Log.d(TAG, "========== 清除完成 ==========")
     }

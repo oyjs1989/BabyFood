@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.Composable
@@ -32,6 +33,7 @@ object AppIcons {
     val Plans: ImageVector = Icons.Default.CalendarMonth
     val Inventory: ImageVector = Icons.Default.Inventory2
     val Baby: ImageVector = Icons.Default.Person
+    val Scan: ImageVector = Icons.Default.PhotoCamera
 
     // Authentication icons
     val Account: ImageVector = Icons.Default.Email

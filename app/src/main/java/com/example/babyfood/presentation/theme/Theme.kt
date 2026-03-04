@@ -40,6 +40,42 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+// ===== Avocado Light Color Scheme (v2.0) =====
+private val AvocadoLightColorScheme = lightColorScheme(
+    primary = AvocadoDark,
+    onPrimary = AvocadoPrimary,
+    primaryContainer = AvocadoPrimary.copy(alpha = 0.2f),
+    onPrimaryContainer = AvocadoDark,
+    secondary = AvocadoPrimary,
+    onSecondary = AvocadoDark,
+    tertiary = Color(0xFF3B82F6), // Blue 500
+    background = AvocadoBackgroundLight,
+    onBackground = AvocadoTextPrimary,
+    surface = Color.White,
+    onSurface = AvocadoTextPrimary,
+    surfaceVariant = AvocadoBackgroundLight,
+    onSurfaceVariant = AvocadoTextSecondary,
+    outline = AvocadoPrimary.copy(alpha = 0.1f)
+)
+
+// ===== Avocado Dark Color Scheme (v2.0) =====
+private val AvocadoDarkColorScheme = darkColorScheme(
+    primary = AvocadoPrimary,
+    onPrimary = AvocadoDark,
+    primaryContainer = AvocadoPrimary.copy(alpha = 0.1f),
+    onPrimaryContainer = AvocadoPrimary,
+    secondary = AvocadoPrimary,
+    onSecondary = AvocadoDark,
+    tertiary = Color(0xFF60A5FA), // Blue 400
+    background = AvocadoBackgroundDark,
+    onBackground = AvocadoTextDarkPrimary,
+    surface = Color(0xFF1E293B), // Slate 800
+    onSurface = AvocadoTextDarkPrimary,
+    surfaceVariant = AvocadoBackgroundDark,
+    onSurfaceVariant = AvocadoTextSecondary,
+    outline = AvocadoPrimary.copy(alpha = 0.1f)
+)
+
 // ===== 亮色主题配色方案 - BabyFood 设计系统 =====
 private val LightColorScheme = lightColorScheme(
     primary = Primary,
@@ -279,6 +315,7 @@ fun getScaleByState(state: AnimationState): Float {
 @Composable
 fun BabyFoodTheme(
     themePreference: String? = null,  // null 表示跟随系统，"light" 表示浅色，"dark" 表示深色
+    isV2: Boolean = true,             // 是否使用 v2 牛油果设计系统
     content: @Composable () -> Unit
 ) {
     // 根据主题偏好决定使用哪个主题
@@ -289,24 +326,33 @@ fun BabyFoodTheme(
         else -> isSystemInDarkTheme()
     }
 
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = if (isV2) {
+        if (darkTheme) AvocadoDarkColorScheme else AvocadoLightColorScheme
+    } else {
+        if (darkTheme) DarkColorScheme else LightColorScheme
+    }
 
-    // 页面背景渐变：从橙色到白色的垂直渐变（三色渐变确保底部纯白）
-    val pageBackgroundBrush = Brush.verticalGradient(
-        colors = listOf(
-            PageGradientStart,
-            PageGradientMiddle,
-            PageGradientEnd
+    // 页面背景颜色处理
+    val backgroundModifier = if (isV2) {
+        Modifier.background(colorScheme.background)
+    } else {
+        val pageBackgroundBrush = Brush.verticalGradient(
+            colors = listOf(
+                PageGradientStart,
+                PageGradientMiddle,
+                PageGradientEnd
+            )
         )
-    )
+        Modifier.background(pageBackgroundBrush)
+    }
 
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
 
-            // 设置状态栏颜色
-            window.statusBarColor = colorScheme.primary.toArgb()
+            // 设置状态栏颜色 (v2 使用背景色以实现沉浸式，v1 使用主色)
+            window.statusBarColor = if (isV2) colorScheme.background.toArgb() else colorScheme.primary.toArgb()
 
             // 设置导航栏颜色
             window.navigationBarColor = colorScheme.surface.toArgb()
@@ -327,18 +373,12 @@ fun BabyFoodTheme(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .then(backgroundModifier)
     ) {
-        // 应用背景渐变
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(pageBackgroundBrush)
-        ) {
-            MaterialTheme(
-                colorScheme = colorScheme,
-                typography = Typography,
-                content = content
-            )
-        }
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
     }
 }

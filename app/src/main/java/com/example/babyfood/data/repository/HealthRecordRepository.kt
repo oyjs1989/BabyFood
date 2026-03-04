@@ -1,7 +1,7 @@
 package com.example.babyfood.data.repository
 
+import com.example.babyfood.data.ai.BackendAiProxyStrategy
 import com.example.babyfood.data.ai.LocalHealthAnalysisStrategy
-import com.example.babyfood.data.ai.RemoteHealthAnalysisStrategy
 import com.example.babyfood.data.local.database.dao.HealthRecordDao
 import com.example.babyfood.data.local.database.entity.HealthRecordEntity
 import com.example.babyfood.data.strategy.StrategyManager
@@ -20,7 +20,7 @@ class HealthRecordRepository @Inject constructor(
     private val growthRecordRepository: GrowthRecordRepository,
     private val babyRepository: BabyRepository,
     private val localHealthAnalysisStrategy: LocalHealthAnalysisStrategy,
-    private val remoteHealthAnalysisStrategy: RemoteHealthAnalysisStrategy,
+    private val backendAiProxyStrategy: BackendAiProxyStrategy,
     private val strategyManager: StrategyManager
 ) : BaseRepository<HealthRecord, HealthRecordEntity, Long>() {
 
@@ -128,7 +128,7 @@ class HealthRecordRepository @Inject constructor(
         val executor = createStrategyExecutor(
             strategyType = strategyType,
             localStrategy = { localHealthAnalysisStrategy.analyze(record, baby) },
-            remoteStrategy = { remoteHealthAnalysisStrategy.analyze(record, baby) }
+            remoteStrategy = { backendAiProxyStrategy.analyze(record, baby) }
         )
 
         return when (val result = executor.execute()) {

@@ -18,6 +18,8 @@ import com.example.babyfood.data.local.database.MIGRATION_12_13
 import com.example.babyfood.data.local.database.MIGRATION_13_14
 import com.example.babyfood.data.local.database.MIGRATION_14_15
 import com.example.babyfood.data.local.database.MIGRATION_15_16
+import com.example.babyfood.data.local.database.MIGRATION_16_17
+import com.example.babyfood.data.local.database.dao.IdMappingDao
 import com.example.babyfood.data.local.database.dao.NutritionDataDao
 import com.example.babyfood.data.ai.recommendation.IronRichStrategy
 import com.example.babyfood.data.preferences.PreferencesManager
@@ -47,7 +49,8 @@ object DatabaseModule {
         MIGRATION_12_13,
         MIGRATION_13_14,
         MIGRATION_14_15,
-        MIGRATION_15_16
+        MIGRATION_15_16,
+        MIGRATION_16_17
     )
 
     @Provides
@@ -96,6 +99,10 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideNutritionDataDao(database: BabyFoodDatabase) = database.nutritionDataDao()
+
+    @Provides
+    @Singleton
+    fun provideIdMappingDao(database: BabyFoodDatabase) = database.idMappingDao()
 
     @Provides
     @Singleton

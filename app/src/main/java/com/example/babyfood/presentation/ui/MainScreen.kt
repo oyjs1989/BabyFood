@@ -71,56 +71,22 @@ fun MainScreen(
 
     Scaffold(
         topBar = {
-            // 在登录、注册、服务条款和隐私政策页面隐藏 AppHeader
-            if (currentDestination?.route !in listOf("login", "register", "legal/terms", "legal/privacy")) {
-                com.example.babyfood.presentation.ui.common.AppHeader(
-                    config = com.example.babyfood.presentation.ui.common.AppHeaderConfig(
-                        currentRoute = currentDestination?.route,
-                        onAppLogoClick = {
-                            // 点击应用名称跳转到首页
-                            if (currentDestination?.route != "home") {
-                                navController.navigate("home") {
-                                    popUpTo("home") { inclusive = true }
-                                }
-                            }
-                        },
-                        onPointsClick = {
-                            navController.navigate("points")
-                        },
-                        pointsBalance = 0
-                    ),
-                    authRepository = mainViewModel.getAuthRepository(),
-                    onLoginClick = {
-                        navController.navigate("login")
-                    },
-                    onRegisterClick = {
-                        navController.navigate("register")
-                    },
-                    onSettingsClick = {
-                        navController.navigate("user/settings")
-                    },
-                    onLogoutClick = {
-                        // 调用 MainViewModel 的 logout 方法
-                        mainViewModel.logout(
-                            onSuccess = {
-                                // 登出成功，导航到登录页面并清除导航栈
-                                navController.navigate("login") {
-                                    popUpTo(0) { inclusive = true }
-                                }
-                            },
-                            onFailure = {
-                                // 登出失败，可以显示错误提示
-                            }
-                        )
+            // 只在核心业务页面展示 AvocadoHeader
+            if (currentDestination?.route in listOf("home", "recipes", "plans", "inventory", "baby")) {
+                com.example.babyfood.presentation.ui.common.AvocadoHeader(
+                    onNotificationsClick = {
+                        // TODO: Handle notifications
                     }
                 )
             }
         },
         bottomBar = {
             if (currentDestination?.route in listOf("home", "recipes", "plans", "inventory", "baby")) {
-                AppBottomBar(
-                    currentDestination = currentDestination,
-                    navController = navController
+                com.example.babyfood.presentation.ui.common.AvocadoBottomBar(
+                    navController = navController,
+                    onScanClick = {
+                        // TODO: Navigate to Scan/AI
+                    }
                 )
             }
         }

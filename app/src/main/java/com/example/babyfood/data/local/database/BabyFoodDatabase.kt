@@ -8,6 +8,7 @@ import androidx.room.TypeConverters
 import com.example.babyfood.data.local.database.dao.BabyDao
 import com.example.babyfood.data.local.database.dao.GrowthRecordDao
 import com.example.babyfood.data.local.database.dao.HealthRecordDao
+import com.example.babyfood.data.local.database.dao.IdMappingDao
 import com.example.babyfood.data.local.database.dao.IngredientTrialDao
 import com.example.babyfood.data.local.database.dao.InventoryItemDao
 import com.example.babyfood.data.local.database.dao.NutritionDataDao
@@ -20,6 +21,7 @@ import com.example.babyfood.data.local.database.dao.UserWarningIgnoreDao
 import com.example.babyfood.data.local.database.entity.BabyEntity
 import com.example.babyfood.data.local.database.entity.GrowthRecordEntity
 import com.example.babyfood.data.local.database.entity.HealthRecordEntity
+import com.example.babyfood.data.local.database.entity.IdMappingEntity
 import com.example.babyfood.data.local.database.entity.IngredientTrialEntity
 import com.example.babyfood.data.local.database.entity.InventoryItemEntity
 import com.example.babyfood.data.local.database.entity.NutritionDataEntity
@@ -181,7 +183,7 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
                 plannedDate TEXT NOT NULL,
                 meal_period TEXT NOT NULL DEFAULT 'BREAKFAST',
                 status TEXT NOT NULL DEFAULT 'PLANNED',
-                notes,
+                notes TEXT,
                 cloudId TEXT,
                 cloudBabyId TEXT,
                 cloudRecipeId TEXT,
@@ -216,7 +218,7 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
                 nutrition TEXT NOT NULL,
                 category TEXT NOT NULL,
                 isBuiltIn INTEGER NOT NULL DEFAULT 0,
-                imageUrl,
+                imageUrl TEXT,
                 cloudId TEXT,
                 syncStatus TEXT NOT NULL DEFAULT 'PENDING_UPLOAD',
                 lastSyncTime INTEGER,
@@ -252,7 +254,7 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
 // 添加用户表，支持登录功能
 val MIGRATION_7_8 = object : Migration(7, 8) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        // 创建 users 表（不使用索引，因为 Room 实体类中没有定义索引）
+        // 创建 users 表
         database.execSQL("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -272,10 +274,10 @@ val MIGRATION_7_8 = object : Migration(7, 8) {
 }
 
 // 数据库迁移：从版本 8 到版本 9
-// 修复 users 表的结构问题（删除索引，重建表以匹配 UserEntity 定义）
+// 修复 users 表的结构问题
 val MIGRATION_8_9 = object : Migration(8, 9) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        // 1. 创建新的 users 表（不带索引）
+        // 1. 创建新的 users 表
         database.execSQL("""
             CREATE TABLE users_new (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -311,7 +313,6 @@ val MIGRATION_8_9 = object : Migration(8, 9) {
 // 为 recipes 表添加 cookingTime 字段
 val MIGRATION_9_10 = object : Migration(9, 10) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        // 为 recipes 表添加 cookingTime 字段
         database.execSQL("ALTER TABLE recipes ADD COLUMN cookingTime INTEGER")
     }
 }
@@ -320,41 +321,31 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
 // 为 plans 表添加 mealTime 字段
 val MIGRATION_10_11 = object : Migration(10, 11) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        // 为 plans 表添加 mealTime 字段
         database.execSQL("ALTER TABLE plans ADD COLUMN mealTime TEXT")
     }
 }
 
 // 数据库迁移：从版本 11 到版本 12
-// 为 plans 表添加反馈相关字段（feedbackStatus 和 feedbackTime）
+// 为 plans 表添加反馈相关字段
 val MIGRATION_11_12 = object : Migration(11, 12) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        // 为 plans 表添加 feedbackStatus 字段
         database.execSQL("ALTER TABLE plans ADD COLUMN feedbackStatus TEXT")
-
-        // 为 plans 表添加 feedbackTime 字段
         database.execSQL("ALTER TABLE plans ADD COLUMN feedbackTime TEXT")
     }
 }
 
 // 数据库迁移：从版本 12 到版本 13
-// 更新 babies 表的 allergies 和 preferences 字段结构（由于使用了 JSON 序列化，这个迁移是版本升级标记）
-// 实际数据结构变化通过 TypeConverters 处理，addedDate 字段在新的 AllergyItem 和 PreferenceItem 中
+// 更新 babies 表的 allergies 和 preferences 字段结构
 val MIGRATION_12_13 = object : Migration(12, 13) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        // 由于 allergies 和 preferences 字段使用 JSON 序列化存储，
-        // 数据结构的变化由 TypeConverters 在读写时自动处理
-        // 新的 AllergyItem 和 PreferenceItem 添加了 addedDate 字段，
-        // 旧数据反序列化时 addedDate 会为 null，新数据会有值
-        // 这里不需要修改数据库结构，只是版本升级
+        // 版本升级标记，数据结构变化由 TypeConverters 处理
     }
 }
 
 // 数据库迁移：从版本 13 到版本 14
-// 添加 inventory_items 表，支持仓库功能
+// 添加 inventory_items 表
 val MIGRATION_13_14 = object : Migration(13, 14) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        // 创建 inventory_items 表
         database.execSQL("""
             CREATE TABLE IF NOT EXISTS inventory_items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -376,7 +367,6 @@ val MIGRATION_13_14 = object : Migration(13, 14) {
             )
         """.trimIndent())
 
-        // 创建索引
         database.execSQL("CREATE INDEX IF NOT EXISTS index_inventory_items_foodId ON inventory_items(foodId)")
         database.execSQL("CREATE INDEX IF NOT EXISTS index_inventory_items_expiryDate ON inventory_items(expiryDate)")
         database.execSQL("CREATE INDEX IF NOT EXISTS index_inventory_items_cloudId ON inventory_items(cloudId)")
@@ -384,11 +374,11 @@ val MIGRATION_13_14 = object : Migration(13, 14) {
 }
 
 // 数据库迁移：从版本 14 到版本 15
+// 添加营养指导和安全风险相关表
 val MIGRATION_14_15 = object : Migration(14, 15) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        // 1. 创建 safety_risks 表
-        database.execSQL(
-            """
+        // 创建 safety_risks 表
+        database.execSQL("""
             CREATE TABLE IF NOT EXISTS safety_risks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 ingredientName TEXT NOT NULL,
@@ -401,12 +391,10 @@ val MIGRATION_14_15 = object : Migration(14, 15) {
                 dataSource TEXT NOT NULL,
                 createdAt INTEGER NOT NULL
             )
-        """.trimIndent()
-        )
+        """.trimIndent())
 
-        // 2. 创建 ingredient_trials 表
-        database.execSQL(
-            """
+        // 创建 ingredient_trials 表
+        database.execSQL("""
             CREATE TABLE IF NOT EXISTS ingredient_trials (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 babyId INTEGER NOT NULL,
@@ -416,12 +404,10 @@ val MIGRATION_14_15 = object : Migration(14, 15) {
                 reaction TEXT,
                 FOREIGN KEY(babyId) REFERENCES babies(id) ON DELETE CASCADE
             )
-            """.trimIndent()
-        )
+        """.trimIndent())
 
-        // 3. 创建 nutrition_goals 表
-        database.execSQL(
-            """
+        // 创建 nutrition_goals 表
+        database.execSQL("""
             CREATE TABLE IF NOT EXISTS nutrition_goals (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 babyId INTEGER NOT NULL,
@@ -433,12 +419,10 @@ val MIGRATION_14_15 = object : Migration(14, 15) {
                 vitaminC REAL NOT NULL,
                 FOREIGN KEY(babyId) REFERENCES babies(id) ON DELETE CASCADE
             )
-        """.trimIndent()
-        )
+        """.trimIndent())
 
-        // 4. 创建 nutrition_data 表
-        database.execSQL(
-            """
+        // 创建 nutrition_data 表
+        database.execSQL("""
             CREATE TABLE IF NOT EXISTS nutrition_data (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 ingredientName TEXT NOT NULL,
@@ -448,12 +432,10 @@ val MIGRATION_14_15 = object : Migration(14, 15) {
                 calciumContent REAL NOT NULL,
                 vitaminCContent REAL NOT NULL
             )
-        """.trimIndent()
-        )
+        """.trimIndent())
 
-        // 5. 创建 user_warning_ignores 表
-        database.execSQL(
-            """
+        // 创建 user_warning_ignores 表
+        database.execSQL("""
             CREATE TABLE IF NOT EXISTS user_warning_ignores (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 userId INTEGER NOT NULL,
@@ -463,17 +445,16 @@ val MIGRATION_14_15 = object : Migration(14, 15) {
                 ignoreCount INTEGER NOT NULL DEFAULT 1,
                 FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
             )
-        """.trimIndent()
-        )
+        """.trimIndent())
 
-        // 6. 扩展 recipes 表
+        // 扩展 recipes 表
         database.execSQL("ALTER TABLE recipes ADD COLUMN textureType TEXT")
         database.execSQL("ALTER TABLE recipes ADD COLUMN isIronRich INTEGER NOT NULL DEFAULT 0")
         database.execSQL("ALTER TABLE recipes ADD COLUMN ironContent REAL")
         database.execSQL("ALTER TABLE recipes ADD COLUMN riskLevelList TEXT")
         database.execSQL("ALTER TABLE recipes ADD COLUMN safetyAdvice TEXT")
 
-        // 7. 扩展 babies 表
+        // 扩展 babies 表
         database.execSQL("ALTER TABLE babies ADD COLUMN chewingAbility TEXT")
         database.execSQL("ALTER TABLE babies ADD COLUMN preferredTextureLevel INTEGER")
 
@@ -487,13 +468,42 @@ val MIGRATION_14_15 = object : Migration(14, 15) {
 }
 
 // 数据库迁移：从版本 15 到版本 16
-// 为 users 表添加 theme 字段，支持用户主题偏好设置
+// 为 users 表添加 theme 字段
 val MIGRATION_15_16 = object : Migration(15, 16) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        // 为 users 表添加 theme 字段，默认值为 'light'（可为空）
         database.execSQL("ALTER TABLE users ADD COLUMN theme TEXT DEFAULT 'light'")
     }
 }
+
+// 数据库迁移：从版本 16 到版本 17
+// 添加 id_mappings 表，支持云端 ID 与本地 ID 的映射
+val MIGRATION_16_17 = object : Migration(16, 17) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // 创建 id_mappings 表
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS id_mappings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                entity_type TEXT NOT NULL,
+                local_id INTEGER NOT NULL,
+                cloud_id TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            )
+        """.trimIndent())
+
+        // 创建唯一索引
+        database.execSQL("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_id_mappings_entity_type_local_id
+            ON id_mappings (entity_type, local_id)
+        """.trimIndent())
+
+        database.execSQL("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_id_mappings_entity_type_cloud_id
+            ON id_mappings (entity_type, cloud_id)
+        """.trimIndent())
+    }
+}
+
 @Database(
     entities = [
         BabyEntity::class,
@@ -507,9 +517,10 @@ val MIGRATION_15_16 = object : Migration(15, 16) {
         IngredientTrialEntity::class,
         NutritionGoalEntity::class,
         NutritionDataEntity::class,
-        UserWarningIgnoreEntity::class
+        UserWarningIgnoreEntity::class,
+        IdMappingEntity::class
     ],
-    version = 16,  // 升级到版本 16（添加个人设置功能）
+    version = 17,  // 升级到版本 17（添加 id_mappings 表）
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -526,4 +537,5 @@ abstract class BabyFoodDatabase : RoomDatabase() {
     abstract fun nutritionGoalDao(): NutritionGoalDao
     abstract fun nutritionDataDao(): NutritionDataDao
     abstract fun userWarningIgnoreDao(): UserWarningIgnoreDao
+    abstract fun idMappingDao(): IdMappingDao
 }

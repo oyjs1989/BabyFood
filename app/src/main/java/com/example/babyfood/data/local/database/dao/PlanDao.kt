@@ -18,6 +18,9 @@ interface PlanDao {
     @Query("SELECT * FROM plans")
     suspend fun getAllPlansSync(): List<PlanEntity>
 
+    @Query("SELECT * FROM plans")
+    fun getAllPlansFlow(): Flow<List<PlanEntity>>
+
     @Query("SELECT * FROM plans WHERE id = :planId")
     suspend fun getById(planId: Long): PlanEntity?
 
