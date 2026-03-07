@@ -20,9 +20,9 @@ enum class ConflictType {
 }
 
 /**
- * 冲突解决策略
+ * 计划冲突解决策略
  */
-enum class ConflictResolution {
+enum class PlanConflictResolution {
     OVERWRITE_ALL,    // 覆盖所有冲突
     SKIP_CONFLICTS,   // 跳过冲突，只保存新计划
     CANCEL            // 取消保存

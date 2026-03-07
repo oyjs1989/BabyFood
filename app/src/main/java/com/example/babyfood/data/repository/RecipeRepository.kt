@@ -15,6 +15,7 @@ class RecipeRepository @Inject constructor(
     // Note: RecipeDao implements SyncableDao methods implicitly
     // but doesn't extend the interface due to Room limitations
 
+    // Convert Entity to Domain model
     override fun RecipeEntity.toDomainModel(): Recipe = Recipe(
         id = id,
         name = name,
@@ -24,10 +25,17 @@ class RecipeRepository @Inject constructor(
         steps = steps,
         nutrition = nutrition,
         category = category,
+        cookingTime = cookingTime,
         isBuiltIn = isBuiltIn,
-        imageUrl = imageUrl
+        imageUrl = imageUrl,
+        textureType = textureType,
+        isIronRich = isIronRich,
+        ironContent = ironContent,
+        riskLevelList = riskLevelList,
+        safetyAdvice = safetyAdvice
     )
 
+    // Convert Domain model to Entity
     override fun Recipe.toEntity(): RecipeEntity = RecipeEntity(
         id = id,
         name = name,
@@ -37,8 +45,14 @@ class RecipeRepository @Inject constructor(
         steps = steps,
         nutrition = nutrition,
         category = category,
+        cookingTime = cookingTime,
         isBuiltIn = isBuiltIn,
-        imageUrl = imageUrl
+        imageUrl = imageUrl,
+        textureType = textureType,
+        isIronRich = isIronRich,
+        ironContent = ironContent,
+        riskLevelList = riskLevelList,
+        safetyAdvice = safetyAdvice
     )
 
     override fun getItemId(item: Recipe): Long = item.id

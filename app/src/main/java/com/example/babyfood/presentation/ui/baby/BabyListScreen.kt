@@ -2,6 +2,7 @@ package com.example.babyfood.presentation.ui.baby
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -44,6 +46,7 @@ import com.example.babyfood.presentation.ui.common.AppBottomAction
 fun BabyListScreen(
     onNavigateToAdd: () -> Unit = {},
     onNavigateToDetail: (Long) -> Unit = {},
+    onAfterSetAsCurrentBaby: () -> Unit = {},
     viewModel: BabyViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -90,12 +93,12 @@ fun BabyListScreen(
                             onClick = { onNavigateToDetail(baby.id) },
                             onSetAsCurrent = {
                                 viewModel.setAsCurrentBaby(baby)
-                                // 显示 Toast 提示
                                 Toast.makeText(
                                     context,
                                     "已切换到 ${baby.name}",
                                     Toast.LENGTH_SHORT
                                 ).show()
+                                onAfterSetAsCurrentBaby()
                             }
                         )
                     }
@@ -134,8 +137,7 @@ private fun BabyCard(
                 0.5.dp,
                 MaterialTheme.colorScheme.outline
             )
-        },
-        onClick = onClick
+        }
     ) {
         Row(
             modifier = Modifier
@@ -144,7 +146,11 @@ private fun BabyCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable(onClick = onClick)
+            ) {
                 Text(
                     text = baby.name,
                     style = MaterialTheme.typography.titleLarge,
@@ -169,14 +175,8 @@ private fun BabyCard(
                     modifier = Modifier.size(24.dp)
                 )
             } else {
-                // 点击切换按钮
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .padding(2.dp)
-                ) {
-                    // 空圆圈，表示可以点击切换
-                    // 实际点击事件由 Card 的 onClick 处理
+                TextButton(onClick = onSetAsCurrent) {
+                    Text("设为当前")
                 }
             }
         }

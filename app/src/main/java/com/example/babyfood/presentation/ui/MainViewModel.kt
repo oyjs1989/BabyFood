@@ -1,26 +1,51 @@
 package com.example.babyfood.presentation.ui
 
 import androidx.lifecycle.viewModelScope
+import com.example.babyfood.data.preferences.PreferencesManager
 import com.example.babyfood.data.repository.AuthRepository
 import com.example.babyfood.data.repository.BabyRepository
 import com.example.babyfood.data.repository.HealthRecordRepository
+import com.example.babyfood.domain.model.Baby
 import com.example.babyfood.domain.model.NutritionGoal
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
  * 主屏幕 ViewModel
- * 处理注销等全局操作
+ * 处理注销等全局操作，并维护当前选中的宝宝（供顶部 Header 显示）
  */
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val babyRepository: BabyRepository,
-    private val healthRecordRepository: HealthRecordRepository
+    private val healthRecordRepository: HealthRecordRepository,
+    private val preferencesManager: PreferencesManager
 ) : BaseViewModel() {
 
     override val logTag: String = "MainViewModel"
+
+    private val _selectedBaby = MutableStateFlow<Baby?>(null)
+    /** 当前选中的宝宝，供顶部 AvocadoHeader 等使用 */
+    val selectedBaby: StateFlow<Baby?> = _selectedBaby.asStateFlow()
+
+    init {
+        refreshSelectedBaby()
+    }
+
+    /**
+     * 根据 Preferences 中的选中 ID 刷新当前宝宝
+     * 在进入主 Tab 或切换宝宝后调用，使顶部 Header 显示正确宝宝信息
+     */
+    fun refreshSelectedBaby() {
+        viewModelScope.launch {
+            val id = preferencesManager.getSelectedBabyId()
+            _selectedBaby.value = if (id != -1L) babyRepository.getById(id) else null
+        }
+    }
 
     /**
      * 获取认证仓库（供 AppHeader 使用）

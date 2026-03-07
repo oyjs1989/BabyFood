@@ -15,22 +15,26 @@ class GrowthRecordRepository @Inject constructor(
     // Note: GrowthRecordDao implements BaseDao methods implicitly
     // but doesn't extend the interface due to Room limitations
 
+    // Convert Entity to Domain model
     override fun GrowthRecordEntity.toDomainModel(): GrowthRecord = GrowthRecord(
         id = id,
         babyId = babyId,
         recordDate = recordDate,
         weight = weight,
         height = height,
-        headCircumference = headCircumference
+        headCircumference = headCircumference,
+        notes = notes
     )
 
+    // Convert Domain model to Entity
     override fun GrowthRecord.toEntity(): GrowthRecordEntity = GrowthRecordEntity(
         id = id,
         babyId = babyId,
         recordDate = recordDate,
         weight = weight,
         height = height,
-        headCircumference = headCircumference
+        headCircumference = headCircumference,
+        notes = notes
     )
 
     // ============ Domain-Specific Query Methods ============

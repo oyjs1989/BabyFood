@@ -407,19 +407,26 @@ Repository (Flow)
     ↓
 ┌─────────────────────────────────┐
 │  Data Source Layer              │
-│  - LocalSource (Room DAO)       │
-│  - RemoteSource (API Service)   │
+│  - RemoteSource (API Service)   │  ← Primary Data Source (Cloud)
+│  - LocalSource (Room DAO)       │  ← Cache Layer
 │  - SyncManager                  │
 └─────────────────────────────────┘
     ↓
-Database (Room SQLite) / Cloud DB
+Cloud DB (Primary) / Local Cache (Room SQLite)
 ```
+
+**云端优先架构说明**：
+- 云端数据库是主数据源，本地数据库仅作为缓存
+- 应用启动时从云端拉取最新数据到本地缓存
+- 数据变更时立即同步到云端，本地缓存随后更新
+- 离线状态下仅提供已缓存数据的只读访问
 
 ### 状态管理模式
 - **ViewModel**：使用 `StateFlow` 管理页面状态
-- **Repository**：使用 `Flow` 提供响应式数据流
-- **Database**：Room 提供 `Flow` 查询支持自动更新
+- **Repository**：使用 `Flow` 提供响应式数据流，优先从云端获取数据
+- **Database**：Room 提供 `Flow` 查询支持自动更新（本地缓存层）
 - **UI**：通过 `collectAsState()` 观察状态变化
+- **Cloud-First**：所有写操作直接发送到云端，本地数据库作为缓存同步更新
 
 ### 依赖管理
 - 使用阿里云 Maven 镜像加速依赖下载
@@ -691,6 +698,7 @@ Database (Room SQLite) / Cloud DB
 - 安全的 API Key 管理（使用环境变量或 Android Keystore 存储 DashScope API Key）
 - 实现 JWT 认证（在 NetworkModule 中添加实际的认证逻辑）
 - 更新 API URL 为实际的后端服务器地址
+- 实现离线只读模式（当网络不可用时，禁用编辑功能）
 
 #### 高级功能
 - 图片支持（食谱图片上传/展示）
@@ -734,13 +742,14 @@ Database (Room SQLite) / Cloud DB
      - 本地规则仅提供基础的健康指标检测
    - **避免**：本地规则过于复杂，影响用户体验
 
-3. **数据同步**
-   - **原则**：云端优先，本地为辅
+3. **数据同步（云端优先架构）**
+   - **原则**：云端是主数据源，本地仅作为缓存
    - **实现**：
-     - 数据以云端为准，本地作为缓存
-     - 冲突时优先保留云端版本（或让用户选择）
-     - 本地数据仅在离线时使用
-   - **避免**：复杂的冲突解决逻辑导致数据不一致
+     - 所有数据以云端为准，本地数据库仅作为缓存层
+     - 应用启动时从云端拉取最新数据
+     - 数据变更时立即同步到云端
+     - 离线状态下仅提供已缓存数据的只读访问
+   - **避免**：复杂的离线编辑和冲突解决逻辑
 
 **核心思想：**
 - 简化系统复杂度

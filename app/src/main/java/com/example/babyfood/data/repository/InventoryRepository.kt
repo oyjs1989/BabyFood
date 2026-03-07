@@ -9,6 +9,7 @@ import com.example.babyfood.domain.model.SyncStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import javax.inject.Inject
@@ -22,13 +23,14 @@ class InventoryRepository @Inject constructor(
     // Note: InventoryItemDao implements SyncableDao methods implicitly
     // but doesn't extend the interface due to Room limitations
 
+    // Convert Entity to Domain model
     override fun InventoryItemEntity.toDomainModel(): InventoryItem = InventoryItem(
         id = id,
         foodId = foodId,
         foodName = foodName,
         foodImageUrl = foodImageUrl,
-        productionDate = kotlinx.datetime.LocalDate.parse(productionDate),
-        expiryDate = kotlinx.datetime.LocalDate.parse(expiryDate),
+        productionDate = LocalDate.parse(productionDate),
+        expiryDate = LocalDate.parse(expiryDate),
         storageMethod = StorageMethod.valueOf(storageMethod),
         quantity = quantity,
         unit = unit,
@@ -41,6 +43,7 @@ class InventoryRepository @Inject constructor(
         isDeleted = isDeleted
     )
 
+    // Convert Domain model to Entity
     override fun InventoryItem.toEntity(): InventoryItemEntity = InventoryItemEntity(
         id = id,
         foodId = foodId,

@@ -1,6 +1,7 @@
 package com.example.babyfood.presentation.ui.common
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -16,14 +17,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -31,18 +30,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.example.babyfood.presentation.ui.icons.AppIcons
+import com.example.babyfood.presentation.theme.AvocadoPrimary
+import com.example.babyfood.presentation.theme.Charcoal
+import com.example.babyfood.presentation.theme.Peach
+import com.example.babyfood.presentation.theme.SoftBrown
 
+/**
+ * 底部导航栏项定义
+ */
 sealed class AvocadoNavItem(
     val route: String,
     val icon: ImageVector,
@@ -50,10 +55,14 @@ sealed class AvocadoNavItem(
 ) {
     object Home : AvocadoNavItem("home", Icons.Default.Home, "Home")
     object Recipes : AvocadoNavItem("recipes", Icons.Default.MenuBook, "Recipes")
-    object Growth : AvocadoNavItem("plans", Icons.Default.Timeline, "Growth")
+    object Growth : AvocadoNavItem("plans", Icons.Default.Favorite, "Growth")
     object Profile : AvocadoNavItem("baby", Icons.Default.Person, "Profile")
 }
 
+/**
+ * 全局底部导航栏组件
+ * 设计风格：白色半透明背景 + Peach 阴影 + 中心扫描按钮
+ */
 @Composable
 fun AvocadoBottomBar(
     navController: NavController,
@@ -73,20 +82,24 @@ fun AvocadoBottomBar(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(100.dp), // Height to accommodate the floating button
+            .height(100.dp),
         contentAlignment = Alignment.BottomCenter
     ) {
-        // Main Navigation Bar
-        Surface(
+        // Main Navigation Bar - 白色半透明背景 + Peach 阴影
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(72.dp)
                 .shadow(
-                    elevation = 16.dp,
-                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-                ),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 8.dp
+                    elevation = 20.dp,
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                    ambientColor = Peach.copy(alpha = 0.3f),
+                    spotColor = Peach.copy(alpha = 0.3f)
+                )
+                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                .background(
+                    color = Color.White.copy(alpha = 0.95f)
+                )
         ) {
             Row(
                 modifier = Modifier
@@ -119,7 +132,7 @@ fun AvocadoBottomBar(
             }
         }
 
-        // Centered Scan Button
+        // Centered Scan Button - Peach 背景，白色边框
         Column(
             modifier = Modifier
                 .offset(y = (-24).dp)
@@ -132,26 +145,33 @@ fun AvocadoBottomBar(
         ) {
             Box(
                 modifier = Modifier
-                    .size(56.dp)
-                    .shadow(elevation = 8.dp, shape = CircleShape)
-                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+                    .size(64.dp)
+                    .shadow(
+                        elevation = 12.dp,
+                        shape = CircleShape,
+                        ambientColor = Peach.copy(alpha = 0.4f),
+                        spotColor = Peach.copy(alpha = 0.4f)
+                    )
+                    .background(Peach, CircleShape)
+                    .border(4.dp, Color.White, CircleShape)
                     .clip(CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.PhotoCamera,
                     contentDescription = "Scan",
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(32.dp)
+                    tint = Charcoal,
+                    modifier = Modifier.size(28.dp)
                 )
             }
             Text(
                 text = "SCAN",
-                style = MaterialTheme.typography.labelSmall.copy(
+                style = androidx.compose.ui.text.TextStyle(
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 10.sp
+                    letterSpacing = 1.sp
                 ),
-                color = MaterialTheme.colorScheme.primary,
+                color = Charcoal,
                 modifier = Modifier.padding(top = 4.dp)
             )
         }
@@ -164,7 +184,8 @@ private fun AvocadoNavItemView(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    val color = if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFF64748B) // Slate 500
+    // 选中：Peach 色，未选中：SoftBrown 50% 透明度
+    val color = if (isSelected) Peach else SoftBrown.copy(alpha = 0.5f)
 
     Column(
         modifier = Modifier
@@ -185,9 +206,10 @@ private fun AvocadoNavItemView(
         )
         Text(
             text = item.label,
-            style = MaterialTheme.typography.labelSmall.copy(
+            style = androidx.compose.ui.text.TextStyle(
+                fontSize = 9.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                fontSize = 10.sp
+                letterSpacing = 0.5.sp
             ),
             color = color
         )

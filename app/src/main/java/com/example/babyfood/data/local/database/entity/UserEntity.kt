@@ -2,6 +2,7 @@ package com.example.babyfood.data.local.database.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.babyfood.domain.model.User
 
 /**
  * 用户数据库实体
@@ -21,4 +22,36 @@ data class UserEntity(
     val isLoggedIn: Boolean = false, // 当前登录状态
     val lastLoginTime: String? = null, // 最后登录时间
     val theme: String? = "light" // 主题设置：light/dark/auto
+) {
+    fun toDomainModel(): User = User(
+        id = id,
+        username = phone ?: email ?: "",
+        phone = phone,
+        email = email,
+        nickname = nickname,
+        avatar = avatar,
+        isEmailVerified = isEmailVerified,
+        isPhoneVerified = isPhoneVerified,
+        createdAt = createdAt.toLongOrNull() ?: 0L,
+        updatedAt = updatedAt.toLongOrNull() ?: 0L,
+        theme = theme ?: "light"
+    )
+}
+
+/**
+ * Domain Model 转 Entity
+ */
+fun User.toEntity(): UserEntity = UserEntity(
+    id = id,
+    phone = phone,
+    email = email,
+    nickname = nickname,
+    avatar = avatar,
+    createdAt = createdAt.toString(),
+    updatedAt = updatedAt.toString(),
+    isEmailVerified = isEmailVerified,
+    isPhoneVerified = isPhoneVerified,
+    isLoggedIn = true,
+    lastLoginTime = null,
+    theme = theme
 )

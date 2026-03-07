@@ -89,13 +89,15 @@ tests/
 - Repository pattern for data access
 - Flow for reactive data streams
 - Hilt for dependency injection
-- Room for local database
+- Room for local database (cache layer)
+- **Cloud-First Architecture**: All data is stored in cloud as primary source, local database serves as cache
 
 ### Database
 - Room database version: 17
 - Supports migrations up to version 17
 - TypeConverters for complex types (LocalDate, enums)
 - New tables: safety_risks, ingredient_trials, nutrition_goals, nutrition_data, user_warning_ignores, id_mappings
+- **Note**: Local database serves as cache layer; cloud database is the primary data source
 
 ### Nutrition Guidance System (005-optimize-app-food-guidelines)
 
@@ -145,4 +147,46 @@ tests/
 - Use class name as log tag
 - Format: "========== Method Start ==========" and "========== Method End =========="
 - Log levels: d (debug), i (info), w (warning), e (error)
+
+### Color System (颜色管理规范)
+
+**强制规则：所有颜色必须统一在 `Color.kt` 中定义，禁止在 UI 代码中硬编码颜色值。**
+
+#### 颜色定义位置
+- 文件路径：`presentation/theme/Color.kt`
+- 所有颜色常量必须在此文件中定义
+
+#### 颜色命名规范
+1. **功能命名**：`Success`, `Error`, `Warning` 等功能状态色
+2. **语义命名**：`RiskForbidden`, `ScoreExcellent` 等业务语义色
+3. **容器命名**：`XxxContainer` 表示背景色，`OnXxxContainer` 表示前景色
+4. **组件命名**：`ButtonPrimary`, `InputDisabledContainer` 等组件色
+
+#### 颜色分类
+- **品牌色**：`Primary`, `Peach`, `Coral` 等品牌核心色
+- **文字色**：`TextPrimary`, `TextSecondary`, `Charcoal` 等
+- **背景色**：`BackgroundLight`, `CardBackground`, `Surface` 等
+- **功能色**：`Success`, `Warning`, `Error` 等
+- **风险等级色**：`RiskForbidden`, `RiskNotRecommended` 等
+- **营养评分色**：`ScoreExcellent`, `ScoreGood` 等
+- **餐次标签色**：`MealBreakfast`, `MealLunch`, `MealDinner`, `MealSnack`
+- **状态色**：`StatusFinished`, `StatusHalf`, `StatusAllergy` 等
+- **灰度色**：`Gray900`, `Gray700`, `Gray500` 等
+
+#### 使用示例
+```kotlin
+// ✅ 正确：使用 Color.kt 中定义的颜色
+Text(text = "Hello", color = TextPrimary)
+Box(modifier = Modifier.background(SuccessContainer))
+
+// ❌ 错误：硬编码颜色值
+Text(text = "Hello", color = Color(0xFF333333))
+Box(modifier = Modifier.background(Color(0xFFE8F5E9)))
+```
+
+#### 添加新颜色的流程
+1. 在 `Color.kt` 中添加颜色定义
+2. 使用有意义的名称
+3. 添加注释说明用途
+4. 在 UI 组件中引用该颜色常量
 <!-- MANUAL ADDITIONS END -->

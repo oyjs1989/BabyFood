@@ -222,52 +222,74 @@ abstract class BaseUiViewModel<T : BaseUiState> : BaseViewModel() {
      * 设置加载状态
      */
     protected fun setLoading(isLoading: Boolean = true) {
-        _uiState.setLoading(isLoading) { loading ->
-            copyWithLoading(loading)
-        }
+        _uiState.value = _uiState.value.copyState(isLoading = isLoading, error = _uiState.value.error)
     }
 
     /**
      * 设置错误信息
      */
     protected fun setError(message: String?) {
-        _uiState.setError(message) { error ->
-            copyWithError(error)
-        }
+        _uiState.value = _uiState.value.copyState(isLoading = _uiState.value.isLoading, error = message)
     }
 
     /**
      * 清除错误
      */
     protected fun clearError() {
-        _uiState.clearError { error ->
-            copyWithError(error)
-        }
+        _uiState.value = _uiState.value.copyState(isLoading = _uiState.value.isLoading, error = null)
     }
 
     /**
      * 清除错误和加载状态
      */
     protected fun clearErrorAndLoading() {
-        _uiState.clearErrorAndLoading { error, loading ->
-            copyWithErrorAndLoading(error, loading)
-        }
+        _uiState.value = _uiState.value.copyState(isLoading = false, error = null)
     }
 
     /**
-     * 子类必须实现：复制状态并修改加载状态
+     * 子类必须实现：复制状态并修改加载状态和错误信息
+     * 这是唯一的抽象方法，简化了 ViewModel 实现
+     * 
+     * @param isLoading 是否正在加载
+     * @param error 错误信息（null 表示无错误）
+     * @return 新的状态对象
      */
-    protected abstract fun T.copyWithLoading(isLoading: Boolean): T
+    protected abstract fun T.copyState(isLoading: Boolean, error: String?): T
+
+    // ============ Deprecated Methods (for backward compatibility) ============
 
     /**
-     * 子类必须实现：复制状态并修改错误信息
+     * 子类可以实现：复制状态并修改加载状态
+     * @deprecated 使用 [copyState] 替代
      */
-    protected abstract fun T.copyWithError(error: String?): T
+    @Deprecated(
+        message = "Use copyState(isLoading, error) instead",
+        replaceWith = ReplaceWith("copyState(isLoading, error)")
+    )
+    protected open fun T.copyWithLoading(isLoading: Boolean): T = 
+        copyState(isLoading = isLoading, error = error)
 
     /**
-     * 子类必须实现：复制状态并修改错误和加载状态
+     * 子类可以实现：复制状态并修改错误信息
+     * @deprecated 使用 [copyState] 替代
      */
-    protected abstract fun T.copyWithErrorAndLoading(error: String?, isLoading: Boolean): T
+    @Deprecated(
+        message = "Use copyState(isLoading, error) instead",
+        replaceWith = ReplaceWith("copyState(isLoading, error)")
+    )
+    protected open fun T.copyWithError(error: String?): T = 
+        copyState(isLoading = isLoading, error = error)
+
+    /**
+     * 子类可以实现：复制状态并修改错误和加载状态
+     * @deprecated 使用 [copyState] 替代
+     */
+    @Deprecated(
+        message = "Use copyState(isLoading, error) instead",
+        replaceWith = ReplaceWith("copyState(isLoading, error)")
+    )
+    protected open fun T.copyWithErrorAndLoading(error: String?, isLoading: Boolean): T = 
+        copyState(isLoading = isLoading, error = error)
 }
 
 /**

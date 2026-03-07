@@ -1,5 +1,10 @@
 package com.example.babyfood.presentation.ui.recipes
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,32 +14,29 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SignalCellularAlt
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,140 +45,101 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.babyfood.domain.model.Recipe
 import com.example.babyfood.domain.model.RiskLevel
-import com.example.babyfood.presentation.ui.common.AppScaffold
-import com.example.babyfood.presentation.ui.common.AppBarAction
-import com.example.babyfood.presentation.ui.common.IronRichBadge
-import com.example.babyfood.presentation.ui.common.SafetyWarningBadge
+import com.example.babyfood.presentation.theme.AvocadoDark
+import com.example.babyfood.presentation.theme.AvocadoPrimary
+import com.example.babyfood.presentation.theme.BackgroundLight
+import com.example.babyfood.presentation.theme.Charcoal
+import com.example.babyfood.presentation.theme.Coral
+import com.example.babyfood.presentation.theme.Cream
+import com.example.babyfood.presentation.theme.Peach
+import com.example.babyfood.presentation.theme.Primary
+import com.example.babyfood.presentation.theme.SoftBrown
 import kotlinx.serialization.json.Json
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipesListScreen(
     onNavigateToDetail: (Long) -> Unit = {},
+    onNavigateBack: () -> Unit = {},
     viewModel: RecipesViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
-    var showAgeFilter by remember { mutableStateOf(false) }
-    var showCategoryFilter by remember { mutableStateOf(false) }
-
-    // 月份筛选选项
-    val ageFilterOptions = listOf(
-        "全部" to null,
-        "6-8个月" to 6,
-        "8-12个月" to 8,
-        "12-24个月" to 12
-    )
 
     // 分类筛选选项
-    val categoryFilterOptions = listOf(
-        "全部" to null,
-        "主食" to "主食",
-        "蔬菜" to "蔬菜",
-        "水果" to "水果",
-        "蛋白质" to "蛋白质"
+    val categoryOptions = listOf(
+        "All" to null,
+        "Vegetable Puree" to "蔬菜",
+        "Fruit Mash" to "水果",
+        "Porridge" to "主食",
+        "Finger Foods" to "手指食物",
+        "Meat" to "蛋白质"
     )
 
-    androidx.compose.foundation.layout.Column(
+    // 月龄筛选选项
+    val ageOptions = listOf(
+        "6-8 Months" to 6,
+        "8-10 Months" to 8,
+        "10-12 Months" to 10,
+        "1 Year+" to 12
+    )
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .background(BackgroundLight)
     ) {
-        // 搜索框
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { query ->
-                searchQuery = query
-                viewModel.searchRecipes(query)
+        // 搜索栏
+        SearchBar(
+            query = searchQuery,
+            onQueryChange = { 
+                searchQuery = it
+                viewModel.searchRecipes(it)
             },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("搜索食谱名称、食材...") },
-            leadingIcon = {
-                Icon(Icons.Default.Search, contentDescription = "搜索")
-            },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = {
-                        searchQuery = ""
-                        viewModel.searchRecipes("")
-                    }) {
-                        Icon(Icons.Default.Clear, contentDescription = "清除")
-                    }
-                }
-            },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(
-                onSearch = { /* 隐藏键盘 */ }
-            )
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 月龄筛选
-        Column {
-            Text(
-                text = "月龄",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                state = rememberLazyListState()
-            ) {
-                items(ageFilterOptions) { (label, age) ->
-                    FilterChip(
-                        selected = uiState.selectedAge == age,
-                        onClick = {
-                            if (age != null) {
-                                viewModel.filterByAge(age)
-                            } else {
-                                viewModel.clearFilters()
-                            }
-                        },
-                        label = { Text(label) }
-                    )
+        // 分类筛选标签
+        FilterChipRow(
+            options = categoryOptions,
+            selectedOption = uiState.selectedCategory,
+            onOptionSelected = { category ->
+                if (category != null) {
+                    viewModel.filterByCategory(category)
+                } else {
+                    viewModel.clearFilters()
                 }
-            }
-        }
+            },
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 分类筛选
-        Column {
-            Text(
-                text = "分类",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                state = rememberLazyListState()
-            ) {
-                items(categoryFilterOptions) { (label, category) ->
-                    FilterChip(
-                        selected = uiState.selectedCategory == category,
-                        onClick = {
-                            if (category != null) {
-                                viewModel.filterByCategory(category)
-                            } else {
-                                viewModel.clearFilters()
-                            }
-                        },
-                        label = { Text(label) }
-                    )
+        // 月龄筛选标签
+        AgeFilterChipRow(
+            options = ageOptions,
+            selectedAge = uiState.selectedAge,
+            onAgeSelected = { age ->
+                if (age != null) {
+                    viewModel.filterByAge(age)
+                } else {
+                    viewModel.clearFilters()
                 }
-            }
-        }
+            },
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+        )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
+        // 食谱列表
         if (uiState.isLoading) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -195,24 +158,222 @@ fun RecipesListScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .weight(1f),
+                    .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(uiState.filteredRecipes) { recipe ->
                     RecipeCard(
                         recipe = recipe,
-                        onClick = { onNavigateToDetail(recipe.id) }
+                        onClick = { onNavigateToDetail(recipe.id) },
+                        onFavoriteClick = { /* TODO: 收藏功能 */ }
                     )
                 }
+
+                // 底部留白
+                item { Spacer(modifier = Modifier.height(16.dp)) }
             }
         }
     }
 }
 
 @Composable
+private fun RecipeListAppBar(
+    onNavigateBack: () -> Unit = {},
+    onFilterClick: () -> Unit = {}
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 返回按钮
+        IconButton(onClick = onNavigateBack) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "返回",
+                tint = AvocadoDark,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+
+        // 标题
+        Text(
+            text = "Baby Food",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = AvocadoDark
+        )
+
+        // 筛选按钮
+        IconButton(onClick = onFilterClick) {
+            Icon(
+                imageVector = Icons.Default.Tune,
+                contentDescription = "筛选",
+                tint = AvocadoDark,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun SearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Cream)
+            .border(1.dp, Peach.copy(alpha = 0.3f), RoundedCornerShape(16.dp)),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 搜索图标
+        Icon(
+            imageVector = Icons.Default.Search,
+            contentDescription = null,
+            tint = Peach,
+            modifier = Modifier.padding(start = 16.dp, end = 8.dp)
+        )
+
+        // 输入框
+        BasicTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier
+                .weight(1f)
+                .padding(vertical = 12.dp),
+            singleLine = true,
+            decorationBox = { innerTextField ->
+                if (query.isEmpty()) {
+                    Text(
+                        text = "搜索食谱、食材...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SoftBrown.copy(alpha = 0.6f)
+                    )
+                }
+                innerTextField()
+            }
+        )
+    }
+}
+
+@Composable
+private fun FilterChipRow(
+    options: List<Pair<String, String?>>,
+    selectedOption: String?,
+    onOptionSelected: (String?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        options.forEach { (label, value) ->
+            val isSelected = selectedOption == value || (selectedOption == null && value == null)
+
+            FilterChip(
+                label = label,
+                isSelected = isSelected,
+                isPrimary = true,
+                onClick = { onOptionSelected(value) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun AgeFilterChipRow(
+    options: List<Pair<String, Int>>,
+    selectedAge: Int?,
+    onAgeSelected: (Int?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        options.forEach { (label, age) ->
+            val isSelected = selectedAge == age
+
+            FilterChip(
+                label = label,
+                isSelected = isSelected,
+                isPrimary = false,
+                onClick = { 
+                    onAgeSelected(if (isSelected) null else age)
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun FilterChip(
+    label: String,
+    isSelected: Boolean,
+    isPrimary: Boolean,
+    onClick: () -> Unit
+) {
+    val backgroundColor = when {
+        isSelected && isPrimary -> Peach
+        isSelected && !isPrimary -> AvocadoPrimary.copy(alpha = 0.3f)
+        else -> Cream
+    }
+
+    val textColor = when {
+        isSelected && isPrimary -> Charcoal
+        isSelected && !isPrimary -> AvocadoDark
+        else -> SoftBrown
+    }
+
+    val border = when {
+        !isSelected -> BorderStroke(1.dp, Peach.copy(alpha = 0.3f))
+        isSelected && !isPrimary -> BorderStroke(1.dp, AvocadoPrimary.copy(alpha = 0.5f))
+        else -> null
+    }
+
+    Box(
+        modifier = Modifier
+            .height(if (isPrimary) 36.dp else 28.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(backgroundColor)
+            .then(
+                if (border != null) {
+                    Modifier.border(border, RoundedCornerShape(18.dp))
+                } else Modifier
+            )
+            .padding(horizontal = 16.dp)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            style = if (isPrimary) {
+                MaterialTheme.typography.labelLarge
+            } else {
+                MaterialTheme.typography.labelMedium
+            },
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+            color = textColor
+        )
+    }
+}
+
+@Composable
 private fun RecipeCard(
-    recipe: com.example.babyfood.domain.model.Recipe,
-    onClick: () -> Unit = {}
+    recipe: Recipe,
+    onClick: () -> Unit = {},
+    onFavoriteClick: () -> Unit = {}
 ) {
     // 解析风险等级列表并获取最高风险
     val highestRisk = recipe.riskLevelList?.let { riskList ->
@@ -224,123 +385,196 @@ private fun RecipeCard(
                 } catch (e: IllegalArgumentException) {
                     null
                 }
-            }.maxByOrNull { riskLevel: RiskLevel -> riskLevel.ordinal }
+            }.maxByOrNull { it.ordinal }
         } catch (e: Exception) {
             null
         }
     }
 
+    // 是否已收藏（模拟）
+    var isFavorite by remember { mutableStateOf(false) }
+
     Card(
-        modifier = Modifier
-            .fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(
-            0.5.dp,
-            MaterialTheme.colorScheme.outline
-        ),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Cream),
         onClick = onClick
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 食谱略图
-            Box(
+            // 食谱图片
+            RecipeImage(
+                imageUrl = recipe.imageUrl,
+                name = recipe.name,
                 modifier = Modifier.size(88.dp)
+            )
+
+            // 食谱信息
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                if (recipe.imageUrl != null) {
-                    AsyncImage(
-                        model = recipe.imageUrl,
-                        contentDescription = "食谱图片",
-                        modifier = Modifier
-                            .size(88.dp)
-                            .clip(RoundedCornerShape(12.dp)),
-                        contentScale = ContentScale.Crop
+                // 标题
+                Text(
+                    text = recipe.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Charcoal,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                // 营养标签
+                if (recipe.isIronRich) {
+                    NutritionTag(
+                        icon = "⚡",
+                        text = "富含铁质",
+                        backgroundColor = AvocadoPrimary.copy(alpha = 0.2f),
+                        textColor = AvocadoDark
                     )
                 } else {
-                    Box(
-                        modifier = Modifier
-                            .size(88.dp)
-                            .clip(RoundedCornerShape(12.dp)),
-                        contentAlignment = Alignment.Center
+                    // 默认显示一个营养标签
+                    val nutritionTag = when (recipe.category) {
+                        "蔬菜" -> "富含维生素A" to "🥬"
+                        "水果" -> "高钾" to "🍌"
+                        "主食" -> "能量补充" to "⚡"
+                        "蛋白质" -> "高蛋白" to "🥩"
+                        else -> "健康选择" to "🌟"
+                    }
+                    NutritionTag(
+                        icon = nutritionTag.second,
+                        text = nutritionTag.first,
+                        backgroundColor = Peach.copy(alpha = 0.3f),
+                        textColor = SoftBrown
+                    )
+                }
+
+                // 难度和时间
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 难度
+                    val difficulty = when (recipe.minAgeMonths) {
+                        in 0..8 -> "简单"
+                        in 9..11 -> "中等"
+                        else -> "进阶"
+                    }
+                    Text(
+                        text = difficulty,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = SoftBrown,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    Text(
+                        text = "•",
+                        color = Peach,
+                        fontSize = 12.sp
+                    )
+
+                    // 时间
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = Peach,
+                            modifier = Modifier.size(16.dp)
+                        )
                         Text(
-                            text = recipe.name.firstOrNull()?.toString() ?: "?",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.primary
+                            text = "${recipe.cookingTime ?: 15}分钟",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SoftBrown,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
             }
 
-            // 食谱信息
-            Column(
-                modifier = Modifier.weight(1f)
+            // 收藏按钮
+            IconButton(
+                onClick = { 
+                    isFavorite = !isFavorite
+                    onFavoriteClick()
+                },
+                modifier = Modifier.size(40.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = recipe.name,
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (recipe.isIronRich == true) {
-                            IronRichBadge()
-                        }
-                        highestRisk?.let { risk ->
-                            SafetyWarningBadge(riskLevel = risk)
-                        }
-                        if (recipe.isBuiltIn) {
-                            Text(
-                                text = "内置",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        text = "${recipe.minAgeMonths}-${recipe.maxAgeMonths}个月",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    )
-                    Text(
-                        text = recipe.category,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // 食材列表（显示前3个）
-                val ingredientsText = recipe.ingredients
-                    .take(3)
-                    .joinToString(", ") { "${it.name} ${it.amount}" } +
-                        if (recipe.ingredients.size > 3) "..." else ""
-
-                Text(
-                    text = "食材：$ingredientsText",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    maxLines = 1
+                Icon(
+                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = "收藏",
+                    tint = if (isFavorite) Coral else SoftBrown.copy(alpha = 0.5f),
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun RecipeImage(
+    imageUrl: String?,
+    name: String,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(Cream),
+        contentAlignment = Alignment.Center
+    ) {
+        if (imageUrl != null) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = name,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            // 使用首字母作为占位符
+            Text(
+                text = name.firstOrNull()?.toString() ?: "?",
+                style = MaterialTheme.typography.headlineMedium,
+                color = Peach,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+private fun NutritionTag(
+    icon: String,
+    text: String,
+    backgroundColor: Color,
+    textColor: Color
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(backgroundColor)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = icon,
+            fontSize = 12.sp
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = textColor
+        )
     }
 }

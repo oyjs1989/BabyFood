@@ -15,8 +15,8 @@ import kotlinx.datetime.Instant
 @Entity(
     tableName = "id_mappings",
     indices = [
-        Index(value = ["entity_type", "local_id"], unique = true),
-        Index(value = ["entity_type", "cloud_id"], unique = true)
+        Index(value = ["entity_type", "local_id"], unique = true, name = "idx_id_mappings_entity_type_local_id"),
+        Index(value = ["entity_type", "cloud_id"], unique = true, name = "idx_id_mappings_entity_type_cloud_id")
     ]
 )
 data class IdMappingEntity(

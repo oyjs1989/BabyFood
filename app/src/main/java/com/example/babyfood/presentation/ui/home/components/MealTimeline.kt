@@ -1,13 +1,9 @@
 package com.example.babyfood.presentation.ui.home.components
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,10 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -30,24 +22,33 @@ import androidx.compose.material.icons.outlined.BreakfastDining
 import androidx.compose.material.icons.outlined.LunchDining
 import androidx.compose.material.icons.outlined.DinnerDining
 import androidx.compose.material.icons.outlined.Cookie
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.babyfood.domain.model.MealPeriod
-import com.example.babyfood.presentation.theme.SecondaryContainer
-import com.example.babyfood.presentation.theme.components.BabyFoodSmallCard
+import com.example.babyfood.presentation.theme.AvocadoDark
+import com.example.babyfood.presentation.theme.AvocadoPrimary
+import com.example.babyfood.presentation.theme.Charcoal
+import com.example.babyfood.presentation.theme.Coral
+import com.example.babyfood.presentation.theme.Cream
+import com.example.babyfood.presentation.theme.Peach
+import com.example.babyfood.presentation.theme.Primary
+import com.example.babyfood.presentation.theme.SoftBrown
 import com.example.babyfood.presentation.ui.home.PlanWithRecipe
 
+/**
+ * 任务卡片样式的时间轴 - 采用新主题色
+ */
 @Composable
 fun MealTimeline(
     plans: List<PlanWithRecipe>,
@@ -59,12 +60,13 @@ fun MealTimeline(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         MealPeriod.values().forEach { period ->
             val planWithRecipe = plans.find { it.plan.mealPeriod == period.name }
             val currentMealTime = planWithRecipe?.plan?.mealTime ?: getMealTime(period)
-            MealPeriodCard(
+            TaskCard(
                 period = period,
                 planWithRecipe = planWithRecipe,
                 onShuffle = { onShuffle(period) },
@@ -73,13 +75,12 @@ fun MealTimeline(
                 onEditMealTime = { _, _ -> onEditMealTime(period, currentMealTime) },
                 onFeedback = { onFeedback(period) }
             )
-            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }
 
 @Composable
-private fun MealPeriodCard(
+private fun TaskCard(
     period: MealPeriod,
     planWithRecipe: PlanWithRecipe?,
     onShuffle: () -> Unit,
@@ -92,316 +93,236 @@ private fun MealPeriodCard(
     val feedbackStatus = planWithRecipe?.plan?.feedbackStatus
     val hasFeedback = feedbackStatus != null
 
-    // 自定义卡片背景和边框
-    val cardBackgroundColor = if (hasRecipe) {
-        MaterialTheme.colorScheme.surface
-    } else {
-        SecondaryContainer
-    }
-    val cardBorder = if (!hasRecipe) {
-        androidx.compose.foundation.BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outlineVariant
-        )
-    } else {
-        null
-    }
-
-    BabyFoodSmallCard(
-        modifier = Modifier.fillMaxWidth()
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { if (hasRecipe) onViewRecipeDetail(planWithRecipe!!.recipe!!.id) else onSelectRecipe() },
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF0F0F0))
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(cardBackgroundColor)
-                .let { modifier ->
-                    if (cardBorder != null) {
-                        modifier.border(cardBorder)
-                    } else {
-                        modifier
-                    }
-                }
-        ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth()
         ) {
-            // 左侧时间轴区域
-            Row(
-                modifier = Modifier.width(60.dp),
-                verticalAlignment = Alignment.Top
+            // 左侧图片区域 - 使用新主题色
+            Box(
+                modifier = Modifier
+                    .size(width = 90.dp, height = 90.dp)
+                    .background(
+                        color = if (hasRecipe) {
+                            when (period) {
+                                MealPeriod.BREAKFAST -> Peach.copy(alpha = 0.3f)
+                                MealPeriod.LUNCH -> AvocadoPrimary.copy(alpha = 0.3f)
+                                MealPeriod.DINNER -> Cream
+                                MealPeriod.SNACK -> Coral.copy(alpha = 0.3f)
+                            }
+                        } else {
+                            Color(0xFFF8F9FA)
+                        }
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // 圆点（使用主色调）
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.primary,
-                                shape = CircleShape
-                            )
+                if (hasRecipe) {
+                    // 有食谱时显示图标
+                    Icon(
+                        imageVector = getMealIcon(period),
+                        contentDescription = null,
+                        tint = if (period == MealPeriod.DINNER) SoftBrown else AvocadoDark,
+                        modifier = Modifier.size(32.dp)
                     )
+                } else {
+                    // 空状态显示添加图标
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        tint = SoftBrown.copy(alpha = 0.5f),
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
+
+            // 右侧内容区域
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    // 时间和更多按钮行
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // 时间标签 - 使用Peach背景
+                        val mealTime = if (hasRecipe) {
+                            planWithRecipe?.plan?.mealTime ?: getMealTime(period)
+                        } else {
+                            getMealTime(period)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = if (hasRecipe) Peach else Cream,
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                .clickable { onEditMealTime(period, mealTime) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = mealTime,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (hasRecipe) Charcoal else SoftBrown,
+                                letterSpacing = 0.3.sp
+                            )
+                        }
+
+                        // 更多操作按钮
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "更多",
+                            tint = SoftBrown.copy(alpha = 0.5f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    // 时间文字（可点击编辑）
-                    val mealTime = if (hasRecipe) {
-                        planWithRecipe?.plan?.mealTime ?: getMealTime(period)
-                    } else {
-                        getMealTime(period)
-                    }
-                    Text(
-                        text = mealTime,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = if (hasRecipe) Color(0xFFFF8C42) else Color(0xFF333333),
-                        modifier = Modifier.clickable { onEditMealTime(period, mealTime) }
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // 灰色竖线
-                    Box(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .height(40.dp)
-                            .background(Color(0xFFE0E0E0))
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // 中部内容区域
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                if (hasRecipe) {
-                    val recipe = planWithRecipe!!.recipe!!
-
-                    Row(
-                        modifier = Modifier.clickable { onViewRecipeDetail(recipe.id) },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // 圆形缩略图背景
-                        Box(
-                            modifier = Modifier
-                                .size(72.dp)
-                                .background(
-                                    color = Color(0xFFF8F8F8),
-                                    shape = CircleShape
-                                )
-                                .border(
-                                    width = 1.dp,
-                                    color = Color(0xFFE5E5E5),
-                                    shape = CircleShape
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = getMealIcon(period),
-                                contentDescription = null,
-                                tint = Color(0xFF999999),
-                                modifier = Modifier.size(36.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        Column {
-                            // 食谱标题
-                            Text(
-                                text = recipe.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF222222)
-                            )
-
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            // 烹饪时长
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Refresh,
-                                    contentDescription = null,
-                                    tint = Color(0xFF666666),
-                                    modifier = Modifier.size(12.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "${recipe.cookingTime ?: 20}分钟",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF666666)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(6.dp))
-
-                            // 标签
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                // 根据食谱类型生成标签
-                                val tags = generateRecipeTags(recipe)
-                                tags.forEach { tag ->
-                                    val interactionSource = remember { MutableInteractionSource() }
-                                    val isPressed by interactionSource.collectIsPressedAsState()
-                                    val backgroundColor by animateColorAsState(
-                                        targetValue = if (isPressed) tag.color.copy(alpha = 0.8f) else tag.color,
-                                        animationSpec = tween(durationMillis = 200),
-                                        label = "tagBackground"
-                                    )
-
-                                    Box(
-                                        modifier = Modifier
-                                            .wrapContentWidth()
-                                            .height(28.dp)
-                                            .background(
-                                                color = backgroundColor,
-                                                shape = RoundedCornerShape(8.dp)
-                                            )
-                                            .clickable(
-                                                interactionSource = interactionSource,
-                                                indication = null
-                                            ) {},
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "#${tag.name}",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontWeight = FontWeight.Medium,
-                                            color = Color.White,
-                                            maxLines = 1,
-                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                            modifier = Modifier.padding(horizontal = 10.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier.clickable { onSelectRecipe() },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // 空状态图标
-                        Box(
-                            modifier = Modifier
-                                .size(64.dp)
-                                .background(
-                                    color = Color(0xFFF8F8F8),
-                                    shape = CircleShape
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = null,
-                                tint = Color(0xFF999999),
-                                modifier = Modifier.size(32.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
+                    // 标题
+                    if (hasRecipe) {
+                        val recipe = planWithRecipe!!.recipe!!
                         Text(
-                            text = "点击添加${period.displayName}食谱",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF666666),
-                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                            text = recipe.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Charcoal
+                        )
+
+                        Spacer(modifier = Modifier.height(1.dp))
+
+                        // 副标题/描述
+                        Text(
+                            text = "${recipe.cookingTime ?: 20}分钟 · ${period.displayName}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SoftBrown
+                        )
+                    } else {
+                        Text(
+                            text = "添加${period.displayName}食谱",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = SoftBrown
                         )
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // 右侧操作区域
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // 换一换按钮
+                // 底部操作按钮
                 Row(
-                    modifier = Modifier.clickable(enabled = hasRecipe) { if (hasRecipe) onShuffle() },
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "换一换",
-                        tint = if (hasRecipe) {
-                            Color(0xFF666666)
+                    if (hasRecipe) {
+                        if (hasFeedback) {
+                            // 已反馈状态 - 显示反馈标签
+                            val feedbackText = getFeedbackDisplayName(feedbackStatus)
+                            val feedbackColor = getFeedbackBackgroundColor(feedbackStatus)
+
+                            Box(
+                                modifier = Modifier
+                                    .clickable { onFeedback() }
+                                    .background(
+                                        color = feedbackColor,
+                                        shape = RoundedCornerShape(12.dp)
+                                    )
+                                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = feedbackText,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.White
+                                )
+                            }
                         } else {
-                            Color(0xFF666666).copy(alpha = 0.5f)
-                        },
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "换一换",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (hasRecipe) {
-                            Color(0xFF666666)
-                        } else {
-                            Color(0xFF666666).copy(alpha = 0.5f)
+                            // 未反馈状态 - 显示完成按钮
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                // 换一换按钮 - Cream背景
+                                Box(
+                                    modifier = Modifier
+                                        .clickable { onShuffle() }
+                                        .background(
+                                            color = Cream,
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
+                                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Refresh,
+                                            contentDescription = null,
+                                            tint = Charcoal,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Text(
+                                            text = "换一换",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Charcoal
+                                        )
+                                    }
+                                }
+
+                                // 完成按钮 - Primary绿色背景
+                                Box(
+                                    modifier = Modifier
+                                        .clickable { onFeedback() }
+                                        .background(
+                                            color = AvocadoPrimary,
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
+                                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "完成",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = AvocadoDark
+                                    )
+                                }
+                            }
                         }
-                    )
-                }
-
-                // 反馈按钮
-                if (hasRecipe) {
-                    if (hasFeedback) {
-                        // 已反馈状态
-                        val feedbackText = getFeedbackDisplayName(feedbackStatus)
-                        val interactionSource = remember { MutableInteractionSource() }
-                        val isPressed by interactionSource.collectIsPressedAsState()
-                        val feedbackColor = getFeedbackBackgroundColor(feedbackStatus)
-                        val backgroundColor = if (isPressed) feedbackColor.copy(alpha = 0.7f) else feedbackColor
-
+                    } else {
+                        // 空状态 - 显示添加按钮
                         Box(
                             modifier = Modifier
-                                .clickable(
-                                    interactionSource = interactionSource,
-                                    indication = null
-                                ) { onFeedback() }
+                                .clickable { onSelectRecipe() }
                                 .background(
-                                    color = backgroundColor,
-                                    shape = RoundedCornerShape(6.dp)
+                                    color = Cream,
+                                    shape = RoundedCornerShape(12.dp)
                                 )
-                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                                .padding(horizontal = 10.dp, vertical = 4.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = feedbackText,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Medium,
-                                color = Color.White
-                            )
-                        }
-                    } else {
-                        // 未反馈状态
-                        Row(
-                            modifier = Modifier.clickable { onFeedback() },
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ThumbUp,
-                                contentDescription = "反馈",
-                                tint = Color(0xFF666666),
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "反馈",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF666666)
+                                text = "选择食谱",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Charcoal
                             )
                         }
                     }
@@ -409,9 +330,7 @@ private fun MealPeriodCard(
             }
         }
     }
-    }
 }
-
 // 获取反馈显示名称
 private fun getFeedbackDisplayName(feedbackStatus: String): String {
     return when (feedbackStatus) {

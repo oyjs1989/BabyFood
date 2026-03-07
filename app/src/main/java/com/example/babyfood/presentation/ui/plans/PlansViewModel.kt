@@ -7,7 +7,7 @@ import com.example.babyfood.data.repository.BabyRepository
 import com.example.babyfood.data.repository.PlanRepository
 import com.example.babyfood.data.repository.RecipeRepository
 import com.example.babyfood.domain.model.Baby
-import com.example.babyfood.domain.model.ConflictResolution
+import com.example.babyfood.domain.model.PlanConflictResolution
 import com.example.babyfood.domain.model.DailyMealPlan
 import com.example.babyfood.domain.model.Plan
 import com.example.babyfood.domain.model.PlanConflict
@@ -321,7 +321,7 @@ class PlansViewModel @Inject constructor(
     suspend fun saveRecommendation(
         babyId: Long,
         weeklyPlan: WeeklyMealPlan,
-        conflictResolution: ConflictResolution,
+        conflictResolution: PlanConflictResolution,
         editedPlans: List<PlannedMeal>? = null
     ): SaveResult {
         logMethodStart("保存推荐")

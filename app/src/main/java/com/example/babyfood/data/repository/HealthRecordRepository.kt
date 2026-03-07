@@ -27,6 +27,7 @@ class HealthRecordRepository @Inject constructor(
     // Note: HealthRecordDao implements BaseDao methods implicitly
     // but doesn't extend the interface due to Room limitations
 
+    // Convert Entity to Domain model
     override fun HealthRecordEntity.toDomainModel(): HealthRecord = HealthRecord(
         id = id,
         babyId = babyId,
@@ -43,6 +44,7 @@ class HealthRecordRepository @Inject constructor(
         notes = notes
     )
 
+    // Convert Domain model to Entity
     override fun HealthRecord.toEntity(): HealthRecordEntity = HealthRecordEntity(
         id = id,
         babyId = babyId,

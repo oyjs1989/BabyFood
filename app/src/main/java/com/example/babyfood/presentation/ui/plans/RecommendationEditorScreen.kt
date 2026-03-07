@@ -33,7 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.babyfood.domain.model.ConflictResolution
+import com.example.babyfood.domain.model.PlanConflictResolution
 import com.example.babyfood.domain.model.DailyMealPlan
 import com.example.babyfood.domain.model.PlanConflict
 import com.example.babyfood.domain.model.PlannedMeal
@@ -59,7 +59,7 @@ fun RecommendationEditorScreen(
     weeklyPlan: WeeklyMealPlan,
     conflicts: List<PlanConflict>,
     onBack: () -> Unit,
-    onSave: (ConflictResolution, List<PlannedMeal>) -> Unit,
+    onSave: (PlanConflictResolution, List<PlannedMeal>) -> Unit,
     viewModel: PlansViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -78,7 +78,7 @@ fun RecommendationEditorScreen(
             if (conflicts.isNotEmpty()) {
                 showConflictDialog = true
             } else {
-                onSave(ConflictResolution.OVERWRITE_ALL, editedMeals)
+                onSave(PlanConflictResolution.OVERWRITE_ALL, editedMeals)
             }
         }
     }

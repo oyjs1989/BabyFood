@@ -14,6 +14,8 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,12 +70,22 @@ fun MainScreen(
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    val selectedBaby by mainViewModel.selectedBaby.collectAsState(initial = null)
+
+    // 进入主 Tab 时刷新当前选中的宝宝，使顶部 Header 与切换宝宝操作同步
+    LaunchedEffect(currentDestination?.route) {
+        if (currentDestination?.route in listOf("home", "recipes", "plans", "inventory", "baby")) {
+            mainViewModel.refreshSelectedBaby()
+        }
+    }
 
     Scaffold(
         topBar = {
             // 只在核心业务页面展示 AvocadoHeader
             if (currentDestination?.route in listOf("home", "recipes", "plans", "inventory", "baby")) {
                 com.example.babyfood.presentation.ui.common.AvocadoHeader(
+                    babyName = selectedBaby?.name ?: "未选择宝宝",
+                    babyAge = selectedBaby?.let { "${it.ageInMonths}个月" } ?: "",
                     onNotificationsClick = {
                         // TODO: Handle notifications
                     }
@@ -327,6 +339,9 @@ fun MainScreen(
                     },
                     onNavigateToDetail = { babyId ->
                         navController.navigate("baby/detail/$babyId")
+                    },
+                    onAfterSetAsCurrentBaby = {
+                        mainViewModel.refreshSelectedBaby()
                     }
                 )
             }

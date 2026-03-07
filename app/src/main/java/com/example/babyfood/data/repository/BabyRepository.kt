@@ -16,6 +16,9 @@ class BabyRepository @Inject constructor(
     // Note: BabyDao implements SyncableDao methods implicitly
     // but doesn't extend the interface due to Room limitations
 
+    // Convert Entity to Domain model using the extension function from BabyEntity.kt
+    // Note: We can't just call this.toDomainModel() because it would be infinite recursion
+    // We explicitly construct the domain model here
     override fun BabyEntity.toDomainModel(): Baby = Baby(
         id = id,
         name = name,
@@ -24,9 +27,14 @@ class BabyRepository @Inject constructor(
         weight = weight,
         height = height,
         preferences = preferences,
-        nutritionGoal = nutritionGoal
+        nutritionGoal = nutritionGoal,
+        avatarUrl = avatarUrl,
+        chewingAbility = chewingAbility,
+        preferredTextureLevel = preferredTextureLevel
     )
 
+    // Convert Domain model to Entity
+    // Note: We explicitly construct the entity here to avoid infinite recursion
     override fun Baby.toEntity(): BabyEntity = BabyEntity(
         id = id,
         name = name,
@@ -35,7 +43,10 @@ class BabyRepository @Inject constructor(
         weight = weight,
         height = height,
         preferences = preferences,
-        nutritionGoal = nutritionGoal
+        nutritionGoal = nutritionGoal,
+        avatarUrl = avatarUrl,
+        chewingAbility = chewingAbility,
+        preferredTextureLevel = preferredTextureLevel
     )
 
     override fun getItemId(item: Baby): Long = item.id

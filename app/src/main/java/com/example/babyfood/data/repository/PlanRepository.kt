@@ -3,7 +3,7 @@ package com.example.babyfood.data.repository
 import com.example.babyfood.data.local.database.dao.PlanDao
 import com.example.babyfood.data.local.database.dao.RecipeDao
 import com.example.babyfood.data.local.database.entity.PlanEntity
-import com.example.babyfood.domain.model.ConflictResolution
+import com.example.babyfood.domain.model.PlanConflictResolution
 import com.example.babyfood.domain.model.MealPeriod
 import com.example.babyfood.domain.model.Plan
 import com.example.babyfood.domain.model.PlanConflict
@@ -24,6 +24,7 @@ class PlanRepository @Inject constructor(
     // Note: PlanDao implements SyncableDao methods implicitly
     // but doesn't extend the interface due to Room limitations
 
+    // Convert Entity to Domain model
     override fun PlanEntity.toDomainModel(): Plan = Plan(
         id = id,
         babyId = babyId,
@@ -37,6 +38,7 @@ class PlanRepository @Inject constructor(
         feedbackTime = feedbackTime
     )
 
+    // Convert Domain model to Entity
     override fun Plan.toEntity(): PlanEntity = PlanEntity(
         id = id,
         babyId = babyId,
@@ -45,7 +47,7 @@ class PlanRepository @Inject constructor(
         mealPeriod = try {
             MealPeriod.valueOf(mealPeriod)
         } catch (e: Exception) {
-            MealPeriod.BREAKFAST
+            MealPeriod.BREAKFAST  // 默认值
         },
         status = status,
         notes = notes,
@@ -228,12 +230,12 @@ class PlanRepository @Inject constructor(
     suspend fun saveRecommendation(
         babyId: Long,
         newPlans: List<Plan>,
-        conflictResolution: ConflictResolution
+        conflictResolution: PlanConflictResolution
     ): SaveResult {
         return when (conflictResolution) {
-            ConflictResolution.OVERWRITE_ALL -> overwritePlans(babyId, newPlans)
-            ConflictResolution.SKIP_CONFLICTS -> insertNonConflictingPlans(babyId, newPlans)
-            ConflictResolution.CANCEL -> SaveResult(
+            PlanConflictResolution.OVERWRITE_ALL -> overwritePlans(babyId, newPlans)
+            PlanConflictResolution.SKIP_CONFLICTS -> insertNonConflictingPlans(babyId, newPlans)
+            PlanConflictResolution.CANCEL -> SaveResult(
                 success = true,
                 savedCount = 0,
                 skippedCount = 0

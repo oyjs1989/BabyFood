@@ -19,7 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.babyfood.domain.model.ConflictResolution
+import com.example.babyfood.domain.model.PlanConflictResolution
 import com.example.babyfood.domain.model.MealPeriod
 import com.example.babyfood.domain.model.PlanConflict
 
@@ -33,7 +33,7 @@ import com.example.babyfood.domain.model.PlanConflict
 fun ConflictResolutionDialog(
     conflicts: List<PlanConflict>,
     onDismiss: () -> Unit,
-    onResolve: (ConflictResolution) -> Unit
+    onResolve: (PlanConflictResolution) -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -68,17 +68,17 @@ fun ConflictResolutionDialog(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Button(
-                    onClick = { onResolve(ConflictResolution.OVERWRITE_ALL) },
+                    onClick = { onResolve(PlanConflictResolution.OVERWRITE_ALL) },
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error
                     )
                 ) {
                     Text("覆盖所有")
                 }
-                TextButton(onClick = { onResolve(ConflictResolution.SKIP_CONFLICTS) }) {
+                TextButton(onClick = { onResolve(PlanConflictResolution.SKIP_CONFLICTS) }) {
                     Text("跳过冲突")
                 }
-                TextButton(onClick = { onResolve(ConflictResolution.CANCEL) }) {
+                TextButton(onClick = { onResolve(PlanConflictResolution.CANCEL) }) {
                     Text("取消")
                 }
             }
