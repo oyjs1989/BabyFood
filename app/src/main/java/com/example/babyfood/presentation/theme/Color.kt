@@ -5,7 +5,7 @@ import androidx.compose.ui.graphics.Color
 // ===== Avocado Design System (New v2.0) =====
 val AvocadoPrimary = Color(0xFF98FB98)
 val AvocadoDark = Color(0xFF2D5A27)
-val AvocadoBackgroundLight = Color(0xFFF5F8F5)
+val AvocadoBackgroundLight = Color(0xFFFFF9F0)  // 统一为浅暖背景 (#FFF9F0)
 val AvocadoBackgroundDark = Color(0xFF102210)
 val AvocadoCream = Color(0xFFFDFDF5)
 
@@ -408,3 +408,14 @@ val Red800 = Color(0xFFC62828)
 
 // 红色容器
 val RedContainer = Color(0xFFFFEBEE)
+
+// ===== 营养进度状态颜色（Nutrition Progress Colors）=====
+
+// 不足 (<80%)
+val NutritionInsufficient = Color(0xFFF44336)
+
+// 正常 (80-120%)
+val NutritionNormal = Color(0xFF4CAF50)
+
+// 过量 (>120%)
+val NutritionExcess = Color(0xFFFF9800)

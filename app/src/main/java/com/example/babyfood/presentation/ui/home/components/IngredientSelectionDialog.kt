@@ -26,6 +26,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.babyfood.domain.model.Ingredient
+import com.example.babyfood.presentation.theme.ButtonPrimary
+import com.example.babyfood.presentation.theme.ButtonPrimaryDisabled
+import com.example.babyfood.presentation.theme.ButtonOutline
+import com.example.babyfood.presentation.theme.Gray500
+import com.example.babyfood.presentation.theme.Gray700
+import com.example.babyfood.presentation.theme.Gray900
 
 /**
  * 食材选择对话框
@@ -75,7 +81,7 @@ fun IngredientSelectionDialog(
                         text = title,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF333333),
+                        color = Gray900,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.weight(1f)
                     )
@@ -88,7 +94,7 @@ fun IngredientSelectionDialog(
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "关闭",
-                            tint = Color(0xFF666666)
+                            tint = Gray700
                         )
                     }
                 }
@@ -99,7 +105,7 @@ fun IngredientSelectionDialog(
                 Text(
                     text = "请选择导致问题的食材（可多选）：",
                     fontSize = 14.sp,
-                    color = Color(0xFF666666),
+                    color = Gray700,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -138,8 +144,8 @@ fun IngredientSelectionDialog(
                         .fillMaxWidth()
                         .height(52.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFF7F3E),
-                        disabledContainerColor = Color(0xFFE0E0E0)
+                        containerColor = ButtonPrimary,
+                        disabledContainerColor = ButtonPrimaryDisabled
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
@@ -160,10 +166,10 @@ fun IngredientSelectionDialog(
                         .fillMaxWidth()
                         .height(44.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color(0xFF666666)
+                        contentColor = Gray700
                     ),
                     border = ButtonDefaults.outlinedButtonBorder.copy(
-                        brush = androidx.compose.ui.graphics.SolidColor(Color(0xFFDDDDDD))
+                        brush = androidx.compose.ui.graphics.SolidColor(ButtonOutline)
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
@@ -171,7 +177,7 @@ fun IngredientSelectionDialog(
                         text = "取消",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFF666666)
+                        color = Gray700
                     )
                 }
             }
@@ -191,9 +197,9 @@ private fun IngredientItem(
     modifier: Modifier = Modifier
 ) {
     val borderColor = if (isSelected) {
-        Color(0xFFFF7F3E)
+        ButtonPrimary
     } else {
-        Color(0xFFDDDDDD)
+        ButtonOutline
     }
 
     val borderWidth = if (isSelected) 2.dp else 1.dp
@@ -205,7 +211,7 @@ private fun IngredientItem(
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) {
-                Color(0xFFFF7F3E).copy(alpha = 0.1f)
+                ButtonPrimary.copy(alpha = 0.1f)
             } else {
                 Color.White
             }
@@ -234,9 +240,9 @@ private fun IngredientItem(
                     FontWeight.Normal
                 },
                 color = if (isSelected) {
-                    Color(0xFFFF7F3E)
+                    ButtonPrimary
                 } else {
-                    Color(0xFF333333)
+                    Gray900
                 },
                 textAlign = TextAlign.Center
             )
@@ -247,7 +253,7 @@ private fun IngredientItem(
             Text(
                 text = amount,
                 fontSize = 12.sp,
-                color = Color(0xFF999999),
+                color = Gray500,
                 textAlign = TextAlign.Center
             )
         }

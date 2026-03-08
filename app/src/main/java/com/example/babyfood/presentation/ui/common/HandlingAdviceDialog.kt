@@ -20,6 +20,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.babyfood.data.service.SafetyRiskAnalyzer
 import com.example.babyfood.domain.model.RiskLevel
+import com.example.babyfood.presentation.theme.RiskForbiddenContainer
+import com.example.babyfood.presentation.theme.RiskNotRecommendedContainer
+import com.example.babyfood.presentation.theme.RiskRequiresHandlingContainer
+import com.example.babyfood.presentation.theme.RiskCautiousContainer
 
 /**
  * 处理建议对话框
@@ -174,10 +178,10 @@ private fun IngredientRiskCard(
     modifier: Modifier = Modifier
 ) {
     val cardColor = when (risk.riskLevel) {
-        RiskLevel.FORBIDDEN -> Color(0xFFFFEBEE)  // 浅红色
-        RiskLevel.NOT_RECOMMENDED -> Color(0xFFFFF8E1)  // 浅黄色
-        RiskLevel.REQUIRES_SPECIAL_HANDLING -> Color(0xFFE3F2FD)  // 浅蓝色
-        RiskLevel.CAUTIOUS_INTRODUCTION -> Color(0xFFFFF3E0)  // 浅橙色
+        RiskLevel.FORBIDDEN -> RiskForbiddenContainer
+        RiskLevel.NOT_RECOMMENDED -> RiskNotRecommendedContainer
+        RiskLevel.REQUIRES_SPECIAL_HANDLING -> RiskRequiresHandlingContainer
+        RiskLevel.CAUTIOUS_INTRODUCTION -> RiskCautiousContainer
         RiskLevel.NORMAL -> Color.Transparent
     }
 

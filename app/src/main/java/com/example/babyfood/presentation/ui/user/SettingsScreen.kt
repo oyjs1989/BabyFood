@@ -93,7 +93,7 @@ fun SettingsScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(PageBackground)
+                .background(BackgroundLight)
                 .padding(paddingValues)
         ) {
             when (uiState) {
@@ -177,13 +177,13 @@ private fun SettingsContent(
                 .fillMaxWidth()
                 .height(50.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = SurfaceVariant
+                containerColor = ButtonPrimary
             ),
             shape = RoundedCornerShape(12.dp)
         ) {
             Text(
                 text = "退出登录",
-                color = TextPrimary,
+                color = Color.White,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium
             )

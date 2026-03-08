@@ -41,9 +41,21 @@ import com.example.babyfood.presentation.theme.AvocadoPrimary
 import com.example.babyfood.presentation.theme.Charcoal
 import com.example.babyfood.presentation.theme.Coral
 import com.example.babyfood.presentation.theme.Cream
+import com.example.babyfood.presentation.theme.DividerLight
+import com.example.babyfood.presentation.theme.GrayBackground
+import com.example.babyfood.presentation.theme.Gray700
+import com.example.babyfood.presentation.theme.MealBreakfast
+import com.example.babyfood.presentation.theme.MealDinner
+import com.example.babyfood.presentation.theme.MealLunch
+import com.example.babyfood.presentation.theme.MealSnack
 import com.example.babyfood.presentation.theme.Peach
 import com.example.babyfood.presentation.theme.Primary
+import com.example.babyfood.presentation.theme.QuickCookTag
+import com.example.babyfood.presentation.theme.BalancedNutritionTag
 import com.example.babyfood.presentation.theme.SoftBrown
+import com.example.babyfood.presentation.theme.StatusFinished
+import com.example.babyfood.presentation.theme.StatusHalf
+import com.example.babyfood.presentation.theme.StatusAllergy
 import com.example.babyfood.presentation.ui.home.PlanWithRecipe
 
 /**
@@ -102,7 +114,7 @@ private fun TaskCard(
         colors = CardDefaults.cardColors(
             containerColor = Color.White
         ),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF0F0F0))
+        border = androidx.compose.foundation.BorderStroke(1.dp, DividerLight)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth()
@@ -120,7 +132,7 @@ private fun TaskCard(
                                 MealPeriod.SNACK -> Coral.copy(alpha = 0.3f)
                             }
                         } else {
-                            Color(0xFFF8F9FA)
+                            GrayBackground
                         }
                     ),
                 contentAlignment = Alignment.Center
@@ -345,11 +357,11 @@ private fun getFeedbackDisplayName(feedbackStatus: String): String {
 // 获取反馈背景颜色
 private fun getFeedbackBackgroundColor(feedbackStatus: String): Color {
     return when (feedbackStatus) {
-        "FINISHED" -> Color(0xFF2EC77C)  // 绿色
-        "HALF" -> Color(0xFFFFB347)      // 橙色
-        "DISLIKED" -> Color(0xFFFFB347)  // 橙色
-        "ALLERGY" -> Color(0xFFE74C3C)   // 红色
-        else -> Color(0xFF666666)        // 灰色
+        "FINISHED" -> StatusFinished  // 绿色
+        "HALF" -> StatusHalf      // 橙色
+        "DISLIKED" -> StatusHalf  // 橙色
+        "ALLERGY" -> StatusAllergy   // 红色
+        else -> Gray700        // 灰色
     }
 }
 
@@ -365,22 +377,22 @@ private fun generateRecipeTags(recipe: com.example.babyfood.domain.model.Recipe)
     
     // 根据烹饪时间添加"快手"标签
     if ((recipe.cookingTime ?: 0) <= 20) {
-        tags.add(RecipeTag("快手", Color(0xFF2EC77C)))
+        tags.add(RecipeTag("快手", QuickCookTag))
     }
     
     // 根据营养均衡添加标签
     val protein = recipe.nutrition.protein ?: 0f
     val calories = recipe.nutrition.calories ?: 0f
     if (calories > 0 && protein / calories > 0.1f) {
-        tags.add(RecipeTag("营养均衡", Color(0xFF2EB9A0)))
+        tags.add(RecipeTag("营养均衡", BalancedNutritionTag))
     }
     
     // 根据类别添加标签
     when (recipe.category) {
-        "breakfast" -> tags.add(RecipeTag("早餐", Color(0xFFFFB347)))
-        "lunch" -> tags.add(RecipeTag("午餐", Color(0xFF87CEEB)))
-        "dinner" -> tags.add(RecipeTag("晚餐", Color(0xFFDDA0DD)))
-        "snack" -> tags.add(RecipeTag("点心", Color(0xFF98FB98)))
+        "breakfast" -> tags.add(RecipeTag("早餐", MealBreakfast))
+        "lunch" -> tags.add(RecipeTag("午餐", MealLunch))
+        "dinner" -> tags.add(RecipeTag("晚餐", MealDinner))
+        "snack" -> tags.add(RecipeTag("点心", MealSnack))
     }
     
     // 限制最多显示3个标签

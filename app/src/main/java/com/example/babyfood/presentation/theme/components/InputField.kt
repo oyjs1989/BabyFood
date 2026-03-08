@@ -31,6 +31,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.babyfood.presentation.theme.Error
+import com.example.babyfood.presentation.theme.InputDisabledContainer
 import com.example.babyfood.presentation.theme.InputFieldRadius
 import com.example.babyfood.presentation.theme.InputFieldShape
 import com.example.babyfood.presentation.theme.Outline
@@ -145,9 +146,9 @@ fun BabyFoodInputField(
                 unfocusedBorderColor = if (isError) Error else Outline,
                 disabledBorderColor = Outline,
                 errorBorderColor = Error,
-                focusedContainerColor = if (enabled) Color.White else Color(0xFFF5F5F5),
-                unfocusedContainerColor = if (enabled) Color.White else Color(0xFFF5F5F5),
-                disabledContainerColor = Color(0xFFF5F5F5),
+                focusedContainerColor = if (enabled) Color.White else InputDisabledContainer,
+                unfocusedContainerColor = if (enabled) Color.White else InputDisabledContainer,
+                disabledContainerColor = InputDisabledContainer,
                 cursorColor = if (isError) Error else Primary,
                 focusedLabelColor = if (isError) Error else Primary,
                 unfocusedLabelColor = if (isError) Error else TextSecondary,
@@ -235,7 +236,7 @@ fun BabyFoodSearchField(
             disabledBorderColor = Outline,
             focusedContainerColor = Color.White,
             unfocusedContainerColor = Color.White,
-            disabledContainerColor = Color(0xFFF5F5F5),
+            disabledContainerColor = InputDisabledContainer,
             cursorColor = Primary,
             focusedTextColor = TextPrimary,
             unfocusedTextColor = TextPrimary,

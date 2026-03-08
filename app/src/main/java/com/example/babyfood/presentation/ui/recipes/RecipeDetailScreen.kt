@@ -8,6 +8,9 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.tween
 import com.example.babyfood.presentation.theme.ANIMATION_DURATION_CARD_EXPAND
 import com.example.babyfood.presentation.theme.EasingEaseOutBack
+import com.example.babyfood.presentation.theme.Warning
+import com.example.babyfood.presentation.theme.WarningContainer
+import com.example.babyfood.presentation.theme.OnWarningContainer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -453,9 +456,9 @@ fun RecipeDetailScreen(
                                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                                     border = androidx.compose.foundation.BorderStroke(
                                         0.5.dp,
-                                        Color(0xFFFF9800)  // 橙色
+                                        Warning
                                     ),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0))
+                                    colors = CardDefaults.cardColors(containerColor = WarningContainer)
                                 ) {
                                     Row(
                                         modifier = Modifier.padding(12.dp),
@@ -469,7 +472,7 @@ fun RecipeDetailScreen(
                                         Text(
                                             text = "含调味品：${seasoningIngredients.joinToString("、")}",
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = Color(0xFFE65100)
+                                            color = OnWarningContainer
                                         )
                                     }
                                 }

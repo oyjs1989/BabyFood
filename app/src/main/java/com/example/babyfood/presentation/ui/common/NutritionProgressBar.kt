@@ -21,6 +21,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.babyfood.presentation.theme.NutritionInsufficient
+import com.example.babyfood.presentation.theme.NutritionNormal
+import com.example.babyfood.presentation.theme.NutritionExcess
 
 /**
  * 营养素进度条
@@ -37,9 +40,9 @@ fun NutritionProgressBar(
 ) {
     val normalizedProgress = (progress / target).coerceIn(0f, 1.5f)
     val progressColor = when {
-        normalizedProgress < 0.8f -> Color(0xFFF44336)  // 红色 - 不足
-        normalizedProgress <= 1.2f -> Color(0xFF4CAF50)  // 绿色 - 正常
-        else -> Color(0xFFFF9800)  // 橙色 - 过量
+        normalizedProgress < 0.8f -> NutritionInsufficient
+        normalizedProgress <= 1.2f -> NutritionNormal
+        else -> NutritionExcess
     }
 
     Row(
@@ -176,9 +179,9 @@ fun SimpleNutritionProgressBar(
 ) {
     val normalizedProgress = progressPercentage.coerceIn(0f, 100f) / 100f
     val progressColor = when {
-        progressPercentage < 80f -> Color(0xFFF44336)  // 红色 - 不足
-        progressPercentage <= 120f -> Color(0xFF4CAF50)  // 绿色 - 正常
-        else -> Color(0xFFFF9800)  // 橙色 - 过量
+        progressPercentage < 80f -> NutritionInsufficient
+        progressPercentage <= 120f -> NutritionNormal
+        else -> NutritionExcess
     }
 
     Row(

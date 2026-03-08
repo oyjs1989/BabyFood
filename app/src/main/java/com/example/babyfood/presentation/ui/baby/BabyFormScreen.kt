@@ -47,6 +47,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import android.net.Uri
 import android.util.Log
+import com.example.babyfood.presentation.theme.ButtonPrimary
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -234,7 +235,7 @@ fun BabyFormScreen(
                             .height(56.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
+                            containerColor = ButtonPrimary
                         )
                     ) {
                         Icon(
@@ -297,7 +298,7 @@ fun BabyFormScreen(
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
+                        containerColor = ButtonPrimary
                     ),
                     enabled = name.isNotBlank() && birthDate != null
                 ) {

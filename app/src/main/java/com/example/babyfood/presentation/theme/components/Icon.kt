@@ -14,8 +14,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.example.babyfood.presentation.theme.Blue
 import com.example.babyfood.presentation.theme.CardBackground
 import com.example.babyfood.presentation.theme.ElevationLevel1
+import com.example.babyfood.presentation.theme.Error
+import com.example.babyfood.presentation.theme.ErrorContainer
 import com.example.babyfood.presentation.theme.IconMediumRadius
 import com.example.babyfood.presentation.theme.IconMediumShape
 import com.example.babyfood.presentation.theme.IconSizeLarge
@@ -25,7 +28,12 @@ import com.example.babyfood.presentation.theme.IconSmallRadius
 import com.example.babyfood.presentation.theme.IconSmallShape
 import com.example.babyfood.presentation.theme.Outline
 import com.example.babyfood.presentation.theme.Primary
+import com.example.babyfood.presentation.theme.RiskRequiresHandlingContainer
 import com.example.babyfood.presentation.theme.SpacingXS
+import com.example.babyfood.presentation.theme.Success
+import com.example.babyfood.presentation.theme.SuccessContainer
+import com.example.babyfood.presentation.theme.Warning
+import com.example.babyfood.presentation.theme.WarningContainer
 
 // ===== 图标容器组件 =====
 // 应用场景：小型图标外容器（12dp 圆角）、中型图标外容器（16dp 圆角）
@@ -160,10 +168,10 @@ fun BabyFoodStatusIconContainer(
     contentDescription: String? = null
 ) {
     val (backgroundColor, iconColor) = when (status) {
-        StatusType.SUCCESS -> Color(0xFFE8F5E9) to Color(0xFF52C41A)
-        StatusType.WARNING -> Color(0xFFFFF3E0) to Color(0xFFFAAD14)
-        StatusType.ERROR -> Color(0xFFFFEBEE) to Color(0xFFF5222D)
-        StatusType.INFO -> Color(0xFFE3F2FD) to Color(0xFF5AC8FA)
+        StatusType.SUCCESS -> SuccessContainer to Success
+        StatusType.WARNING -> WarningContainer to Warning
+        StatusType.ERROR -> ErrorContainer to Error
+        StatusType.INFO -> RiskRequiresHandlingContainer to Blue
     }
 
     Surface(

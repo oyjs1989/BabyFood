@@ -24,6 +24,8 @@ import androidx.compose.material.icons.filled.ChildCare
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -38,8 +40,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import android.widget.Toast
+import com.example.babyfood.presentation.theme.ButtonPrimary
 import com.example.babyfood.presentation.ui.common.AppScaffold
-import com.example.babyfood.presentation.ui.common.AppBottomAction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,14 +54,22 @@ fun BabyListScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     AppScaffold(
-        bottomActions = listOf(
-            AppBottomAction(
-                icon = Icons.Default.Add,
-                label = "添加",
-                contentDescription = "添加宝宝",
-                onClick = onNavigateToAdd
-            )
-        )
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onNavigateToAdd,
+                containerColor = ButtonPrimary,
+                contentColor = Color.White,
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = 6.dp,
+                    pressedElevation = 8.dp
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "添加宝宝"
+                )
+            }
+        }
     ) {
         Column(
             modifier = Modifier

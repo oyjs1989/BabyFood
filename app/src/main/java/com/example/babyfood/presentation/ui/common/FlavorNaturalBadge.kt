@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.babyfood.presentation.theme.RiskNormal
 
 /**
  * 原味推荐标识组件
@@ -31,7 +32,7 @@ fun FlavorNaturalBadge(
     Box(
         modifier = modifier
             .background(
-                color = Color(0xFF4CAF50),  // 绿色
+                color = RiskNormal,
                 shape = RoundedCornerShape(4.dp)
             )
             .padding(horizontal = 6.dp, vertical = 2.dp)
@@ -57,7 +58,7 @@ fun MiniFlavorNaturalBadge(
     Box(
         modifier = modifier
             .background(
-                color = Color(0xFF4CAF50),  // 绿色
+                color = RiskNormal,
                 shape = RoundedCornerShape(50)
             )
     ) {

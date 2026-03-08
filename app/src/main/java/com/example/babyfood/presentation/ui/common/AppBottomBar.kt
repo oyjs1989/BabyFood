@@ -16,10 +16,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.example.babyfood.presentation.theme.ButtonPrimary
 import com.example.babyfood.presentation.theme.ElevationLevel2
 
 /**
@@ -59,8 +61,8 @@ fun AppBottomBar(
                         .sizeIn(minWidth = 80.dp, minHeight = 48.dp)
                         .semantics { contentDescription = action.contentDescription },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        containerColor = ButtonPrimary,
+                        contentColor = Color.White,
                         disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                     ),

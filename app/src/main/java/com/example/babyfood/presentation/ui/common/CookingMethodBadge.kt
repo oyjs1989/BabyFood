@@ -22,6 +22,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.babyfood.data.service.CookingMethodRecommender
+import com.example.babyfood.presentation.theme.DifficultyEasy
+import com.example.babyfood.presentation.theme.DifficultyMedium
+import com.example.babyfood.presentation.theme.DifficultyHard
 
 /**
  * 制作方式推荐徽章
@@ -84,9 +87,9 @@ fun DifficultyBadge(
     }
 
     val color = when {
-        difficultyLevel <= 2 -> Color(0xFF4CAF50)  // 绿色-简单
-        difficultyLevel <= 4 -> Color(0xFFFF9800)  // 橙色-中等
-        else -> Color(0xFFF44336)  // 红色-困难
+        difficultyLevel <= 2 -> DifficultyEasy
+        difficultyLevel <= 4 -> DifficultyMedium
+        else -> DifficultyHard
     }
 
     Box(

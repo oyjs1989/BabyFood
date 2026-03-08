@@ -20,6 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.babyfood.presentation.theme.ChartBaby
+import com.example.babyfood.presentation.theme.ChartBabyFill
+import com.example.babyfood.presentation.theme.ChartChina
+import com.example.babyfood.presentation.theme.ChartWHO
 import com.example.babyfood.presentation.theme.ElevationLevel1
 import com.example.babyfood.presentation.theme.SpacingMD
 
@@ -40,25 +44,25 @@ import com.example.babyfood.presentation.theme.SpacingMD
  * WHO 标准线颜色
  * #88C999（柔和绿）
  */
-val WhoStandardLineColor = Color(0xFF88C999)
+val WhoStandardLineColor = ChartWHO
 
 /**
  * 中国标准线颜色
  * #73A6FF（清新蓝）
  */
-val ChinaStandardLineColor = Color(0xFF73A6FF)
+val ChinaStandardLineColor = ChartChina
 
 /**
  * 宝宝实际数据线颜色
  * #FF9F69（主暖橙）
  */
-val BabyDataLineColor = Color(0xFFFF9F69)
+val BabyDataLineColor = ChartBaby
 
 /**
  * 宝宝数据线填充颜色（20% 透明度）
  * #FF9F69 20% 透明度
  */
-val BabyDataFillColor = Color(0x33FF9F69)  // 20% 透明度
+val BabyDataFillColor = ChartBabyFill
 
 /**
  * 生长曲线图表容器
@@ -142,42 +146,42 @@ object GrowthChartColors {
     /**
      * WHO P3 标准线颜色（下界）
      */
-    val WhoP3 = Color(0xFF88C999)
+    val WhoP3 = ChartWHO
     
     /**
      * WHO P50 标准线颜色（中位线）
      */
-    val WhoP50 = Color(0xFF88C999)
+    val WhoP50 = ChartWHO
     
     /**
      * WHO P97 标准线颜色（上界）
      */
-    val WhoP97 = Color(0xFF88C999)
+    val WhoP97 = ChartWHO
     
     /**
      * 中国 P3 标准线颜色（下界）
      */
-    val ChinaP3 = Color(0xFF73A6FF)
+    val ChinaP3 = ChartChina
     
     /**
      * 中国 P50 标准线颜色（中位线）
      */
-    val ChinaP50 = Color(0xFF73A6FF)
+    val ChinaP50 = ChartChina
     
     /**
      * 中国 P97 标准线颜色（上界）
      */
-    val ChinaP97 = Color(0xFF73A6FF)
+    val ChinaP97 = ChartChina
     
     /**
      * 宝宝数据线颜色
      */
-    val BabyData = Color(0xFFFF9F69)
+    val BabyData = ChartBaby
     
     /**
      * 宝宝数据线填充颜色（20% 透明度）
      */
-    val BabyDataFill = Color(0x33FF9F69)
+    val BabyDataFill = ChartBabyFill
 }
 
 /**

@@ -95,10 +95,7 @@ fun MainScreen(
         bottomBar = {
             if (currentDestination?.route in listOf("home", "recipes", "plans", "inventory", "baby")) {
                 com.example.babyfood.presentation.ui.common.AvocadoBottomBar(
-                    navController = navController,
-                    onScanClick = {
-                        // TODO: Navigate to Scan/AI
-                    }
+                    navController = navController
                 )
             }
         }

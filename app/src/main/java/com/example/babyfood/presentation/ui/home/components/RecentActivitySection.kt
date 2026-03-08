@@ -31,6 +31,14 @@ import androidx.compose.ui.unit.dp
 import com.example.babyfood.presentation.theme.Blue
 import com.example.babyfood.presentation.theme.Green
 import com.example.babyfood.presentation.theme.Primary
+import com.example.babyfood.presentation.theme.Gray300
+import com.example.babyfood.presentation.theme.Gray400
+import com.example.babyfood.presentation.theme.Gray900
+import com.example.babyfood.presentation.theme.Gray700
+import com.example.babyfood.presentation.theme.Orange600
+import com.example.babyfood.presentation.theme.OrangeContainer
+import com.example.babyfood.presentation.theme.GreenContainer
+import com.example.babyfood.presentation.theme.DividerLight
 
 /**
  * 最近活动记录区域 - 参考设计中的活动列表
@@ -92,7 +100,7 @@ private fun ActivityRow(
                         .width(2.dp)
                         .height(20.dp)
                         .background(
-                            color = Color(0xFFE5E7EB),
+                            color = Gray300,
                             shape = RoundedCornerShape(1.dp)
                         )
                 )
@@ -107,7 +115,7 @@ private fun ActivityRow(
                 text = activity.title,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF1F2937)
+                color = Gray900
             )
 
             Spacer(modifier = Modifier.height(2.dp))
@@ -115,7 +123,7 @@ private fun ActivityRow(
             Text(
                 text = activity.description,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFF6B7280)
+                color = Gray700
             )
 
             Spacer(modifier = Modifier.height(2.dp))
@@ -123,7 +131,7 @@ private fun ActivityRow(
             Text(
                 text = activity.time,
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF9CA3AF),
+                color = Gray400,
                 fontWeight = FontWeight.Medium
             )
         }
@@ -152,8 +160,8 @@ private fun getSampleActivities(): List<ActivityItem> {
             description = "通过 AI 相机识别到：蒸西兰花",
             time = "2小时前",
             icon = Icons.Default.Restaurant,
-            iconColor = Color(0xFFEA580C), // Orange 600
-            iconBackgroundColor = Color(0xFFFFEDD5) // Orange 100
+            iconColor = Orange600,
+            iconBackgroundColor = OrangeContainer
         ),
         ActivityItem(
             title = "生长里程碑",
@@ -161,7 +169,7 @@ private fun getSampleActivities(): List<ActivityItem> {
             time = "昨天",
             icon = Icons.Default.TrendingUp,
             iconColor = Green,
-            iconBackgroundColor = Color(0xFFDCFCE7) // Green 100
+            iconBackgroundColor = GreenContainer
         )
     )
 }
@@ -181,7 +189,7 @@ fun RecentActivityCard(
         colors = CardDefaults.cardColors(
             containerColor = Color.White
         ),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF0F0F0))
+        border = androidx.compose.foundation.BorderStroke(1.dp, DividerLight)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)

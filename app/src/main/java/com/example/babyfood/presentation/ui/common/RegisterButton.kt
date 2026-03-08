@@ -3,15 +3,16 @@ package com.example.babyfood.presentation.ui.common
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.example.babyfood.presentation.theme.ButtonPrimary
 
 /**
  * 注册按钮组件
@@ -35,8 +36,8 @@ fun RegisterButton(
                 role = Role.Button
             },
         colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary
+            containerColor = ButtonPrimary,
+            contentColor = Color.White
         )
     ) {
         Text(text = "注册")

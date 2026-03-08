@@ -101,7 +101,7 @@ fun AvatarPickerScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(PageBackground)
+                .background(BackgroundLight)
                 .padding(paddingValues)
         ) {
             Column(

@@ -27,6 +27,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.babyfood.presentation.theme.AnimationDurationNormal
 import com.example.babyfood.presentation.theme.AnimationEasing
+import com.example.babyfood.presentation.theme.Blue
+import com.example.babyfood.presentation.theme.CircularProgressBackground
+import com.example.babyfood.presentation.theme.Gray900
+import com.example.babyfood.presentation.theme.Gray700
 
 /**
  * 环形进度条组件
@@ -45,8 +49,8 @@ fun CircularProgressIndicator(
     modifier: Modifier = Modifier,
     size: Dp = 56.dp,
     strokeWidth: Dp = 6.dp,
-    backgroundColor: Color = Color(0xFFE0E0E0),
-    progressColor: Color = Color(0xFF42A5F5),
+    backgroundColor: Color = CircularProgressBackground,
+    progressColor: Color = Blue,
     animationDuration: Int = AnimationDurationNormal
 ) {
     val animatedProgress = animateProgress(progress, animationDuration)
@@ -88,7 +92,7 @@ fun CircularProgressWithValue(
     strokeWidth: Dp = 8.dp,
     progressColor: Color = MaterialTheme.colorScheme.primary,
     animationDuration: Int = AnimationDurationNormal,
-    backgroundColor: Color = Color(0xFFFFFFFF).copy(alpha = 0.3f)  // 白色半透明背景，增强对比度
+    backgroundColor: Color = Color.White.copy(alpha = 0.3f)
 ) {
     val animatedProgress = animateProgress(progress, animationDuration)
 
@@ -126,7 +130,7 @@ fun CircularProgressWithValue(
                 text = unit,
                 style = MaterialTheme.typography.labelSmall,
                 fontSize = 10.sp,
-                color = Color(0xFF333333)  // 使用深灰色，提高可读性
+                color = Gray900
             )
 
             Spacer(modifier = Modifier.height(2.dp))
@@ -136,7 +140,7 @@ fun CircularProgressWithValue(
                 style = MaterialTheme.typography.labelMedium,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color(0xFF666666)  // 使用中灰色，提高可读性
+                color = Gray700
             )
         }
     }

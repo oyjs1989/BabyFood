@@ -25,6 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.babyfood.presentation.theme.RiskCautious
+import com.example.babyfood.presentation.theme.RiskCautiousContainer
+import com.example.babyfood.presentation.theme.RiskForbidden
+import com.example.babyfood.presentation.theme.RiskForbiddenContainer
 
 /**
  * 质地适配性警告组件
@@ -126,7 +130,7 @@ private fun TextureTooSimpleCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFFFF3E0).copy(alpha = 0.8f)
+            containerColor = RiskCautiousContainer.copy(alpha = 0.8f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         shape = RoundedCornerShape(8.dp)
@@ -140,7 +144,7 @@ private fun TextureTooSimpleCard(
             Icon(
                 imageVector = Icons.Default.Warning,
                 contentDescription = "过于简单",
-                tint = Color(0xFFFF9800),
+                tint = RiskCautious,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.size(12.dp))
@@ -151,7 +155,7 @@ private fun TextureTooSimpleCard(
                     text = "质地提示",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFF57C00)
+                    color = RiskCautious
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -175,7 +179,7 @@ private fun TextureTooComplexCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFFFEBEE).copy(alpha = 0.8f)
+            containerColor = RiskForbiddenContainer.copy(alpha = 0.8f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         shape = RoundedCornerShape(8.dp)
@@ -189,7 +193,7 @@ private fun TextureTooComplexCard(
             Icon(
                 imageVector = Icons.Default.Warning,
                 contentDescription = "过于复杂",
-                tint = Color(0xFFD32F2F),
+                tint = RiskForbidden,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.size(12.dp))
@@ -200,7 +204,7 @@ private fun TextureTooComplexCard(
                     text = "质地警告",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFD32F2F)
+                    color = RiskForbidden
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -224,7 +228,7 @@ private fun TextureTooYoungCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFEF5350).copy(alpha = 0.1f)
+            containerColor = RiskForbidden.copy(alpha = 0.1f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         shape = RoundedCornerShape(8.dp)
@@ -238,7 +242,7 @@ private fun TextureTooYoungCard(
             Icon(
                 imageVector = Icons.Default.Warning,
                 contentDescription = "月龄过小",
-                tint = Color(0xFFD32F2F),
+                tint = RiskForbidden,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.size(12.dp))
@@ -249,7 +253,7 @@ private fun TextureTooYoungCard(
                     text = "重要提醒",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFD32F2F)
+                    color = RiskForbidden
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(

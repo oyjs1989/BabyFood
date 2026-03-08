@@ -19,6 +19,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.babyfood.presentation.theme.NewIngredientTag
+import com.example.babyfood.presentation.theme.ScoreExcellent
+import com.example.babyfood.presentation.theme.ScoreFair
+import com.example.babyfood.presentation.theme.ScoreMedium
+import com.example.babyfood.presentation.theme.ScorePoor
 
 /**
  * 新食材标签组件
@@ -33,7 +38,7 @@ fun NewIngredientTag(
     Box(
         modifier = modifier
             .background(
-                color = Color(0xFF9C27B0),  // 紫色
+                color = NewIngredientTag,
                 shape = RoundedCornerShape(12.dp)
             )
             .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -122,7 +127,7 @@ fun IngredientVarietySummary(
         Text(
             text = "新食材：$newIngredients",
             style = MaterialTheme.typography.bodySmall,
-            color = Color(0xFF9C27B0),
+            color = NewIngredientTag,
             fontWeight = FontWeight.Bold
         )
         Text(
@@ -133,10 +138,10 @@ fun IngredientVarietySummary(
             text = "多样性：$varietyPercentage%",
             style = MaterialTheme.typography.bodySmall,
             color = when {
-                varietyPercentage >= 50 -> Color(0xFF4CAF50)  // 绿色
-                varietyPercentage >= 30 -> Color(0xFFFF9800)  // 橙色
-                varietyPercentage >= 10 -> Color(0xFFFFC107)  // 黄色
-                else -> Color(0xFFF44336)  // 红色
+                varietyPercentage >= 50 -> ScoreExcellent
+                varietyPercentage >= 30 -> ScoreFair
+                varietyPercentage >= 10 -> ScoreMedium
+                else -> ScorePoor
             },
             fontWeight = FontWeight.Bold
         )

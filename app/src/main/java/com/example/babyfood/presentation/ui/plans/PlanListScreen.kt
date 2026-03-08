@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import com.example.babyfood.presentation.ui.home.components.RecipeSelectorDialog
 import androidx.compose.runtime.*
@@ -32,7 +33,8 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.babyfood.domain.model.MealPeriod
 import com.example.babyfood.domain.model.PlanStatus
 import com.example.babyfood.presentation.ui.common.AppScaffold
-import com.example.babyfood.presentation.ui.common.AppBottomAction
+import com.example.babyfood.presentation.ui.common.ExpandableFab
+import com.example.babyfood.presentation.ui.common.FabAction
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import java.time.format.TextStyle
@@ -53,26 +55,28 @@ fun PlanListScreen(
     var showDateRangePicker by remember { mutableStateOf(false) }
 
     AppScaffold(
-        bottomActions = listOf(
-            AppBottomAction(
-                icon = Icons.Default.Add,
-                label = "手动添加",
-                contentDescription = "手动添加计划",
-                onClick = {
-                    uiState.selectedBaby?.let { baby ->
-                        onNavigateToAdd(baby.id)
-                    }
-                }
-            ),
-            AppBottomAction(
-                icon = Icons.Default.AutoAwesome,
-                label = "AI推荐",
-                contentDescription = "AI生成计划",
-                onClick = {
-                    showDateRangePicker = true
-                }
+        floatingActionButton = {
+            ExpandableFab(
+                actions = listOf(
+                    FabAction(
+                        icon = Icons.Default.Edit,
+                        label = "手动添加计划",
+                        onClick = {
+                            uiState.selectedBaby?.let { baby ->
+                                onNavigateToAdd(baby.id)
+                            }
+                        }
+                    ),
+                    FabAction(
+                        icon = Icons.Default.AutoAwesome,
+                        label = "AI智能推荐",
+                        onClick = {
+                            showDateRangePicker = true
+                        }
+                    )
+                )
             )
-        )
+        }
     ) {
         // 宝宝选择器
         if (uiState.babies.size > 1) {

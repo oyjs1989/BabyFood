@@ -47,6 +47,7 @@ import com.example.babyfood.presentation.theme.AvocadoPrimary
 import com.example.babyfood.presentation.theme.Charcoal
 import com.example.babyfood.presentation.theme.Coral
 import com.example.babyfood.presentation.theme.Cream
+import com.example.babyfood.presentation.theme.Gray300
 import com.example.babyfood.presentation.theme.Peach
 import com.example.babyfood.presentation.theme.SoftBrown
 
@@ -74,30 +75,14 @@ fun NutritionGoalCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "营养摄入",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = SoftBrown,
-                letterSpacing = 1.sp
+                text = "NUTRITION OVERVIEW",
+                style = androidx.compose.ui.text.TextStyle(
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                ),
+                color = SoftBrown
             )
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    text = "详情",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Charcoal
-                )
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = null,
-                    tint = Charcoal,
-                    modifier = Modifier.size(12.dp)
-                )
-            }
         }
 
         // 横向滚动的营养指标卡片
@@ -219,40 +204,37 @@ private fun WaterIntakeCard(
                 ) {
                     // 圆形进度条 + 水滴图标
                     Box(
-                        modifier = Modifier.size(56.dp),
+                        modifier = Modifier.size(48.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        val strokeWidth = 3.dp
                         androidx.compose.foundation.Canvas(
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.size(48.dp)
                         ) {
-                            val strokePx = strokeWidth.toPx()
-                            val diameter = size.minDimension - strokePx
-                            val radius = diameter / 2
-                            val center = Offset(size.width / 2, size.height / 2)
+                            val strokeWidth = 3.dp.toPx()
+                            val diameter = size.minDimension - strokeWidth
+                            val radius = diameter / 2f
+                            val centerOffset = Offset(size.width / 2f, size.height / 2f)
 
-                            // 背景圆环
+                            // 背景圆环 - Gray300
                             drawCircle(
-                                color = Color(0xFFE5E7EB),
+                                color = Gray300,
                                 radius = radius,
-                                center = center,
-                                style = Stroke(width = strokePx)
+                                center = centerOffset,
+                                style = Stroke(width = strokeWidth)
                             )
 
-                            // 进度圆弧
-                            val sweepAngle = 360f * progress
-                            drawArc(
-                                color = AvocadoPrimary,
-                                startAngle = -90f,
-                                sweepAngle = sweepAngle,
-                                useCenter = false,
-                                style = Stroke(width = strokePx, cap = StrokeCap.Round),
-                                size = Size(diameter, diameter),
-                                topLeft = Offset(
-                                    (size.width - diameter) / 2,
-                                    (size.height - diameter) / 2
+                            // 进度圆弧 - 从顶部开始
+                            if (progress > 0f) {
+                                drawArc(
+                                    color = AvocadoPrimary,
+                                    startAngle = -90f,
+                                    sweepAngle = 360f * progress,
+                                    useCenter = false,
+                                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                                    topLeft = Offset(strokeWidth / 2f, strokeWidth / 2f),
+                                    size = Size(diameter, diameter)
                                 )
-                            )
+                            }
                         }
 
                         // 水滴图标
@@ -260,7 +242,7 @@ private fun WaterIntakeCard(
                             imageVector = Icons.Default.WaterDrop,
                             contentDescription = null,
                             tint = AvocadoPrimary,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
 
@@ -332,13 +314,11 @@ private fun CircularProgressCard(
         (currentValue.toFloat() / targetValue).coerceIn(0f, 1f)
     } else 0f
     val percentage = (progress * 100).toInt()
-    val strokeWidth = 4.dp
-    val circleSize = 56.dp
 
     Card(
         onClick = onClick,
-        modifier = Modifier.width(120.dp),
-        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.width(110.dp),
+        shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(
             containerColor = Cream
@@ -348,70 +328,71 @@ private fun CircularProgressCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp, horizontal = 8.dp),
+                .padding(vertical = 8.dp, horizontal = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 标题
+            // 标题 - 10px, 大写
             Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = SoftBrown,
-                letterSpacing = 0.5.sp
+                text = label.uppercase(),
+                style = androidx.compose.ui.text.TextStyle(
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
+                ),
+                color = SoftBrown
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            // 圆形进度条
+            // 圆形进度条 - 使用固定尺寸的 Canvas
             Box(
-                modifier = Modifier.size(circleSize),
+                modifier = Modifier.size(56.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // 绘制圆形进度条
                 androidx.compose.foundation.Canvas(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.size(56.dp)
                 ) {
-                    val strokePx = strokeWidth.toPx()
-                    val diameter = size.minDimension - strokePx
-                    val radius = diameter / 2
-                    val center = Offset(size.width / 2, size.height / 2)
+                    val strokeWidth = 4.dp.toPx()
+                    val diameter = size.minDimension - strokeWidth
+                    val radius = diameter / 2f
+                    val centerOffset = Offset(size.width / 2f, size.height / 2f)
 
-                    // 背景圆环 - 白色
+                    // 背景圆环 - 使用淡灰色，在 Cream 背景上可见
                     drawCircle(
                         color = Color.White,
                         radius = radius,
-                        center = center,
-                        style = Stroke(width = strokePx)
+                        center = centerOffset,
+                        style = Stroke(width = strokeWidth)
                     )
 
-                    // 进度圆弧
-                    val sweepAngle = 360f * progress
-                    drawArc(
-                        color = progressColor,
-                        startAngle = -90f,
-                        sweepAngle = sweepAngle,
-                        useCenter = false,
-                        style = Stroke(width = strokePx, cap = StrokeCap.Round),
-                        size = Size(diameter, diameter),
-                        topLeft = Offset(
-                            (size.width - diameter) / 2,
-                            (size.height - diameter) / 2
+                    // 进度圆弧 - 从顶部开始（-90度）
+                    if (progress > 0f) {
+                        drawArc(
+                            color = progressColor,
+                            startAngle = -90f,
+                            sweepAngle = 360f * progress,
+                            useCenter = false,
+                            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                            topLeft = Offset(strokeWidth / 2f, strokeWidth / 2f),
+                            size = Size(diameter, diameter)
                         )
-                    )
+                    }
                 }
 
-                // 中心百分比
+                // 中心百分比 - 14px
                 Text(
                     text = "$percentage%",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    style = androidx.compose.ui.text.TextStyle(
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
                     color = Charcoal
                 )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            // 数值行
+            // 数值行 - 9px
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -421,21 +402,25 @@ private fun CircularProgressCard(
                         imageVector = icon,
                         contentDescription = null,
                         tint = progressColor,
-                        modifier = Modifier.size(14.dp)
+                        modifier = Modifier.size(12.dp)
                     )
                 } else if (textIcon != null) {
                     Text(
                         text = textIcon,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
+                        style = androidx.compose.ui.text.TextStyle(
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
                         color = progressColor
                     )
                 }
 
                 Text(
                     text = "$currentValue/$targetValue $unit",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Medium,
+                    style = androidx.compose.ui.text.TextStyle(
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
                     color = SoftBrown
                 )
             }

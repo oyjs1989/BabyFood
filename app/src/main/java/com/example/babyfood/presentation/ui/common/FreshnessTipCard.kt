@@ -20,6 +20,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.babyfood.data.service.FreshnessAdvisor
+import com.example.babyfood.presentation.theme.StorageFreshContainer
+import com.example.babyfood.presentation.theme.StorageFrozenContainer
+import com.example.babyfood.presentation.theme.StorageCannedContainer
+import com.example.babyfood.presentation.theme.StorageExpiryWarningContainer
+import com.example.babyfood.presentation.theme.FreshnessToday
+import com.example.babyfood.presentation.theme.Freshness3Days
+import com.example.babyfood.presentation.theme.Freshness1Week
+import com.example.babyfood.presentation.theme.FreshnessLong
 
 /**
  * 新鲜度提示卡片
@@ -33,16 +41,16 @@ fun FreshnessTipCard(
 ) {
     val (icon, title, backgroundColor) = when (advice.level) {
         FreshnessAdvisor.FreshnessLevel.FRESH -> {
-            Triple("🥬", "新鲜建议", Color(0xFFE8F5E9))
+            Triple("🥬", "新鲜建议", StorageFreshContainer)
         }
         FreshnessAdvisor.FreshnessLevel.FROZEN_RECOMMENDED -> {
-            Triple("❄️", "推荐冷冻", Color(0xFFE3F2FD))
+            Triple("❄️", "推荐冷冻", StorageFrozenContainer)
         }
         FreshnessAdvisor.FreshnessLevel.CANNED_ACCEPTABLE -> {
-            Triple("🥫", "可接受罐装", Color(0xFFF3E5F5))
+            Triple("🥫", "可接受罐装", StorageCannedContainer)
         }
         FreshnessAdvisor.FreshnessLevel.CONSIDER_EXPIRY -> {
-            Triple("⚠️", "注意保质期", Color(0xFFFFF3E0))
+            Triple("⚠️", "注意保质期", StorageExpiryWarningContainer)
         }
     }
 
@@ -130,7 +138,7 @@ fun FreshnessSummaryCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFE8F5E9)
+            containerColor = StorageFreshContainer
         ),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -187,16 +195,16 @@ fun StorageDaysTag(
 ) {
     val (color, text) = when {
         days <= 1 -> {
-            Pair(Color(0xFFFF5252), "当天食用")
+            Pair(FreshnessToday, "当天食用")
         }
         days <= 3 -> {
-            Pair(Color(0xFFFF9800), "3天内")
+            Pair(Freshness3Days, "3天内")
         }
         days <= 7 -> {
-            Pair(Color(0xFFFFC107), "1周内")
+            Pair(Freshness1Week, "1周内")
         }
         else -> {
-            Pair(Color(0xFF4CAF50), "${days}天")
+            Pair(FreshnessLong, "${days}天")
         }
     }
 

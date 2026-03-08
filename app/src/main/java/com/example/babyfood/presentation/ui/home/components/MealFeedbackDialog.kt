@@ -27,6 +27,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.babyfood.presentation.theme.ButtonPrimary
+import com.example.babyfood.presentation.theme.ButtonPrimaryDisabled
+import com.example.babyfood.presentation.theme.ButtonOutline
+import com.example.babyfood.presentation.theme.Charcoal
+import com.example.babyfood.presentation.theme.DividerLight
+import com.example.babyfood.presentation.theme.Gray500
+import com.example.babyfood.presentation.theme.Gray700
+import com.example.babyfood.presentation.theme.Gray900
 
 /**
  * 用餐反馈选项
@@ -106,7 +114,7 @@ fun MealFeedbackDialog(
                         text = "宝宝吃得怎么样？",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF333333),
+                        color = Gray900,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.weight(1f)
                     )
@@ -119,7 +127,7 @@ fun MealFeedbackDialog(
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "关闭",
-                            tint = Color(0xFF666666)
+                            tint = Gray700
                         )
                     }
                 }
@@ -185,8 +193,8 @@ fun MealFeedbackDialog(
                         .fillMaxWidth()
                         .height(52.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFF7F3E),
-                        disabledContainerColor = Color(0xFFE0E0E0)
+                        containerColor = ButtonPrimary,
+                        disabledContainerColor = ButtonPrimaryDisabled
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
@@ -212,10 +220,10 @@ fun MealFeedbackDialog(
                         .fillMaxWidth()
                         .height(44.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color(0xFF666666)
+                        contentColor = Gray700
                     ),
                     border = ButtonDefaults.outlinedButtonBorder.copy(
-                        brush = androidx.compose.ui.graphics.SolidColor(Color(0xFFDDDDDD))
+                        brush = androidx.compose.ui.graphics.SolidColor(ButtonOutline)
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
@@ -223,7 +231,7 @@ fun MealFeedbackDialog(
                         text = "取消",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFF666666)
+                        color = Gray700
                     )
                 }
             }
@@ -242,9 +250,9 @@ private fun FeedbackOptionCard(
     modifier: Modifier = Modifier
 ) {
     val borderColor = if (isSelected) {
-        Color(0xFFFF7F3E)
+        ButtonPrimary
     } else {
-        Color(0xFFDDDDDD)
+        ButtonOutline
     }
 
     val borderWidth = if (isSelected) 2.dp else 1.dp
@@ -279,9 +287,9 @@ private fun FeedbackOptionCard(
                     .size(40.dp)
                     .background(
                         color = if (isSelected) {
-                            Color(0xFFFF7F3E).copy(alpha = 0.1f)
+                            ButtonPrimary.copy(alpha = 0.1f)
                         } else {
-                            Color(0xFFF0F0F0)
+                            DividerLight
                         },
                         shape = CircleShape
                     ),
@@ -292,9 +300,9 @@ private fun FeedbackOptionCard(
                     imageVector = getFeedbackIcon(option),
                     contentDescription = option.displayName,
                     tint = if (isSelected) {
-                        Color(0xFFFF7F3E)
+                        ButtonPrimary
                     } else {
-                        Color(0xFF999999)
+                        Gray500
                     },
                     modifier = Modifier.size(24.dp)
                 )
@@ -312,9 +320,9 @@ private fun FeedbackOptionCard(
                     FontWeight.Normal
                 },
                 color = if (isSelected) {
-                    Color(0xFFFF7F3E)
+                    ButtonPrimary
                 } else {
-                    Color(0xFF333333)
+                    Gray900
                 }
             )
         }

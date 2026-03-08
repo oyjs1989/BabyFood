@@ -6,12 +6,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
+import com.example.babyfood.presentation.theme.BackgroundLight
 
 /**
  * 应用内容区域组件
@@ -40,7 +40,7 @@ fun AppContent(
         modifier = modifier
             .fillMaxSize()
             .widthIn(max = maxContentWidth),
-        color = MaterialTheme.colorScheme.background
+        color = BackgroundLight
     ) {
         Box(
             modifier = Modifier

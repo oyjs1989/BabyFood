@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.unit.dp
+import com.example.babyfood.presentation.theme.BackgroundLight
+import com.example.babyfood.presentation.theme.OnBackground
 
 /**
  * 应用主布局组件
@@ -26,12 +28,14 @@ import androidx.compose.ui.unit.dp
  * 用户应使用全局 Header（AppHeader）中的"BabyFood"应用名称返回首页。
  *
  * @param bottomActions 底部操作按钮列表
+ * @param floatingActionButton 悬浮按钮（可选）
  * @param modifier 修饰符
  * @param content 内容
  */
 @Composable
 fun AppScaffold(
     bottomActions: List<AppBottomAction> = emptyList(),
+    floatingActionButton: @Composable () -> Unit = {},
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -40,10 +44,13 @@ fun AppScaffold(
             .semantics { testTag = "app_scaffold" },
         // 移除 topBar 参数，Scaffold 将不再显示顶部标题栏
         bottomBar = {
-            AppBottomBar(bottomActions = bottomActions)
+            if (bottomActions.isNotEmpty()) {
+                AppBottomBar(bottomActions = bottomActions)
+            }
         },
-        containerColor = MaterialTheme.colorScheme.background,
-        contentColor = MaterialTheme.colorScheme.onBackground
+        floatingActionButton = floatingActionButton,
+        containerColor = BackgroundLight,
+        contentColor = OnBackground
     ) { paddingValues ->
         Column(
             modifier = Modifier

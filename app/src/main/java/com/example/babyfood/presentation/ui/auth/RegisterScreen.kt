@@ -56,7 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.babyfood.domain.model.AuthState
-import com.example.babyfood.presentation.theme.Background
+import com.example.babyfood.presentation.theme.BackgroundLight
 import com.example.babyfood.presentation.theme.Error
 import com.example.babyfood.presentation.theme.ErrorContainer
 import com.example.babyfood.presentation.theme.OnBackground
@@ -97,7 +97,7 @@ fun RegisterScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Background)
+            .background(BackgroundLight)
     ) {
         CompositionLocalProvider(LocalContentColor provides OnSurface) {
             Column(

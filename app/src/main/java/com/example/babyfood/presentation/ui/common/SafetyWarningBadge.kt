@@ -19,6 +19,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.babyfood.domain.model.RiskLevel
+import com.example.babyfood.presentation.theme.Gray900
+import com.example.babyfood.presentation.theme.RiskCautious
+import com.example.babyfood.presentation.theme.RiskForbidden
+import com.example.babyfood.presentation.theme.RiskNotRecommended
+import com.example.babyfood.presentation.theme.RiskRequiresHandling
 
 /**
  * 安全警告标识组件
@@ -39,22 +44,22 @@ fun SafetyWarningBadge(
 ) {
     val (backgroundColor, textColor, labelText) = when (riskLevel) {
         RiskLevel.FORBIDDEN -> Triple(
-            Color(0xFFFF5252),  // 红色
+            RiskForbidden,
             Color.White,
             "禁用"
         )
         RiskLevel.NOT_RECOMMENDED -> Triple(
-            Color(0xFFFFC107),  // 黄色
-            Color(0xFF212121),
+            RiskNotRecommended,
+            Gray900,
             "不推荐"
         )
         RiskLevel.REQUIRES_SPECIAL_HANDLING -> Triple(
-            Color(0xFF2196F3),  // 蓝色
+            RiskRequiresHandling,
             Color.White,
             "需处理"
         )
         RiskLevel.CAUTIOUS_INTRODUCTION -> Triple(
-            Color(0xFFFF9800),  // 橙色
+            RiskCautious,
             Color.White,
             "谨慎"
         )
@@ -99,10 +104,10 @@ fun MiniSafetyWarningBadge(
     modifier: Modifier = Modifier
 ) {
     val color = when (riskLevel) {
-        RiskLevel.FORBIDDEN -> Color(0xFFFF5252)  // 红色
-        RiskLevel.NOT_RECOMMENDED -> Color(0xFFFFC107)  // 黄色
-        RiskLevel.REQUIRES_SPECIAL_HANDLING -> Color(0xFF2196F3)  // 蓝色
-        RiskLevel.CAUTIOUS_INTRODUCTION -> Color(0xFFFF9800)  // 橙色
+        RiskLevel.FORBIDDEN -> RiskForbidden
+        RiskLevel.NOT_RECOMMENDED -> RiskNotRecommended
+        RiskLevel.REQUIRES_SPECIAL_HANDLING -> RiskRequiresHandling
+        RiskLevel.CAUTIOUS_INTRODUCTION -> RiskCautious
         RiskLevel.NORMAL -> Color.Transparent
     }
 

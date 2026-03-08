@@ -28,7 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.babyfood.presentation.theme.Background
+import com.example.babyfood.presentation.theme.BackgroundLight
 import com.example.babyfood.presentation.theme.OnBackground
 import com.example.babyfood.presentation.theme.OnSurface
 import com.example.babyfood.presentation.theme.OnSurfaceVariant
@@ -64,11 +64,11 @@ fun TermsOfServiceScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Background
+                    containerColor = BackgroundLight
                 )
             )
         },
-        containerColor = Background
+        containerColor = BackgroundLight
     ) { paddingValues ->
         Column(
             modifier = Modifier

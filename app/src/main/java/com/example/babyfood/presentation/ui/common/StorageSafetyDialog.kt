@@ -31,6 +31,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.babyfood.data.service.FreshnessAdvisor
+import com.example.babyfood.presentation.theme.FreshnessLong
+import com.example.babyfood.presentation.theme.RiskCautious
+import com.example.babyfood.presentation.theme.RiskCautiousContainer
+import com.example.babyfood.presentation.theme.RiskForbidden
+import com.example.babyfood.presentation.theme.RiskForbiddenContainer
+import com.example.babyfood.presentation.theme.RiskNormalContainer
+import com.example.babyfood.presentation.theme.StorageCannedContainer
+import com.example.babyfood.presentation.theme.Warning
 
 /**
  * 存储安全警告对话框
@@ -125,23 +133,23 @@ fun StorageSafetyDialog(
 private fun FreshnessAdviceItem(advice: FreshnessAdvisor.FreshnessAdvice) {
     val (backgroundColor, textColor, icon) = when (advice.level) {
         FreshnessAdvisor.FreshnessLevel.CONSIDER_EXPIRY -> Triple(
-            Color(0xFFFFEBEE),
-            Color(0xFFC62828),
+            RiskForbiddenContainer,
+            RiskForbidden,
             Icons.Default.Warning
         )
         FreshnessAdvisor.FreshnessLevel.FROZEN_RECOMMENDED -> Triple(
-            Color(0xFFFFF3E0),
-            Color(0xFFEF6C00),
+            RiskCautiousContainer,
+            RiskCautious,
             Icons.Default.Info
         )
         FreshnessAdvisor.FreshnessLevel.CANNED_ACCEPTABLE -> Triple(
-            Color(0xFFFFF9C4),
-            Color(0xFFF9A825),
+            StorageCannedContainer,
+            Warning,
             Icons.Default.Info
         )
         FreshnessAdvisor.FreshnessLevel.FRESH -> Triple(
-            Color(0xFFE8F5E9),
-            Color(0xFF2E7D32),
+            RiskNormalContainer,
+            FreshnessLong,
             Icons.Default.Check
         )
     }

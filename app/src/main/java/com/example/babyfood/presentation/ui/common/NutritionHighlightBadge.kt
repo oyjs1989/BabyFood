@@ -18,6 +18,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.babyfood.presentation.theme.HighlightProtein
+import com.example.babyfood.presentation.theme.HighlightCalcium
+import com.example.babyfood.presentation.theme.HighlightIron
+import com.example.babyfood.presentation.theme.HighlightBalanced
+import com.example.babyfood.presentation.theme.HighlightLowCalorie
+import com.example.babyfood.presentation.theme.HighlightVitamin
+import com.example.babyfood.presentation.theme.HighlightDefault
+import com.example.babyfood.presentation.theme.ScoreExcellent
+import com.example.babyfood.presentation.theme.ScoreGood
+import com.example.babyfood.presentation.theme.ScoreMedium
+import com.example.babyfood.presentation.theme.ScoreFair
+import com.example.babyfood.presentation.theme.ScorePoor
+import com.example.babyfood.presentation.theme.Gray900
+import com.example.babyfood.presentation.theme.RedContainer
+import com.example.babyfood.presentation.theme.Red800
 
 /**
  * 营养亮点徽章
@@ -30,16 +45,16 @@ fun NutritionHighlightBadge(
     modifier: Modifier = Modifier
 ) {
     val (backgroundColor, textColor, icon) = when (highlight) {
-        "蛋白质充足" -> Triple(Color(0xFF4CAF50), Color.White, "💪")
-        "钙充足" -> Triple(Color(0xFF2196F3), Color.White, "🦴")
-        "铁充足" -> Triple(Color(0xFFFF9800), Color.White, "🩸")
-        "营养均衡" -> Triple(Color(0xFF9C27B0), Color.White, "⚖️")
-        "高蛋白" -> Triple(Color(0xFF4CAF50), Color.White, "💪")
-        "高钙" -> Triple(Color(0xFF2196F3), Color.White, "🦴")
-        "高铁" -> Triple(Color(0xFFFF9800), Color.White, "🩸")
-        "低热量" -> Triple(Color(0xFF03A9F4), Color.White, "🥗")
-        "富含维生素" -> Triple(Color(0xFF8BC34A), Color.White, "🥬")
-        else -> Triple(Color(0xFF607D8B), Color.White, "✨")
+        "蛋白质充足" -> Triple(HighlightProtein, Color.White, "💪")
+        "钙充足" -> Triple(HighlightCalcium, Color.White, "🦴")
+        "铁充足" -> Triple(HighlightIron, Color.White, "🩸")
+        "营养均衡" -> Triple(HighlightBalanced, Color.White, "⚖️")
+        "高蛋白" -> Triple(HighlightProtein, Color.White, "💪")
+        "高钙" -> Triple(HighlightCalcium, Color.White, "🦴")
+        "高铁" -> Triple(HighlightIron, Color.White, "🩸")
+        "低热量" -> Triple(HighlightLowCalorie, Color.White, "🥗")
+        "富含维生素" -> Triple(HighlightVitamin, Color.White, "🥬")
+        else -> Triple(HighlightDefault, Color.White, "✨")
     }
 
     Box(
@@ -80,11 +95,11 @@ fun NutritionGradeBadge(
     modifier: Modifier = Modifier
 ) {
     val (backgroundColor, textColor, emoji) = when {
-        score >= 90f -> Triple(Color(0xFF4CAF50), Color.White, "⭐⭐⭐⭐⭐")
-        score >= 75f -> Triple(Color(0xFF8BC34A), Color.White, "⭐⭐⭐⭐")
-        score >= 60f -> Triple(Color(0xFFFFC107), Color(0xFF212121), "⭐⭐⭐")
-        score >= 40f -> Triple(Color(0xFFFF9800), Color.White, "⭐⭐")
-        else -> Triple(Color(0xFFF44336), Color.White, "⭐")
+        score >= 90f -> Triple(ScoreExcellent, Color.White, "⭐⭐⭐⭐⭐")
+        score >= 75f -> Triple(ScoreGood, Color.White, "⭐⭐⭐⭐")
+        score >= 60f -> Triple(ScoreMedium, Gray900, "⭐⭐⭐")
+        score >= 40f -> Triple(ScoreFair, Color.White, "⭐⭐")
+        else -> Triple(ScorePoor, Color.White, "⭐")
     }
 
     Box(
@@ -139,7 +154,7 @@ fun NutritionDeficiencyBadge(
     Box(
         modifier = modifier
             .background(
-                color = Color(0xFFFFEBEE),
+                color = RedContainer,
                 shape = RoundedCornerShape(8.dp)
             )
             .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -154,7 +169,7 @@ fun NutritionDeficiencyBadge(
             Spacer(modifier = Modifier.width(4.dp))
             Text(
                 text = "缺$deficiency",
-                color = Color(0xFFC62828),
+                color = Red800,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold
             )

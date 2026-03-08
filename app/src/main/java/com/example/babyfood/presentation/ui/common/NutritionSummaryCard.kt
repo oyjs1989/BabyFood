@@ -22,6 +22,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.babyfood.presentation.theme.RiskNormalContainer
+import com.example.babyfood.presentation.theme.RiskCautiousContainer
+import com.example.babyfood.presentation.theme.ScoreExcellent
+import com.example.babyfood.presentation.theme.ScoreGood
+import com.example.babyfood.presentation.theme.ScoreMedium
+import com.example.babyfood.presentation.theme.ScoreFair
+import com.example.babyfood.presentation.theme.ScorePoor
+import com.example.babyfood.presentation.theme.NutritionInsufficient
+import com.example.babyfood.presentation.theme.NutritionNormal
+import com.example.babyfood.presentation.theme.NutritionExcess
 
 /**
  * 营养汇总卡片
@@ -47,11 +57,11 @@ fun NutritionSummaryCard(
     }
 
     val gradeColor = when {
-        overallScore >= 90f -> Color(0xFF4CAF50)
-        overallScore >= 75f -> Color(0xFF8BC34A)
-        overallScore >= 60f -> Color(0xFFFFC107)
-        overallScore >= 40f -> Color(0xFFFF9800)
-        else -> Color(0xFFF44336)
+        overallScore >= 90f -> ScoreExcellent
+        overallScore >= 75f -> ScoreGood
+        overallScore >= 60f -> ScoreMedium
+        overallScore >= 40f -> ScoreFair
+        else -> ScorePoor
     }
 
     Card(
@@ -59,9 +69,9 @@ fun NutritionSummaryCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isBalanced) {
-                Color(0xFFE8F5E9)
+                RiskNormalContainer
             } else {
-                Color(0xFFFFF3E0)
+                RiskCautiousContainer
             }
         )
     ) {
@@ -168,9 +178,9 @@ private fun NutritionItem(
  */
 private fun getProgressColor(progress: Float): Color {
     return when {
-        progress < 80f -> Color(0xFFF44336)  // 红色 - 不足
-        progress <= 120f -> Color(0xFF4CAF50)  // 绿色 - 正常
-        else -> Color(0xFFFF9800)  // 橙色 - 过量
+        progress < 80f -> NutritionInsufficient
+        progress <= 120f -> NutritionNormal
+        else -> NutritionExcess
     }
 }
 

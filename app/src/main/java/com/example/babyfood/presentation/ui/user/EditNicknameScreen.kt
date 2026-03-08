@@ -94,7 +94,7 @@ fun EditNicknameScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(PageBackground)
+                .background(BackgroundLight)
                 .padding(paddingValues)
         ) {
             Column(
