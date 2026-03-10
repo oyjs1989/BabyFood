@@ -1,3 +1,17 @@
 <resources>
     <string name="app_name">BabyFood</string>
+    
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="account_security">Account Security</string>
+    <string name="change_password">Change Password</string>
+    <string name="delete_account">Delete Account</string>
+    <string name="delete_account_desc">Permanently delete all your data</string>
+    <string name="preferences">Preferences</string>
+    <string name="theme_setting">Theme Settings</string>
+    <string name="about_app">About App</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="terms_of_service">Terms of Service</string>
+    <string name="current_version">Current Version</string>
+    <string name="logout">Logout</string>
 </resources>

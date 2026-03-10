@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">宝宝辅食</string>
+    
+    <!-- 设置 -->
+    <string name="settings_title">个人设置</string>
+    <string name="account_security">账号安全</string>
+    <string name="change_password">修改密码</string>
+    <string name="delete_account">注销账号</string>
+    <string name="delete_account_desc">永久删除您的所有数据</string>
+    <string name="preferences">偏好设置</string>
+    <string name="theme_setting">主题设置</string>
+    <string name="about_app">关于应用</string>
+    <string name="privacy_policy">隐私政策</string>
+    <string name="terms_of_service">用户协议</string>
+    <string name="current_version">当前版本</string>
+    <string name="logout">退出登录</string>
+</resources>

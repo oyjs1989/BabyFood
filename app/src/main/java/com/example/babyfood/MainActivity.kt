@@ -3,6 +3,7 @@ package com.example.babyfood
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -28,6 +29,9 @@ class MainActivity : ComponentActivity() {
     lateinit var authRepository: AuthRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 启用 Android 12+ 启动页
+        installSplashScreen()
+        
         super.onCreate(savedInstanceState)
 
         // 初始化内置食谱数据

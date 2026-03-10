@@ -5,4 +5,14 @@
         <item name="android:statusBarColor">@color/ic_launcher_background</item>
         <!-- Customize your theme here. -->
     </style>
+
+    <!-- SplashScreen Theme -->
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <!-- 背景色 -->
+        <item name="windowSplashScreenBackground">@android:color/white</item>
+        <!-- 启动页图标 -->
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <!-- 启动后切换到的主题 -->
+        <item name="postSplashScreenTheme">@style/Theme.BabyFood</item>
+    </style>
 </resources>

@@ -160,6 +160,14 @@ private fun SettingsContent(
                 onClick = onChangePassword,
                 showArrow = true
             )
+            SettingsItem(
+                icon = null,
+                title = "注销账号",
+                subtitle = "永久删除您的所有数据",
+                value = null,
+                onClick = { /* TODO: 处理注销逻辑 */ },
+                showArrow = true
+            )
         }
 
         // 偏好设置分组
@@ -167,6 +175,34 @@ private fun SettingsContent(
             ThemeSettingsItem(
                 currentTheme = user.theme,
                 onThemeChange = onThemeChange
+            )
+        }
+
+        // 关于应用分组
+        SettingsGroup(title = "关于应用") {
+            SettingsItem(
+                icon = null,
+                title = "隐私政策",
+                subtitle = null,
+                value = null,
+                onClick = { /* TODO: 跳转隐私政策 URL */ },
+                showArrow = true
+            )
+            SettingsItem(
+                icon = null,
+                title = "用户协议",
+                subtitle = null,
+                value = null,
+                onClick = { /* TODO: 跳转用户协议 URL */ },
+                showArrow = true
+            )
+            SettingsItem(
+                icon = null,
+                title = "当前版本",
+                subtitle = null,
+                value = "v1.0.0",
+                onClick = { },
+                showArrow = false
             )
         }
 
