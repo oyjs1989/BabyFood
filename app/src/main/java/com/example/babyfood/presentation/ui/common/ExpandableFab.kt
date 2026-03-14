@@ -244,7 +244,14 @@ private fun FabActionItem(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.End
+        horizontalArrangement = Arrangement.End,
+        modifier = Modifier.clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null
+        ) {
+            action.onClick()
+            onDismiss()
+        }
     ) {
         // 标签卡片
         Surface(

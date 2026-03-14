@@ -67,8 +67,12 @@ fun PlanListScreen(
                         icon = Icons.Default.Edit,
                         label = stringResource(R.string.plans_manual_add),
                         onClick = {
-                            uiState.selectedBaby?.let { baby ->
+                            val baby = uiState.selectedBaby ?: uiState.babies.firstOrNull()
+                            if (baby != null) {
+                                android.util.Log.d("PlanListScreen", "导航至添加计划，宝宝ID: ${baby.id}")
                                 onNavigateToAdd(baby.id)
+                            } else {
+                                android.util.Log.e("PlanListScreen", "无法添加计划：未找到宝宝信息")
                             }
                         }
                     ),
@@ -76,6 +80,7 @@ fun PlanListScreen(
                         icon = Icons.Default.AutoAwesome,
                         label = stringResource(R.string.plans_ai_recommend),
                         onClick = {
+                            android.util.Log.d("PlanListScreen", "显示日期范围选择器")
                             showDateRangePicker = true
                         }
                     )
