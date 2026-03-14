@@ -53,6 +53,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import androidx.compose.ui.res.stringResource
+import com.example.babyfood.R
 import com.example.babyfood.presentation.ui.common.AppScaffold
 import com.example.babyfood.presentation.ui.common.AppBottomAction
 
@@ -94,9 +96,18 @@ fun RecipeFormScreen(
     var showExitConfirmationDialog by remember { mutableStateOf(false) }
 
     // 分类选项
-    val categories = listOf("主食", "蔬菜", "水果", "蛋白质")
+    val categories = listOf(
+        stringResource(R.string.recipes_category_staple) to "主食",
+        stringResource(R.string.recipes_category_vegetable) to "蔬菜",
+        stringResource(R.string.recipes_category_fruit) to "水果",
+        stringResource(R.string.recipes_category_protein) to "蛋白质"
+    )
 
     // 保存函数
+    val errorNameEmpty = stringResource(R.string.recipes_enter_name_error)
+    val errorIngredientsEmpty = stringResource(R.string.recipes_at_least_one_ingredient)
+    val errorStepsEmpty = stringResource(R.string.recipes_at_least_one_step)
+
     val saveRecipe = {
         // 验证表单
         if (name.isNotBlank() && ingredients.isNotEmpty() && steps.isNotEmpty()) {
@@ -137,13 +148,13 @@ fun RecipeFormScreen(
             }
             hasUnsavedChanges = false
         } else if (name.isBlank()) {
-            errorMessage = "请输入食谱名称"
+            errorMessage = errorNameEmpty
             showErrorDialog = true
         } else if (ingredients.isEmpty()) {
-            errorMessage = "请至少添加一种食材"
+            errorMessage = errorIngredientsEmpty
             showErrorDialog = true
         } else if (steps.isEmpty()) {
-            errorMessage = "请至少添加一个制作步骤"
+            errorMessage = errorStepsEmpty
             showErrorDialog = true
         }
     }
@@ -191,9 +202,10 @@ fun RecipeFormScreen(
     }
 
     // 错误处理
+    val defaultError = stringResource(R.string.update_failed)
     LaunchedEffect(uiState.error) {
         if (uiState.error != null) {
-            errorMessage = uiState.error ?: "操作失败"
+            errorMessage = uiState.error ?: defaultError
             showErrorDialog = true
             viewModel.clearError()
         }
@@ -202,11 +214,11 @@ fun RecipeFormScreen(
     if (showErrorDialog) {
         AlertDialog(
             onDismissRequest = { showErrorDialog = false },
-            title = { Text("提示") },
+            title = { Text(stringResource(R.string.common_tip)) },
             text = { Text(errorMessage) },
             confirmButton = {
                 TextButton(onClick = { showErrorDialog = false }) {
-                    Text("确定")
+                    Text(stringResource(R.string.confirm))
                 }
             }
         )
@@ -216,8 +228,8 @@ fun RecipeFormScreen(
     if (showExitConfirmationDialog) {
         AlertDialog(
             onDismissRequest = { showExitConfirmationDialog = false },
-            title = { Text("未保存的修改") },
-            text = { Text("您有未保存的修改，是否要保存？") },
+            title = { Text(stringResource(R.string.recipes_unsaved_changes_title)) },
+            text = { Text(stringResource(R.string.recipes_unsaved_changes_text)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -226,7 +238,7 @@ fun RecipeFormScreen(
                     },
                     enabled = name.isNotBlank() && ingredients.isNotEmpty() && steps.isNotEmpty()
                 ) {
-                    Text("保存")
+                    Text(stringResource(R.string.save))
                 }
             },
             dismissButton = {
@@ -236,7 +248,7 @@ fun RecipeFormScreen(
                         onBack()
                     }
                 ) {
-                    Text("放弃修改")
+                    Text(stringResource(R.string.recipes_discard_changes))
                 }
             }
         )
@@ -246,8 +258,8 @@ fun RecipeFormScreen(
         bottomActions = listOf(
             AppBottomAction(
                 icon = Icons.Default.Check,
-                label = "保存",
-                contentDescription = "保存食谱",
+                label = stringResource(R.string.save),
+                contentDescription = stringResource(R.string.save),
                 onClick = saveRecipe
             )
         )
@@ -273,7 +285,7 @@ fun RecipeFormScreen(
                         if (imageUrl != null) {
                             AsyncImage(
                                 model = imageUrl,
-                                contentDescription = "食谱图片",
+                                contentDescription = null,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(200.dp)
@@ -289,7 +301,7 @@ fun RecipeFormScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "点击上传食谱图片",
+                                    text = stringResource(R.string.recipes_upload_image_hint),
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                 )
@@ -306,7 +318,7 @@ fun RecipeFormScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.CameraAlt,
-                                contentDescription = "上传图片",
+                                contentDescription = stringResource(R.string.recipes_upload_image_action),
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -326,7 +338,7 @@ fun RecipeFormScreen(
                             .padding(16.dp)
                     ) {
                         Text(
-                            text = "基本信息",
+                            text = stringResource(R.string.recipes_basic_info_label),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Spacer(modifier = Modifier.height(12.dp))
@@ -334,7 +346,7 @@ fun RecipeFormScreen(
                         OutlinedTextField(
                             value = name,
                             onValueChange = { name = it },
-                            label = { Text("食谱名称") },
+                            label = { Text(stringResource(R.string.recipes_name_label)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
@@ -350,7 +362,7 @@ fun RecipeFormScreen(
                                 onValueChange = {
                                     minAgeMonths = it.toIntOrNull() ?: 6
                                 },
-                                label = { Text("最小月龄") },
+                                label = { Text(stringResource(R.string.recipes_min_age_label)) },
                                 modifier = Modifier.weight(1f),
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(
@@ -363,7 +375,7 @@ fun RecipeFormScreen(
                                 onValueChange = {
                                     maxAgeMonths = it.toIntOrNull() ?: 24
                                 },
-                                label = { Text("最大月龄") },
+                                label = { Text(stringResource(R.string.recipes_max_age_label)) },
                                 modifier = Modifier.weight(1f),
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(
@@ -376,7 +388,7 @@ fun RecipeFormScreen(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
-                            text = "质地类型",
+                            text = stringResource(R.string.recipes_texture_type_label),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Row(
@@ -395,18 +407,18 @@ fun RecipeFormScreen(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
-                            text = "分类",
+                            text = stringResource(R.string.preferences),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            categories.forEach { cat ->
+                            categories.forEach { (label, cat) ->
                                 androidx.compose.material3.FilterChip(
                                     selected = category == cat,
                                     onClick = { category = cat },
-                                    label = { Text(cat) }
+                                    label = { Text(label) }
                                 )
                             }
                         }
@@ -431,7 +443,7 @@ fun RecipeFormScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "食材清单",
+                                text = stringResource(R.string.recipes_ingredients_list_label),
                                 style = MaterialTheme.typography.titleMedium
                             )
                             TextButton(onClick = {
@@ -439,7 +451,7 @@ fun RecipeFormScreen(
                             }) {
                                 Icon(Icons.Default.Add, contentDescription = null)
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("添加")
+                                Text(stringResource(R.string.common_add))
                             }
                         }
 
@@ -478,13 +490,13 @@ fun RecipeFormScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "制作步骤",
+                                text = stringResource(R.string.recipes_steps_label),
                                 style = MaterialTheme.typography.titleMedium
                             )
                             TextButton(onClick = { steps.add("") }) {
                                 Icon(Icons.Default.Add, contentDescription = null)
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("添加")
+                                Text(stringResource(R.string.common_add))
                             }
                         }
 
@@ -517,18 +529,18 @@ fun RecipeFormScreen(
                             .padding(16.dp)
                     ) {
                         Text(
-                            text = "营养成分（可选）",
+                            text = stringResource(R.string.recipes_nutrition_label),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        NutritionInputField(label = "热量", value = calories, unit = "kcal", onValueChange = { calories = it })
-                        NutritionInputField(label = "蛋白质", value = protein, unit = "g", onValueChange = { protein = it })
-                        NutritionInputField(label = "脂肪", value = fat, unit = "g", onValueChange = { fat = it })
-                        NutritionInputField(label = "碳水化合物", value = carbohydrates, unit = "g", onValueChange = { carbohydrates = it })
-                        NutritionInputField(label = "膳食纤维", value = fiber, unit = "g", onValueChange = { fiber = it })
-                        NutritionInputField(label = "钙", value = calcium, unit = "mg", onValueChange = { calcium = it })
-                        NutritionInputField(label = "铁", value = iron, unit = "mg", onValueChange = { iron = it })
+                        NutritionInputField(label = stringResource(R.string.recipes_calories_label), value = calories, unit = "kcal", onValueChange = { calories = it })
+                        NutritionInputField(label = stringResource(R.string.recipes_protein_label), value = protein, unit = "g", onValueChange = { protein = it })
+                        NutritionInputField(label = stringResource(R.string.recipes_fat_label), value = fat, unit = "g", onValueChange = { fat = it })
+                        NutritionInputField(label = stringResource(R.string.recipes_carbohydrates_label), value = carbohydrates, unit = "g", onValueChange = { carbohydrates = it })
+                        NutritionInputField(label = stringResource(R.string.recipes_fiber_label), value = fiber, unit = "g", onValueChange = { fiber = it })
+                        NutritionInputField(label = stringResource(R.string.recipes_calcium_label), value = calcium, unit = "mg", onValueChange = { calcium = it })
+                        NutritionInputField(label = stringResource(R.string.recipes_iron_label), value = iron, unit = "mg", onValueChange = { iron = it })
                     }
                 }
             }
@@ -556,7 +568,7 @@ private fun IngredientItem(
         OutlinedTextField(
             value = ingredient.name,
             onValueChange = onNameChange,
-            label = { Text("食材") },
+            label = { Text(stringResource(R.string.recipes_ingredients_label)) },
             modifier = Modifier.weight(1f),
             singleLine = true
         )
@@ -564,7 +576,7 @@ private fun IngredientItem(
         OutlinedTextField(
             value = ingredient.amount,
             onValueChange = onAmountChange,
-            label = { Text("用量") },
+            label = { Text(stringResource(R.string.recipes_amount_label)) },
             modifier = Modifier.width(100.dp),
             singleLine = true
         )
@@ -574,14 +586,14 @@ private fun IngredientItem(
             onCheckedChange = onAllergenChange
         )
         Text(
-            text = "过敏原",
+            text = stringResource(R.string.recipes_allergen_label),
             style = MaterialTheme.typography.bodySmall
         )
         Spacer(modifier = Modifier.width(8.dp))
         IconButton(onClick = onDelete) {
             Icon(
                 Icons.Default.Delete,
-                contentDescription = "删除",
+                contentDescription = stringResource(R.string.back), // Reusing common_delete if exists, but back/delete icon desc
                 tint = MaterialTheme.colorScheme.error
             )
         }
@@ -607,19 +619,20 @@ private fun StepItem(
         OutlinedTextField(
             value = step,
             onValueChange = onStepChange,
-            placeholder = { Text("输入步骤描述") },
+            placeholder = { Text(stringResource(R.string.recipes_step_placeholder)) },
             modifier = Modifier.weight(1f),
             minLines = 2
         )
         IconButton(onClick = onDelete) {
             Icon(
                 Icons.Default.Delete,
-                contentDescription = "删除",
+                contentDescription = null,
                 tint = MaterialTheme.colorScheme.error
             )
         }
     }
 }
+
 
 @Composable
 private fun NutritionInputField(

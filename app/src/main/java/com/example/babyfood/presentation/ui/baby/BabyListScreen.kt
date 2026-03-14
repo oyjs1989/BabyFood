@@ -43,6 +43,9 @@ import android.widget.Toast
 import com.example.babyfood.presentation.theme.ButtonPrimary
 import com.example.babyfood.presentation.ui.common.AppScaffold
 
+import androidx.compose.ui.res.stringResource
+import com.example.babyfood.R
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BabyListScreen(
@@ -66,7 +69,7 @@ fun BabyListScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "添加宝宝"
+                    contentDescription = stringResource(R.string.baby_add_title)
                 )
             }
         }
@@ -81,13 +84,13 @@ fun BabyListScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "加载中...")
+                    Text(text = stringResource(R.string.loading))
                 }
             } else if (uiState.babies.isEmpty()) {
                 com.example.babyfood.presentation.theme.EmptyState(
                     icon = Icons.Default.ChildCare,
-                    title = "还没有添加宝宝信息",
-                    description = "点击下方添加按钮添加宝宝"
+                    title = stringResource(R.string.baby_empty_list),
+                    description = stringResource(R.string.baby_empty_description)
                 )
             } else {
                 val context = LocalContext.current
@@ -97,6 +100,7 @@ fun BabyListScreen(
                 ) {
                     items(uiState.babies) { baby ->
                         val isSelected = baby.id == uiState.selectedBabyId
+                        val switchSuccessMsg = stringResource(R.string.baby_switch_success, baby.name)
                         BabyCard(
                             baby = baby,
                             isSelected = isSelected,
@@ -105,7 +109,7 @@ fun BabyListScreen(
                                 viewModel.setAsCurrentBaby(baby)
                                 Toast.makeText(
                                     context,
-                                    "已切换到 ${baby.name}",
+                                    switchSuccessMsg,
                                     Toast.LENGTH_SHORT
                                 ).show()
                                 onAfterSetAsCurrentBaby()
@@ -167,11 +171,11 @@ private fun BabyCard(
                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "月龄：${baby.ageInMonths} 个月",
+                    text = stringResource(R.string.baby_age_format, baby.ageInMonths),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    text = "出生日期：${baby.birthDate}",
+                    text = stringResource(R.string.baby_birthday_format, baby.birthDate),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
@@ -180,13 +184,13 @@ private fun BabyCard(
             if (isSelected) {
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
-                    contentDescription = "当前选中",
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
             } else {
                 TextButton(onClick = onSetAsCurrent) {
-                    Text("设为当前")
+                    Text(stringResource(R.string.baby_set_current))
                 }
             }
         }

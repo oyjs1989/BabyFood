@@ -11,16 +11,35 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import com.example.babyfood.domain.manager.LanguageManager
+import com.example.babyfood.domain.model.AppLanguage
+
 /**
  * 个人设置页面 ViewModel
  * 管理用户信息、主题设置等状态
  */
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val languageManager: LanguageManager
 ) : BaseViewModel() {
 
     override val logTag: String = "SettingsViewModel"
+
+    // 语言状态
+    val currentLanguage = languageManager.currentLanguage
+
+    /**
+     * 更新语言设置
+     * @param language 选择的语言
+     */
+    fun updateLanguage(language: AppLanguage) {
+        logMethodStart("更新语言设置")
+        logD("新语言: ${language.code}")
+        languageManager.setLanguage(language)
+        _operationState.value = OperationState.Success("语言设置已更新")
+        logMethodEnd("更新语言设置")
+    }
 
     // UI 状态
     private val _uiState = MutableStateFlow<SettingsUiState>(SettingsUiState.Loading)

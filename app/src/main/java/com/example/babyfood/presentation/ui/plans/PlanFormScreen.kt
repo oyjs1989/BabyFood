@@ -16,6 +16,9 @@ import com.example.babyfood.domain.model.MealPeriod
 import com.example.babyfood.domain.model.PlanStatus
 import com.example.babyfood.presentation.ui.common.AppScaffold
 import com.example.babyfood.presentation.ui.common.AppBottomAction
+import androidx.compose.ui.res.stringResource
+import com.example.babyfood.R
+import com.example.babyfood.presentation.util.DateTimeUtils
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
@@ -59,11 +62,16 @@ fun PlanFormScreen(
     )
 
     // 状态选项
-    val statuses = listOf(
-        PlanStatus.PLANNED to "已计划",
-        PlanStatus.TRIED to "已尝试",
-        PlanStatus.SKIPPED to "已跳过"
-    )
+    val plannedStatusText = stringResource(R.string.plans_status_planned)
+    val triedStatusText = stringResource(R.string.plans_status_tried)
+    val skippedStatusText = stringResource(R.string.plans_status_skipped)
+    val statuses = remember(plannedStatusText, triedStatusText, skippedStatusText) {
+        listOf(
+            PlanStatus.PLANNED to plannedStatusText,
+            PlanStatus.TRIED to triedStatusText,
+            PlanStatus.SKIPPED to skippedStatusText
+        )
+    }
 
     // 加载现有计划数据（编辑模式）
     LaunchedEffect(planId) {
@@ -101,6 +109,9 @@ fun PlanFormScreen(
         }
     }
 
+    val updateFailedMessage = stringResource(R.string.update_failed)
+    val selectRecipeErrorMessage = stringResource(R.string.plans_select_recipe_error)
+
     // 保存函数
     val savePlan: () -> Unit = {
         if (selectedRecipeId != null) {
@@ -132,12 +143,12 @@ fun PlanFormScreen(
                     hasUnsavedChanges = false
                     onSave()
                 } catch (e: Exception) {
-                    errorMessage = e.message ?: "保存失败"
+                    errorMessage = e.message ?: updateFailedMessage
                     showError = true
                 }
             }
         } else {
-            errorMessage = "请选择食谱"
+            errorMessage = selectRecipeErrorMessage
             showError = true
         }
     }
@@ -146,11 +157,11 @@ fun PlanFormScreen(
     if (showError) {
         AlertDialog(
             onDismissRequest = { showError = false },
-            title = { Text("错误") },
+            title = { Text(stringResource(R.string.common_error)) },
             text = { Text(errorMessage) },
             confirmButton = {
                 TextButton(onClick = { showError = false }) {
-                    Text("确定")
+                    Text(stringResource(R.string.confirm))
                 }
             }
         )
@@ -160,8 +171,8 @@ fun PlanFormScreen(
     if (showExitConfirmationDialog) {
         AlertDialog(
             onDismissRequest = { showExitConfirmationDialog = false },
-            title = { Text("未保存的修改") },
-            text = { Text("您有未保存的修改，是否要保存？") },
+            title = { Text(stringResource(R.string.recipes_unsaved_changes_title)) },
+            text = { Text(stringResource(R.string.recipes_unsaved_changes_text)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -170,7 +181,7 @@ fun PlanFormScreen(
                     },
                     enabled = selectedRecipeId != null
                 ) {
-                    Text("保存")
+                    Text(stringResource(R.string.save))
                 }
             },
             dismissButton = {
@@ -180,33 +191,41 @@ fun PlanFormScreen(
                         onBack()
                     }
                 ) {
-                    Text("放弃修改")
+                    Text(stringResource(R.string.recipes_discard_changes))
                 }
             }
         )
     }
 
     // 构建底部操作按钮列表
-    val bottomActions = mutableListOf<AppBottomAction>()
-    bottomActions.add(
-        AppBottomAction(
-            icon = Icons.Default.Check,
-            label = "保存",
-            contentDescription = "保存计划",
-            onClick = savePlan
-        )
-    )
-    // AI推荐按钮（仅在创建模式显示）
-    if (planId == null || planId == 0L) {
-        bottomActions.add(
+    val saveText = stringResource(R.string.save)
+    val saveDesc = stringResource(R.string.plans_save_action_desc)
+    val aiRecommendText = stringResource(R.string.plans_ai_recommend)
+    val aiRecommendDesc = stringResource(R.string.plans_ai_generate_action_desc)
+
+    val bottomActions = remember(saveText, saveDesc, aiRecommendText, aiRecommendDesc, planId, uiState.isGenerating) {
+        val actions = mutableListOf<AppBottomAction>()
+        actions.add(
             AppBottomAction(
-                icon = Icons.Default.AutoAwesome,
-                label = "AI推荐",
-                contentDescription = "AI生成推荐",
-                enabled = !uiState.isGenerating,
-                onClick = generateRecommendation
+                icon = Icons.Default.Check,
+                label = saveText,
+                contentDescription = saveDesc,
+                onClick = savePlan
             )
         )
+        // AI推荐按钮（仅在创建模式显示）
+        if (planId == null || planId == 0L) {
+            actions.add(
+                AppBottomAction(
+                    icon = Icons.Default.AutoAwesome,
+                    label = aiRecommendText,
+                    contentDescription = aiRecommendDesc,
+                    enabled = !uiState.isGenerating,
+                    onClick = generateRecommendation
+                )
+            )
+        }
+        actions
     }
 
     AppScaffold(
@@ -219,7 +238,7 @@ fun PlanFormScreen(
         ) {
             // 日期选择
             DatePicker(
-                label = "日期",
+                label = stringResource(R.string.plans_date_label),
                 date = plannedDate,
                 onDateChange = { plannedDate = it }
             )
@@ -228,7 +247,7 @@ fun PlanFormScreen(
 
             // 餐段选择
             DropdownSelector(
-                label = "餐段",
+                label = stringResource(R.string.plans_meal_period_label),
                 selectedValue = selectedMealPeriod,
                 options = mealPeriods,
                 displayMapper = { it.displayName },
@@ -248,7 +267,7 @@ fun PlanFormScreen(
 
             // 状态选择
             DropdownSelector(
-                label = "状态",
+                label = stringResource(R.string.plans_status_label),
                 selectedValue = selectedStatus,
                 options = statuses.map { it.first },
                 displayMapper = { status -> statuses.find { it.first == status }?.second ?: "" },
@@ -261,7 +280,7 @@ fun PlanFormScreen(
             OutlinedTextField(
                 value = notes,
                 onValueChange = { notes = it },
-                label = { Text("备注（可选）") },
+                label = { Text(stringResource(R.string.plans_notes_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
                 maxLines = 5
@@ -296,7 +315,7 @@ private fun DatePicker(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "${date.year}年${date.monthNumber}月${date.dayOfMonth}日",
+                text = DateTimeUtils.formatDate(date),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -363,7 +382,7 @@ private fun RecipeSelector(
             value = selectedRecipe?.name ?: "",
             onValueChange = {},
             readOnly = true,
-            label = { Text("食谱") },
+            label = { Text(stringResource(R.string.plans_select_recipe)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
                 .menuAnchor()
@@ -377,7 +396,7 @@ private fun RecipeSelector(
         ) {
             if (recipes.isEmpty()) {
                 DropdownMenuItem(
-                    text = { Text("暂无食谱，请先添加食谱") },
+                    text = { Text(stringResource(R.string.plans_no_recipes_hint)) },
                     onClick = { },
                     enabled = false
                 )
@@ -388,7 +407,7 @@ private fun RecipeSelector(
                             Column {
                                 Text(recipe.name)
                                 Text(
-                                    text = "${recipe.minAgeMonths}-${recipe.maxAgeMonths}个月 | ${recipe.category}",
+                                    text = "${recipe.minAgeMonths}-${recipe.maxAgeMonths}${stringResource(R.string.baby_months_unit)} | ${recipe.category}",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

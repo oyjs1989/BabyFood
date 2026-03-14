@@ -24,6 +24,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.res.stringResource
+import com.example.babyfood.R
+import com.example.babyfood.presentation.util.DateTimeUtils
 import coil.compose.AsyncImage
 import com.example.babyfood.domain.model.NutritionGoal
 import com.example.babyfood.presentation.ui.home.components.NutritionGoalEditDialog
@@ -67,8 +70,8 @@ fun BabyDetailScreen(
         bottomActions = listOf(
             AppBottomAction(
                 icon = Icons.Default.Edit,
-                label = "编辑",
-                contentDescription = "编辑宝宝信息",
+                label = stringResource(R.string.edit),
+                contentDescription = stringResource(R.string.baby_edit_action_desc),
                 onClick = onEdit
             )
         )
@@ -109,7 +112,7 @@ fun BabyDetailScreen(
                                 if (baby.avatarUrl != null) {
                                     AsyncImage(
                                         model = baby.avatarUrl,
-                                        contentDescription = "宝宝头像",
+                                        contentDescription = stringResource(R.string.baby_avatar_desc),
                                         modifier = Modifier
                                             .size(60.dp)
                                             .clip(CircleShape),
@@ -144,7 +147,7 @@ fun BabyDetailScreen(
                                     color = MaterialTheme.colorScheme.onBackground
                                 )
                                 Text(
-                                    text = "${baby.ageInMonths} 个月",
+                                    text = "${baby.ageInMonths}${stringResource(R.string.baby_months_unit)}",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -159,7 +162,7 @@ fun BabyDetailScreen(
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Text(
-                                        text = baby.birthDate.toString(),
+                                        text = DateTimeUtils.formatDate(baby.birthDate),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -192,13 +195,13 @@ fun BabyDetailScreen(
                         ) {
                             Column {
                                 Text(
-                                    text = "生长曲线",
+                                    text = stringResource(R.string.baby_growth_curve_title),
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onBackground
                                 )
                                 Text(
-                                    text = "身高体重发育趋势",
+                                    text = stringResource(R.string.baby_growth_trend_subtitle),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -220,7 +223,7 @@ fun BabyDetailScreen(
                                             .background(MaterialTheme.colorScheme.primary)
                                     )
                                     Text(
-                                        text = "发育正常",
+                                        text = stringResource(R.string.baby_growth_status_normal),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -238,16 +241,16 @@ fun BabyDetailScreen(
                             ) {
                                 // 身高
                                 GrowthMetricItem(
-                                    label = "身高",
-                                    value = latestHealthRecord.height?.let { "${it.toInt()} cm" } ?: "未记录",
-                                    change = "较上次增长 2.5 cm",
+                                    label = stringResource(R.string.baby_height_label),
+                                    value = latestHealthRecord.height?.let { "${it.toInt()} cm" } ?: stringResource(R.string.common_not_recorded),
+                                    change = stringResource(R.string.baby_growth_increase_prefix) + "2.5 cm",
                                     icon = "↑"
                                 )
                                 // 体重
                                 GrowthMetricItem(
-                                    label = "体重",
-                                    value = latestHealthRecord.weight?.let { "${it} kg" } ?: "未记录",
-                                    change = "较上次增长 0.3 kg",
+                                    label = stringResource(R.string.baby_weight_label),
+                                    value = latestHealthRecord.weight?.let { "${it} kg" } ?: stringResource(R.string.common_not_recorded),
+                                    change = stringResource(R.string.baby_growth_increase_prefix) + "0.3 kg",
                                     icon = "↑"
                                 )
                             }
@@ -259,7 +262,7 @@ fun BabyDetailScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "暂无体检记录",
+                                    text = stringResource(R.string.baby_no_health_records),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -276,8 +279,8 @@ fun BabyDetailScreen(
                         ) {
                             Text(
                                 text = latestHealthRecord?.let {
-                                    "最后测量：${it.recordDate}"
-                                } ?: "暂无测量记录",
+                                    stringResource(R.string.baby_last_measured_prefix) + DateTimeUtils.formatDate(it.recordDate)
+                                } ?: stringResource(R.string.baby_no_measured_records),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -286,7 +289,7 @@ fun BabyDetailScreen(
                                 contentPadding = PaddingValues(0.dp)
                             ) {
                                 Text(
-                                    text = "查看详情",
+                                    text = stringResource(R.string.common_view_details),
                                     color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Medium
                                 )
@@ -326,13 +329,13 @@ fun BabyDetailScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "营养目标",
+                                text = stringResource(R.string.baby_nutrition_goals_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             Icon(
                                 imageVector = Icons.Default.Edit,
-                                contentDescription = "编辑",
+                                contentDescription = stringResource(R.string.edit),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -342,10 +345,10 @@ fun BabyDetailScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            NutritionGoalItem("热量", "${nutritionGoal.calories.toInt()}", "kcal")
-                            NutritionGoalItem("蛋白质", "${nutritionGoal.protein.toInt()}", "g")
-                            NutritionGoalItem("钙", "${nutritionGoal.calcium.toInt()}", "mg")
-                            NutritionGoalItem("铁", "${nutritionGoal.iron.toInt()}", "mg")
+                            NutritionGoalItem(stringResource(R.string.baby_calories_label), "${nutritionGoal.calories.toInt()}", "kcal")
+                            NutritionGoalItem(stringResource(R.string.baby_protein_label), "${nutritionGoal.protein.toInt()}", "g")
+                            NutritionGoalItem(stringResource(R.string.baby_calcium_label), "${nutritionGoal.calcium.toInt()}", "mg")
+                            NutritionGoalItem(stringResource(R.string.baby_iron_label), "${nutritionGoal.iron.toInt()}", "mg")
                         }
                     }
                 }
@@ -372,18 +375,18 @@ fun BabyDetailScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "过敏食材",
+                                text = stringResource(R.string.baby_allergies_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             TextButton(onClick = onManageAllergies) {
-                                Text("管理")
+                                Text(stringResource(R.string.common_manage))
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         if (effectiveAllergies.isEmpty()) {
                             Text(
-                                text = "暂无过敏食材",
+                                text = stringResource(R.string.baby_no_allergies),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -421,18 +424,18 @@ fun BabyDetailScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "偏好食材",
+                                text = stringResource(R.string.baby_preferences_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             TextButton(onClick = onManagePreferences) {
-                                Text("管理")
+                                Text(stringResource(R.string.common_manage))
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         if (effectivePreferences.isEmpty()) {
                             Text(
-                                text = "暂无偏好食材",
+                                text = stringResource(R.string.baby_no_preferences),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -469,17 +472,17 @@ fun BabyDetailScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "体检记录",
+                                text = stringResource(R.string.baby_health_records_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             TextButton(onClick = onNavigateToHealthRecords) {
-                                Text("查看")
+                                Text(stringResource(R.string.common_view))
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "查看和管理宝宝的体检记录，包括体重、身高、头围等数据",
+                            text = stringResource(R.string.baby_health_records_desc),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -493,7 +496,7 @@ fun BabyDetailScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text("宝宝信息不存在")
+                Text(stringResource(R.string.baby_not_found))
             }
         }
     }

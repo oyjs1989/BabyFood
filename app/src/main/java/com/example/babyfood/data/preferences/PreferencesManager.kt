@@ -20,6 +20,26 @@ class PreferencesManager @Inject constructor(
         private const val TAG = "PreferencesManager"
         private const val KEY_SELECTED_BABY_ID = "selected_baby_id"
         private const val KEY_LAST_SYNC_TIME = "last_sync_time"
+        private const val KEY_SELECTED_LANGUAGE = "selected_language"
+    }
+
+    /**
+     * 保存选择的语言代码 (zh, en, auto)
+     */
+    fun saveLanguage(languageCode: String) {
+        Log.d(TAG, "========== 保存语言设置 ==========")
+        Log.d(TAG, "语言代码: $languageCode")
+        prefs.edit().putString(KEY_SELECTED_LANGUAGE, languageCode).apply()
+        Log.d(TAG, "✓ 保存成功")
+        Log.d(TAG, "========== 保存完成 ==========")
+    }
+
+    /**
+     * 获取选择的语言代码
+     * @return 语言代码，默认为 "auto"
+     */
+    fun getLanguageCode(): String {
+        return prefs.getString(KEY_SELECTED_LANGUAGE, "auto") ?: "auto"
     }
 
     /**

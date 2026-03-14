@@ -24,12 +24,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
+import androidx.compose.ui.res.stringResource
+import com.example.babyfood.R
 import com.example.babyfood.domain.model.MealPeriod
 import com.example.babyfood.domain.model.PlanStatus
 import com.example.babyfood.presentation.ui.common.AppScaffold
@@ -37,8 +40,10 @@ import com.example.babyfood.presentation.ui.common.ExpandableFab
 import com.example.babyfood.presentation.ui.common.FabAction
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
-import java.time.format.TextStyle
 import java.util.Locale
+import android.widget.Toast
+
+import com.example.babyfood.presentation.util.DateTimeUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +65,7 @@ fun PlanListScreen(
                 actions = listOf(
                     FabAction(
                         icon = Icons.Default.Edit,
-                        label = "手动添加计划",
+                        label = stringResource(R.string.plans_manual_add),
                         onClick = {
                             uiState.selectedBaby?.let { baby ->
                                 onNavigateToAdd(baby.id)
@@ -69,7 +74,7 @@ fun PlanListScreen(
                     ),
                     FabAction(
                         icon = Icons.Default.AutoAwesome,
-                        label = "AI智能推荐",
+                        label = stringResource(R.string.plans_ai_recommend),
                         onClick = {
                             showDateRangePicker = true
                         }
@@ -78,40 +83,42 @@ fun PlanListScreen(
             )
         }
     ) {
-        // 宝宝选择器
-        if (uiState.babies.size > 1) {
-            BabySelector(
-                babies = uiState.babies,
-                selectedBaby = uiState.selectedBaby,
-                onBabySelected = { viewModel.selectBaby(it) }
+        Column(modifier = Modifier.fillMaxSize()) {
+            // 宝宝选择器
+            if (uiState.babies.size > 1) {
+                BabySelector(
+                    babies = uiState.babies,
+                    selectedBaby = uiState.selectedBaby,
+                    onBabySelected = { viewModel.selectBaby(it) }
+                )
+            }
+
+            // 日历视图
+            CalendarView(
+                currentMonth = currentMonth,
+                selectedDate = selectedDate,
+                plans = uiState.plans,
+                onPreviousMonth = {
+                    currentMonth = currentMonth.minus(1, DateTimeUnit.MONTH)
+                },
+                onNextMonth = {
+                    currentMonth = currentMonth.plus(1, DateTimeUnit.MONTH)
+                },
+                onDateSelected = { date ->
+                    selectedDate = date
+                }
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            // 选中日期和计划列表
+            SelectedDatePlans(
+                selectedDate = selectedDate,
+                plansWithRecipe = uiState.plansWithRecipe,
+                onPlanClick = onNavigateToDetail,
+                onChangeRecipe = { planId -> viewModel.showRecipeSelector(planId) }
             )
         }
-
-        // 日历视图
-        CalendarView(
-            currentMonth = currentMonth,
-            selectedDate = selectedDate,
-            plans = uiState.plans,
-            onPreviousMonth = {
-                currentMonth = currentMonth.minus(1, DateTimeUnit.MONTH)
-            },
-            onNextMonth = {
-                currentMonth = currentMonth.plus(1, DateTimeUnit.MONTH)
-            },
-            onDateSelected = { date ->
-                selectedDate = date
-            }
-        )
-
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
-
-        // 选中日期和计划列表
-        SelectedDatePlans(
-            selectedDate = selectedDate,
-            plansWithRecipe = uiState.plansWithRecipe,
-            onPlanClick = onNavigateToDetail,
-            onChangeRecipe = { planId -> viewModel.showRecipeSelector(planId) }
-        )
     }
 
     // 日期范围选择器对话框
@@ -120,17 +127,13 @@ fun PlanListScreen(
             onDismiss = { showDateRangePicker = false },
             onConfirm = { startDate, endDate ->
                 showDateRangePicker = false
-                // 计算天数
                 val days = (endDate.toEpochDays() - startDate.toEpochDays() + 1).toInt()
-                // 生成AI推荐并跳转到编辑器
                 uiState.selectedBaby?.let { baby ->
                     scope.launch {
                         val recommendation = viewModel.generateWeeklyRecommendation(baby.id, startDate, days)
                         if (recommendation != null) {
                             onNavigateToRecommendationEditor(baby.id)
                         }
-                        // 如果recommendation为null，错误信息已经在ViewModel中设置了
-                        // 错误对话框会自动显示
                     }
                 }
             }
@@ -141,7 +144,7 @@ fun PlanListScreen(
     if (uiState.isGenerating) {
         AlertDialog(
             onDismissRequest = { },
-            title = { Text("AI分析中") },
+            title = { Text(stringResource(R.string.plans_ai_analyzing)) },
             text = {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -153,7 +156,7 @@ fun PlanListScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "正在为您生成个性化辅食计划...",
+                        text = stringResource(R.string.plans_ai_generating),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -167,11 +170,11 @@ fun PlanListScreen(
     if (uiState.error != null) {
         AlertDialog(
             onDismissRequest = { viewModel.clearError() },
-            title = { Text("错误") },
+            title = { Text(stringResource(R.string.common_error)) },
             text = { Text(uiState.error ?: "") },
             confirmButton = {
                 TextButton(onClick = { viewModel.clearError() }) {
-                    Text("确定")
+                    Text(stringResource(R.string.confirm))
                 }
             }
         )
@@ -200,18 +203,16 @@ private fun BabySelector(
 
     ExposedDropdownMenuBox(
         expanded = expanded,
-        onExpandedChange = { expanded = !expanded }
+        onExpandedChange = { expanded = !expanded },
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         OutlinedTextField(
             value = selectedBaby?.name ?: "",
             onValueChange = {},
             readOnly = true,
-            label = { Text("选择宝宝") },
+            label = { Text(stringResource(R.string.plans_select_baby)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier
-                .menuAnchor()
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+            modifier = Modifier.menuAnchor().fillMaxWidth()
         )
 
         ExposedDropdownMenu(
@@ -252,17 +253,17 @@ private fun CalendarView(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onPreviousMonth) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "上个月")
+                Icon(Icons.Default.ArrowBack, contentDescription = null)
             }
 
             Text(
-                text = "${currentMonth.year}年${currentMonth.monthNumber}月",
+                text = DateTimeUtils.formatYearMonth(currentMonth),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
 
             IconButton(onClick = onNextMonth) {
-                Icon(Icons.Default.ArrowForward, contentDescription = "下个月")
+                Icon(Icons.Default.ArrowForward, contentDescription = null)
             }
         }
 
@@ -270,7 +271,15 @@ private fun CalendarView(
 
         // 星期标题
         Row(modifier = Modifier.fillMaxWidth()) {
-            listOf("日", "一", "二", "三", "四", "五", "六").forEach { day ->
+            listOf(
+                stringResource(R.string.day_sun),
+                stringResource(R.string.day_mon),
+                stringResource(R.string.day_tue),
+                stringResource(R.string.day_wed),
+                stringResource(R.string.day_thu),
+                stringResource(R.string.day_fri),
+                stringResource(R.string.day_sat)
+            ).forEach { day ->
                 Text(
                     text = day,
                     modifier = Modifier.weight(1f),
@@ -382,7 +391,7 @@ private fun SelectedDatePlans(
             .padding(horizontal = 16.dp)
     ) {
         Text(
-            text = "${selectedDate.year}年${selectedDate.monthNumber}月${selectedDate.dayOfMonth}日",
+            text = DateTimeUtils.formatDate(selectedDate),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 8.dp)
@@ -392,17 +401,21 @@ private fun SelectedDatePlans(
         if (filteredPlans.isEmpty()) {
                 com.example.babyfood.presentation.theme.EmptyState(
                     icon = Icons.Default.CalendarMonth,
-                    title = "暂无计划",
-                    description = "点击右下角 + 按钮添加辅食计划"
+                    title = stringResource(R.string.plans_empty_list),
+                    description = stringResource(R.string.plans_empty_description)
                 )
             } else {
-            filteredPlans.sortedBy { try { MealPeriod.valueOf(it.plan.mealPeriod).order } catch (e: Exception) { 0 } }.forEach { planWithRecipe ->
-                PlanItem(
-                    planWithRecipe = planWithRecipe,
-                    onClick = { onPlanClick(planWithRecipe.plan.id) },
-                    onChangeRecipe = { onChangeRecipe(planWithRecipe.plan.id) }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(filteredPlans.sortedBy { try { MealPeriod.valueOf(it.plan.mealPeriod).order } catch (e: Exception) { 0 } }) { planWithRecipe ->
+                    PlanItem(
+                        planWithRecipe = planWithRecipe,
+                        onClick = { onPlanClick(planWithRecipe.plan.id) },
+                        onChangeRecipe = { onChangeRecipe(planWithRecipe.plan.id) }
+                    )
+                }
             }
         }
     }
@@ -461,7 +474,7 @@ private fun PlanItem(
                     if (recipe.cookingTime != null) {
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "制作时间: ${recipe.cookingTime}分钟",
+                            text = stringResource(R.string.recipes_cooking_time_format, recipe.cookingTime!!),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -486,9 +499,9 @@ private fun PlanItem(
 @Composable
 private fun PlanStatusChip(status: PlanStatus) {
     val (text, color) = when (status) {
-        PlanStatus.PLANNED -> "已计划" to MaterialTheme.colorScheme.primary
-        PlanStatus.TRIED -> "已尝试" to MaterialTheme.colorScheme.tertiary
-        PlanStatus.SKIPPED -> "已跳过" to MaterialTheme.colorScheme.error
+        PlanStatus.PLANNED -> stringResource(R.string.plans_status_planned) to MaterialTheme.colorScheme.primary
+        PlanStatus.TRIED -> stringResource(R.string.plans_status_tried) to MaterialTheme.colorScheme.tertiary
+        PlanStatus.SKIPPED -> stringResource(R.string.plans_status_skipped) to MaterialTheme.colorScheme.error
     }
 
     Surface(

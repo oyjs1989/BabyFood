@@ -45,6 +45,9 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import androidx.compose.ui.res.stringResource
+import com.example.babyfood.R
+import com.example.babyfood.presentation.util.DateTimeUtils
 import android.net.Uri
 import android.util.Log
 import com.example.babyfood.presentation.theme.ButtonPrimary
@@ -173,12 +176,12 @@ fun BabyFormScreen(
                         }
                     }
                 ) {
-                    Text("确定")
+                    Text(stringResource(R.string.confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("取消")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         ) {
@@ -194,7 +197,7 @@ fun BabyFormScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = if (isEditing) "Baby Details" else "Add Baby",
+                        text = if (isEditing) stringResource(R.string.baby_details_title) else stringResource(R.string.baby_add_title),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -208,7 +211,7 @@ fun BabyFormScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回",
+                            contentDescription = stringResource(R.string.back),
                             tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
@@ -245,7 +248,7 @@ fun BabyFormScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Edit Profile",
+                            text = stringResource(R.string.baby_edit_profile),
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleMedium
                         )
@@ -268,7 +271,7 @@ fun BabyFormScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Health Records",
+                            text = stringResource(R.string.baby_health_records_title),
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleMedium
                         )
@@ -308,7 +311,7 @@ fun BabyFormScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Save",
+                        text = stringResource(R.string.save),
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleMedium
                     )
@@ -347,7 +350,7 @@ fun BabyFormScreen(
                         if (avatarUrl != null) {
                             AsyncImage(
                                 model = avatarUrl,
-                                contentDescription = "宝宝头像",
+                                contentDescription = stringResource(R.string.baby_avatar_desc),
                                 modifier = Modifier
                                     .size(132.dp)
                                     .clip(CircleShape),
@@ -383,7 +386,7 @@ fun BabyFormScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "上传头像",
+                            contentDescription = stringResource(R.string.baby_upload_avatar_desc),
                             modifier = Modifier.size(20.dp),
                             tint = MaterialTheme.colorScheme.onBackground
                         )
@@ -404,7 +407,7 @@ fun BabyFormScreen(
                         (now.year - it.year) * 12 + (now.monthNumber - it.monthNumber)
                     } ?: 0
                     Text(
-                        text = "$ageInMonths Months old",
+                        text = "$ageInMonths" + stringResource(R.string.baby_months_old),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Medium
@@ -416,7 +419,7 @@ fun BabyFormScreen(
             if (showImagePickerDialog) {
                 AlertDialog(
                     onDismissRequest = { showImagePickerDialog = false },
-                    title = { Text("选择头像") },
+                    title = { Text(stringResource(R.string.baby_select_avatar_title)) },
                     text = {
                         Column(
                             modifier = Modifier.fillMaxWidth(),
@@ -434,10 +437,10 @@ fun BabyFormScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Image,
-                                    contentDescription = "从相册选择",
+                                    contentDescription = stringResource(R.string.baby_gallery),
                                     modifier = Modifier.padding(end = 8.dp)
                                 )
-                                Text("从相册选择")
+                                Text(stringResource(R.string.baby_gallery))
                             }
 
                             // 拍照
@@ -452,16 +455,16 @@ fun BabyFormScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.CameraAlt,
-                                    contentDescription = "拍照",
+                                    contentDescription = stringResource(R.string.baby_camera),
                                     modifier = Modifier.padding(end = 8.dp)
                                 )
-                                Text("拍照")
+                                Text(stringResource(R.string.baby_camera))
                             }
                         }
                     },
                     confirmButton = {
                         TextButton(onClick = { showImagePickerDialog = false }) {
-                            Text("取消")
+                            Text(stringResource(R.string.cancel))
                         }
                     }
                 )
@@ -473,7 +476,7 @@ fun BabyFormScreen(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("宝宝姓名") },
+                    label = { Text(stringResource(R.string.baby_name_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)
@@ -491,7 +494,7 @@ fun BabyFormScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "出生日期",
+                            text = stringResource(R.string.baby_birthday_label),
                             style = MaterialTheme.typography.bodyLarge
                         )
                         Row(
@@ -499,12 +502,12 @@ fun BabyFormScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = birthDate?.toString() ?: "选择日期",
+                                text = birthDate?.let { DateTimeUtils.formatDate(it) } ?: stringResource(R.string.baby_select_date_hint),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Icon(
                                 imageVector = Icons.Default.CalendarMonth,
-                                contentDescription = "选择日期"
+                                contentDescription = stringResource(R.string.baby_select_date_hint)
                             )
                         }
                     }
@@ -540,7 +543,7 @@ fun BabyFormScreen(
                                 modifier = Modifier.size(24.dp)
                             )
                             Text(
-                                text = "Growth Curve",
+                                text = stringResource(R.string.baby_growth_curve_title),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
@@ -550,7 +553,7 @@ fun BabyFormScreen(
                             contentPadding = PaddingValues(0.dp)
                         ) {
                             Text(
-                                text = "View Details",
+                                text = stringResource(R.string.common_view_details),
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -569,25 +572,24 @@ fun BabyFormScreen(
 
                     // 身高体重数据
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // 身高
-                        GrowthDataCard(
-                            label = "Height",
-                            value = if (height.isNotBlank()) "${height.toDoubleOrNull()?.toInt() ?: 0}" else "72",
-                            unit = "cm",
-                            modifier = Modifier.weight(1f)
-                        )
-                        // 体重
-                        GrowthDataCard(
-                            label = "Weight",
-                            value = if (weight.isNotBlank()) weight else "9.5",
-                            unit = "kg",
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
+                    // 身高
+                    GrowthDataCard(
+                        label = stringResource(R.string.baby_height_label),
+                        value = if (height.isNotBlank()) "${height.toDoubleOrNull()?.toInt() ?: 0}" else "72",
+                        unit = stringResource(R.string.unit_cm),
+                        modifier = Modifier.weight(1f)
+                    )
+                    // 体重
+                    GrowthDataCard(
+                        label = stringResource(R.string.baby_weight_label),
+                        value = if (weight.isNotBlank()) weight else "9.5",
+                        unit = stringResource(R.string.unit_kg),
+                        modifier = Modifier.weight(1f)
+                    )
+                    }                }
             }
 
             // 营养目标卡片
@@ -619,7 +621,7 @@ fun BabyFormScreen(
                                 modifier = Modifier.size(24.dp)
                             )
                             Text(
-                                text = "Nutrition Goals",
+                                text = stringResource(R.string.baby_nutrition_goals_title),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
@@ -627,7 +629,7 @@ fun BabyFormScreen(
                         IconButton(onClick = { /* 编辑营养目标 */ }) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
-                                contentDescription = "编辑",
+                                contentDescription = stringResource(R.string.edit),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -642,7 +644,7 @@ fun BabyFormScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Calories",
+                            text = stringResource(R.string.baby_calories_label),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -670,9 +672,9 @@ fun BabyFormScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        NutritionItem(label = "Protein", value = "15g")
-                        NutritionItem(label = "Calcium", value = "260mg")
-                        NutritionItem(label = "Iron", value = "11mg")
+                        NutritionItem(label = stringResource(R.string.baby_protein_label), value = "15g")
+                        NutritionItem(label = stringResource(R.string.baby_calcium_label), value = "260mg")
+                        NutritionItem(label = stringResource(R.string.baby_iron_label), value = "11mg")
                     }
                 }
             }
@@ -695,7 +697,7 @@ fun BabyFormScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Allergies",
+                            text = stringResource(R.string.baby_allergies_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -709,7 +711,7 @@ fun BabyFormScreen(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                         ) {
                             Text(
-                                text = "Manage",
+                                text = stringResource(R.string.common_manage),
                                 fontWeight = FontWeight.SemiBold,
                                 style = MaterialTheme.typography.labelLarge
                             )
@@ -720,7 +722,7 @@ fun BabyFormScreen(
 
                     if (allergyItems.isEmpty()) {
                         Text(
-                            text = "No allergies recorded",
+                            text = stringResource(R.string.baby_no_allergies),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -755,7 +757,7 @@ fun BabyFormScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Preferences",
+                            text = stringResource(R.string.baby_preferences_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -769,7 +771,7 @@ fun BabyFormScreen(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                         ) {
                             Text(
-                                text = "Manage",
+                                text = stringResource(R.string.common_manage),
                                 fontWeight = FontWeight.SemiBold,
                                 style = MaterialTheme.typography.labelLarge
                             )
@@ -780,7 +782,7 @@ fun BabyFormScreen(
 
                     if (preferenceItems.isEmpty()) {
                         Text(
-                            text = "No preferences recorded",
+                            text = stringResource(R.string.baby_no_preferences),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -811,7 +813,7 @@ fun BabyFormScreen(
                         modifier = Modifier.padding(20.dp)
                     ) {
                         Text(
-                            text = "咀嚼能力",
+                            text = stringResource(R.string.baby_chewing_ability_label),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -821,9 +823,9 @@ fun BabyFormScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             listOf(
-                                "NORMAL" to "正常",
-                                "STRONG" to "较强",
-                                "WEAK" to "较弱"
+                                "NORMAL" to stringResource(R.string.baby_chewing_normal),
+                                "STRONG" to stringResource(R.string.baby_chewing_strong),
+                                "WEAK" to stringResource(R.string.baby_chewing_weak)
                             ).forEach { (value, label) ->
                                 FilterChip(
                                     selected = chewingAbility == value,
@@ -834,7 +836,7 @@ fun BabyFormScreen(
                             }
                         }
                         Text(
-                            text = "选择宝宝的咀嚼能力，帮助系统推荐适合的质地",
+                            text = stringResource(R.string.baby_chewing_ability_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 8.dp)
@@ -849,13 +851,13 @@ fun BabyFormScreen(
             if (showAllergyDialog) {
                 AlertDialog(
                     onDismissRequest = { showAllergyDialog = false },
-                    title = { Text("添加过敏食材") },
+                    title = { Text(stringResource(R.string.baby_add_allergy)) },
                     text = {
                         Column {
                             OutlinedTextField(
                                 value = newAllergy,
                                 onValueChange = { newAllergy = it },
-                                label = { Text("食材名称") },
+                                label = { Text(stringResource(R.string.baby_ingredient_name)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp)
@@ -870,12 +872,12 @@ fun BabyFormScreen(
                             },
                             enabled = newAllergy.isNotBlank()
                         ) {
-                            Text("添加")
+                            Text(stringResource(R.string.common_add))
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { showAllergyDialog = false }) {
-                            Text("取消")
+                            Text(stringResource(R.string.cancel))
                         }
                     }
                 )
@@ -885,13 +887,13 @@ fun BabyFormScreen(
             if (showPreferenceDialog) {
                 AlertDialog(
                     onDismissRequest = { showPreferenceDialog = false },
-                    title = { Text("添加偏好食材") },
+                    title = { Text(stringResource(R.string.baby_add_preference)) },
                     text = {
                         Column {
                             OutlinedTextField(
                                 value = newPreference,
                                 onValueChange = { newPreference = it },
-                                label = { Text("食材名称") },
+                                label = { Text(stringResource(R.string.baby_ingredient_name)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp)
@@ -906,12 +908,12 @@ fun BabyFormScreen(
                             },
                             enabled = newPreference.isNotBlank()
                         ) {
-                            Text("添加")
+                            Text(stringResource(R.string.common_add))
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { showPreferenceDialog = false }) {
-                            Text("取消")
+                            Text(stringResource(R.string.cancel))
                         }
                     }
                 )
@@ -919,7 +921,7 @@ fun BabyFormScreen(
 
             if (uiState.error != null) {
                 Text(
-                    text = "错误: ${uiState.error}",
+                    text = stringResource(R.string.common_error_prefix) + "${uiState.error}",
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(top = 8.dp)
                 )

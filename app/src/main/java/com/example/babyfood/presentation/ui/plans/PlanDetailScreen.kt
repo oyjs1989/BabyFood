@@ -17,6 +17,9 @@ import com.example.babyfood.domain.model.Plan
 import com.example.babyfood.domain.model.PlanStatus
 import com.example.babyfood.presentation.ui.common.AppScaffold
 import com.example.babyfood.presentation.ui.common.AppBottomAction
+import androidx.compose.ui.res.stringResource
+import com.example.babyfood.R
+import com.example.babyfood.presentation.util.DateTimeUtils
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 
@@ -46,8 +49,8 @@ fun PlanDetailScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("删除计划") },
-            text = { Text("确定要删除这个辅食计划吗？此操作无法撤销。") },
+            title = { Text(stringResource(R.string.plans_delete_title)) },
+            text = { Text(stringResource(R.string.plans_delete_confirm)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -58,12 +61,12 @@ fun PlanDetailScreen(
                         }
                     }
                 ) {
-                    Text("删除", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("取消")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -73,14 +76,14 @@ fun PlanDetailScreen(
         bottomActions = listOf(
             AppBottomAction(
                 icon = Icons.Default.Edit,
-                label = "编辑",
-                contentDescription = "编辑计划",
+                label = stringResource(R.string.edit),
+                contentDescription = stringResource(R.string.plans_edit_action_desc),
                 onClick = { plan?.let { onNavigateToEdit(it.id) } }
             ),
             AppBottomAction(
                 icon = Icons.Default.Delete,
-                label = "删除",
-                contentDescription = "删除计划",
+                label = stringResource(R.string.common_delete),
+                contentDescription = stringResource(R.string.plans_delete_title),
                 onClick = { showDeleteDialog = true }
             )
         )
@@ -92,29 +95,29 @@ fun PlanDetailScreen(
                     .padding(16.dp)
             ) {
                 // 基本信息卡片
-                InfoCard(title = "基本信息") {
-                    InfoRow(label = "日期", value = "${plan.plannedDate.year}年${plan.plannedDate.monthNumber}月${plan.plannedDate.dayOfMonth}日")
-                    InfoRow(label = "餐段", value = try { MealPeriod.valueOf(plan.mealPeriod).displayName } catch (e: Exception) { plan.mealPeriod })
-                    InfoRow(label = "状态", value = getStatusDisplayName(plan.status))
+                InfoCard(title = stringResource(R.string.plans_basic_info_title)) {
+                    InfoRow(label = stringResource(R.string.plans_date_label), value = DateTimeUtils.formatDate(plan.plannedDate))
+                    InfoRow(label = stringResource(R.string.plans_meal_period_label), value = try { MealPeriod.valueOf(plan.mealPeriod).displayName } catch (e: Exception) { plan.mealPeriod })
+                    InfoRow(label = stringResource(R.string.plans_status_label), value = getStatusDisplayName(plan.status))
                     if (!plan.notes.isNullOrBlank()) {
-                        InfoRow(label = "备注", value = plan.notes ?: "")
+                        InfoRow(label = stringResource(R.string.plans_notes_label), value = plan.notes ?: "")
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // 食谱信息卡片
-                InfoCard(title = "食谱信息") {
+                InfoCard(title = stringResource(R.string.plans_recipe_info_title)) {
                     // 这里显示食谱详情，需要从食谱列表中查找
                     val recipe = uiState.recipes.find { it.id == plan.recipeId }
                     if (recipe != null) {
-                        InfoRow(label = "食谱名称", value = recipe.name)
-                        InfoRow(label = "适合月龄", value = "${recipe.minAgeMonths}-${recipe.maxAgeMonths}个月")
-                        InfoRow(label = "分类", value = recipe.category)
+                        InfoRow(label = stringResource(R.string.recipes_name_label), value = recipe.name)
+                        InfoRow(label = stringResource(R.string.plans_suitable_age_label), value = "${recipe.minAgeMonths}-${recipe.maxAgeMonths}${stringResource(R.string.baby_months_unit)}")
+                        InfoRow(label = stringResource(R.string.recipes_category_label), value = recipe.category)
                         if (recipe.ingredients.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "食材：",
+                                text = stringResource(R.string.recipes_ingredients_label) + "：",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold
                             )
@@ -127,7 +130,7 @@ fun PlanDetailScreen(
                             }
                         }
                     } else {
-                        InfoRow(label = "食谱", value = "食谱ID: ${plan.recipeId}")
+                        InfoRow(label = stringResource(R.string.plans_select_recipe), value = "ID: ${plan.recipeId}")
                     }
                 }
 
@@ -152,7 +155,7 @@ fun PlanDetailScreen(
                 if (uiState.isLoading) {
                     CircularProgressIndicator()
                 } else {
-                    Text("计划不存在或已删除")
+                    Text(stringResource(R.string.plans_not_found))
                 }
             }
         }
@@ -220,7 +223,7 @@ private fun StatusActionButtons(
                 .padding(16.dp)
         ) {
             Text(
-                text = "状态操作",
+                text = stringResource(R.string.plans_status_action_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -232,26 +235,26 @@ private fun StatusActionButtons(
                         onClick = { onStatusChange(PlanStatus.TRIED) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("标记为已尝试")
+                        Text(stringResource(R.string.plans_mark_tried))
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(
                         onClick = { onStatusChange(PlanStatus.SKIPPED) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("标记为已跳过")
+                        Text(stringResource(R.string.plans_mark_skipped))
                     }
                 }
                 PlanStatus.TRIED -> {
                     Text(
-                        text = "✓ 已完成尝试",
+                        text = stringResource(R.string.plans_completed_tried),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
                 PlanStatus.SKIPPED -> {
                     Text(
-                        text = "✗ 已跳过",
+                        text = stringResource(R.string.plans_skipped_text),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error
                     )
@@ -261,10 +264,11 @@ private fun StatusActionButtons(
     }
 }
 
+@Composable
 private fun getStatusDisplayName(status: PlanStatus): String {
     return when (status) {
-        PlanStatus.PLANNED -> "已计划"
-        PlanStatus.TRIED -> "已尝试"
-        PlanStatus.SKIPPED -> "已跳过"
+        PlanStatus.PLANNED -> stringResource(R.string.plans_status_planned)
+        PlanStatus.TRIED -> stringResource(R.string.plans_status_tried)
+        PlanStatus.SKIPPED -> stringResource(R.string.plans_status_skipped)
     }
 }

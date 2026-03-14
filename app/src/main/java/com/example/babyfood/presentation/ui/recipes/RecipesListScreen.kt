@@ -54,6 +54,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import androidx.compose.ui.res.stringResource
+import com.example.babyfood.R
 import com.example.babyfood.domain.model.Recipe
 import com.example.babyfood.domain.model.RiskLevel
 import com.example.babyfood.presentation.theme.AvocadoDark
@@ -78,20 +80,20 @@ fun RecipesListScreen(
 
     // 分类筛选选项
     val categoryOptions = listOf(
-        "All" to null,
-        "Vegetable Puree" to "蔬菜",
-        "Fruit Mash" to "水果",
-        "Porridge" to "主食",
-        "Finger Foods" to "手指食物",
-        "Meat" to "蛋白质"
+        stringResource(R.string.recipes_category_all) to null,
+        stringResource(R.string.recipes_category_vegetable) to "蔬菜",
+        stringResource(R.string.recipes_category_fruit) to "水果",
+        stringResource(R.string.recipes_category_staple) to "主食",
+        stringResource(R.string.recipes_category_finger_food) to "手指食物",
+        stringResource(R.string.recipes_category_protein) to "蛋白质"
     )
 
     // 月龄筛选选项
     val ageOptions = listOf(
-        "6-8 Months" to 6,
-        "8-10 Months" to 8,
-        "10-12 Months" to 10,
-        "1 Year+" to 12
+        stringResource(R.string.recipes_age_6_8) to 6,
+        stringResource(R.string.recipes_age_8_10) to 8,
+        stringResource(R.string.recipes_age_10_12) to 10,
+        stringResource(R.string.recipes_age_12_plus) to 12
     )
 
     Column(
@@ -145,14 +147,14 @@ fun RecipesListScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "加载中...")
+                Text(text = stringResource(R.string.loading))
             }
         } else if (uiState.filteredRecipes.isEmpty()) {
             val isFiltering = searchQuery.isNotEmpty() || uiState.selectedAge != null || uiState.selectedCategory != null
             com.example.babyfood.presentation.theme.EmptyState(
                 icon = if (isFiltering) Icons.Default.Search else Icons.Default.Restaurant,
-                title = if (isFiltering) "没有找到符合条件的食谱" else "还没有食谱数据",
-                description = if (isFiltering) "尝试调整搜索条件或筛选器" else "点击右下角 + 按钮添加食谱"
+                title = if (isFiltering) stringResource(R.string.recipes_empty_filter) else stringResource(R.string.recipes_empty_list),
+                description = if (isFiltering) stringResource(R.string.recipes_filter_description) else stringResource(R.string.recipes_empty_description)
             )
         } else {
             LazyColumn(
@@ -192,7 +194,7 @@ private fun RecipeListAppBar(
         IconButton(onClick = onNavigateBack) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "返回",
+                contentDescription = stringResource(R.string.back),
                 tint = AvocadoDark,
                 modifier = Modifier.size(28.dp)
             )
@@ -200,7 +202,7 @@ private fun RecipeListAppBar(
 
         // 标题
         Text(
-            text = "Baby Food",
+            text = stringResource(R.string.app_name),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = AvocadoDark
@@ -210,7 +212,7 @@ private fun RecipeListAppBar(
         IconButton(onClick = onFilterClick) {
             Icon(
                 imageVector = Icons.Default.Tune,
-                contentDescription = "筛选",
+                contentDescription = stringResource(R.string.common_filter),
                 tint = AvocadoDark,
                 modifier = Modifier.size(28.dp)
             )
@@ -252,7 +254,7 @@ private fun SearchBar(
             decorationBox = { innerTextField ->
                 if (query.isEmpty()) {
                     Text(
-                        text = "搜索食谱、食材...",
+                        text = stringResource(R.string.recipes_search_placeholder),
                         style = MaterialTheme.typography.bodyMedium,
                         color = SoftBrown.copy(alpha = 0.6f)
                     )
@@ -262,6 +264,7 @@ private fun SearchBar(
         )
     }
 }
+
 
 @Composable
 private fun FilterChipRow(
@@ -435,7 +438,7 @@ private fun RecipeCard(
                 if (recipe.isIronRich) {
                     NutritionTag(
                         icon = "⚡",
-                        text = "富含铁质",
+                        text = stringResource(R.string.recipes_iron_rich),
                         backgroundColor = AvocadoPrimary.copy(alpha = 0.2f),
                         textColor = AvocadoDark
                     )
@@ -463,9 +466,9 @@ private fun RecipeCard(
                 ) {
                     // 难度
                     val difficulty = when (recipe.minAgeMonths) {
-                        in 0..8 -> "简单"
-                        in 9..11 -> "中等"
-                        else -> "进阶"
+                        in 0..8 -> stringResource(R.string.recipes_difficulty_easy)
+                        in 9..11 -> stringResource(R.string.recipes_difficulty_medium)
+                        else -> stringResource(R.string.recipes_difficulty_advanced)
                     }
                     Text(
                         text = difficulty,
@@ -492,7 +495,7 @@ private fun RecipeCard(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = "${recipe.cookingTime ?: 15}分钟",
+                            text = stringResource(R.string.recipes_cooking_time_format, recipe.cookingTime ?: 15),
                             style = MaterialTheme.typography.bodySmall,
                             color = SoftBrown,
                             fontWeight = FontWeight.Medium
@@ -511,7 +514,7 @@ private fun RecipeCard(
             ) {
                 Icon(
                     imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = "收藏",
+                    contentDescription = stringResource(R.string.common_favorite),
                     tint = if (isFavorite) Coral else SoftBrown.copy(alpha = 0.5f),
                     modifier = Modifier.size(24.dp)
                 )
