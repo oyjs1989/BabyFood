@@ -36,6 +36,8 @@ class NutritionMatcher @Inject constructor(
         val proteinProgress: Float,        // 蛋白质达成率
         val calciumProgress: Float,        // 钙达成率
         val ironProgress: Float,           // 铁达成率
+        val vitaminAProgress: Float,       // 维生素A达成率
+        val vitaminCProgress: Float,       // 维生素C达成率
         val isBalanced: Boolean,           // 是否营养均衡
         val deficiencies: List<String>,    // 营养缺乏项
         val excesses: List<String>,        // 营养过量项
@@ -56,10 +58,12 @@ class NutritionMatcher @Inject constructor(
             Log.d(TAG, "✓ 从后端 API 获取营养目标成功")
             
             NutritionGoal(
-                calories = response.calories.toFloat(),
-                protein = response.protein.toFloat(),
-                calcium = response.calcium.toFloat(),
-                iron = response.iron.toFloat()
+                calories = response.calories?.toFloat() ?: 0f,
+                protein = response.protein?.toFloat() ?: 0f,
+                calcium = response.calcium?.toFloat() ?: 0f,
+                iron = response.iron?.toFloat() ?: 0f,
+                vitaminA = response.vitaminA?.toFloat() ?: 0f,
+                vitaminC = response.vitaminC?.toFloat() ?: 0f
             )
         } catch (e: Exception) {
             Log.w(TAG, "⚠️ 从后端 API 获取营养目标失败: ${e.message}")
@@ -85,17 +89,21 @@ class NutritionMatcher @Inject constructor(
                 calories = goals.calories.toDouble(),
                 protein = goals.protein.toDouble(),
                 calcium = goals.calcium.toDouble(),
-                iron = goals.iron.toDouble()
+                iron = goals.iron.toDouble(),
+                vitaminA = goals.vitaminA.toDouble(),
+                vitaminC = goals.vitaminC.toDouble()
             )
             
             val response = nutritionApiService.updateNutritionGoals(babyId, updateDto)
             Log.d(TAG, "✓ 更新营养目标成功")
             
             val updatedGoal = NutritionGoal(
-                calories = response.calories.toFloat(),
-                protein = response.protein.toFloat(),
-                calcium = response.calcium.toFloat(),
-                iron = response.iron.toFloat()
+                calories = response.calories?.toFloat() ?: 0f,
+                protein = response.protein?.toFloat() ?: 0f,
+                calcium = response.calcium?.toFloat() ?: 0f,
+                iron = response.iron?.toFloat() ?: 0f,
+                vitaminA = response.vitaminA?.toFloat() ?: 0f,
+                vitaminC = response.vitaminC?.toFloat() ?: 0f
             )
             
             Result.success(updatedGoal)
@@ -123,7 +131,9 @@ class NutritionMatcher @Inject constructor(
                 "calories" to intake.calories.toDouble(),
                 "protein" to intake.protein.toDouble(),
                 "calcium" to intake.calcium.toDouble(),
-                "iron" to intake.iron.toDouble()
+                "iron" to intake.iron.toDouble(),
+                "vitamin_a" to intake.vitaminA.toDouble(),
+                "vitamin_c" to intake.vitaminC.toDouble()
             )
             
             val response = nutritionApiService.calculateNutritionIntake(babyId, intakeMap)
@@ -132,21 +142,27 @@ class NutritionMatcher @Inject constructor(
             // 获取营养目标
             val goal = response.goals?.let {
                 NutritionGoal(
-                    calories = it.calories.toFloat(),
-                    protein = it.protein.toFloat(),
-                    calcium = it.calcium.toFloat(),
-                    iron = it.iron.toFloat()
+                    calories = it.calories?.toFloat() ?: 0f,
+                    protein = it.protein?.toFloat() ?: 0f,
+                    calcium = it.calcium?.toFloat() ?: 0f,
+                    iron = it.iron?.toFloat() ?: 0f,
+                    vitaminA = it.vitaminA?.toFloat() ?: 0f,
+                    vitaminC = it.vitaminC?.toFloat() ?: 0f
                 )
             } ?: return null
             
             // 构建匹配结果
-            val actualIntake = response.actualIntake
-            val caloriesProgress = calculateProgress(actualIntake.calories.toFloat(), goal.calories)
-            val proteinProgress = calculateProgress(actualIntake.protein.toFloat(), goal.protein)
-            val calciumProgress = calculateProgress(actualIntake.calcium.toFloat(), goal.calcium)
-            val ironProgress = calculateProgress(actualIntake.iron.toFloat(), goal.iron)
+            val actualIntakeMap = response.actualIntake
+            val matchPercentageMap = response.matchPercentage
             
-            val overallScore = (caloriesProgress + proteinProgress + calciumProgress + ironProgress) / 4f
+            val caloriesProgress = matchPercentageMap["calories"]?.toFloat() ?: 0f
+            val proteinProgress = matchPercentageMap["protein"]?.toFloat() ?: 0f
+            val calciumProgress = matchPercentageMap["calcium"]?.toFloat() ?: 0f
+            val ironProgress = matchPercentageMap["iron"]?.toFloat() ?: 0f
+            val vitaminAProgress = matchPercentageMap["vitamin_a"]?.toFloat() ?: 0f
+            val vitaminCProgress = matchPercentageMap["vitamin_c"]?.toFloat() ?: 0f
+            
+            val overallScore = (caloriesProgress + proteinProgress + calciumProgress + ironProgress + vitaminAProgress + vitaminCProgress) / 6f
             
             // 分析缺乏和过量
             val deficiencies = mutableListOf<String>()
@@ -188,16 +204,20 @@ class NutritionMatcher @Inject constructor(
             NutritionMatchResult(
                 goal = goal,
                 intake = NutritionIntake(
-                    calories = actualIntake.calories.toFloat(),
-                    protein = actualIntake.protein.toFloat(),
-                    calcium = actualIntake.calcium.toFloat(),
-                    iron = actualIntake.iron.toFloat()
+                    calories = actualIntakeMap["calories"]?.toFloat() ?: 0f,
+                    protein = actualIntakeMap["protein"]?.toFloat() ?: 0f,
+                    calcium = actualIntakeMap["calcium"]?.toFloat() ?: 0f,
+                    iron = actualIntakeMap["iron"]?.toFloat() ?: 0f,
+                    vitaminA = actualIntakeMap["vitamin_a"]?.toFloat() ?: 0f,
+                    vitaminC = actualIntakeMap["vitamin_c"]?.toFloat() ?: 0f
                 ),
                 overallScore = overallScore,
                 caloriesProgress = caloriesProgress,
                 proteinProgress = proteinProgress,
                 calciumProgress = calciumProgress,
                 ironProgress = ironProgress,
+                vitaminAProgress = vitaminAProgress,
+                vitaminCProgress = vitaminCProgress,
                 isBalanced = deficiencies.isEmpty() && excesses.isEmpty(),
                 deficiencies = deficiencies,
                 excesses = excesses,
@@ -264,7 +284,9 @@ class NutritionMatcher @Inject constructor(
             calories = (recipe.nutrition?.calories ?: 0f) * multiplier,
             protein = (recipe.nutrition?.protein ?: 0f) * multiplier,
             calcium = (recipe.nutrition?.calcium ?: 0f) * multiplier,
-            iron = (recipe.nutrition?.iron ?: 0f) * multiplier
+            iron = (recipe.nutrition?.iron ?: 0f) * multiplier,
+            vitaminA = (recipe.nutrition?.vitaminA ?: 0f) * multiplier,
+            vitaminC = (recipe.nutrition?.vitaminC ?: 0f) * multiplier
         )
     }
 
@@ -272,12 +294,14 @@ class NutritionMatcher @Inject constructor(
      * 计算总营养摄入
      */
     private fun calculateTotalIntake(recipes: List<Recipe>): NutritionIntake {
-        return recipes.fold(NutritionIntake(0f, 0f, 0f, 0f)) { acc, recipe ->
+        return recipes.fold(NutritionIntake(0f, 0f, 0f, 0f, 0f, 0f)) { acc, recipe ->
             acc.copy(
                 calories = acc.calories + (recipe.nutrition?.calories ?: 0f),
                 protein = acc.protein + (recipe.nutrition?.protein ?: 0f),
                 calcium = acc.calcium + (recipe.nutrition?.calcium ?: 0f),
-                iron = acc.iron + (recipe.nutrition?.iron ?: 0f)
+                iron = acc.iron + (recipe.nutrition?.iron ?: 0f),
+                vitaminA = acc.vitaminA + (recipe.nutrition?.vitaminA ?: 0f),
+                vitaminC = acc.vitaminC + (recipe.nutrition?.vitaminC ?: 0f)
             )
         }
     }
@@ -290,8 +314,10 @@ class NutritionMatcher @Inject constructor(
         val proteinProgress = calculateProgress(intake.protein, goal.protein)
         val calciumProgress = calculateProgress(intake.calcium, goal.calcium)
         val ironProgress = calculateProgress(intake.iron, goal.iron)
+        val vitaminAProgress = calculateProgress(intake.vitaminA, goal.vitaminA)
+        val vitaminCProgress = calculateProgress(intake.vitaminC, goal.vitaminC)
 
-        val overallScore = (caloriesProgress + proteinProgress + calciumProgress + ironProgress) / 4f
+        val overallScore = (caloriesProgress + proteinProgress + calciumProgress + ironProgress + vitaminAProgress + vitaminCProgress) / 6f
 
         val deficiencies = mutableListOf<String>()
         val excesses = mutableListOf<String>()
@@ -302,7 +328,9 @@ class NutritionMatcher @Inject constructor(
             NutritionRule("热量", caloriesProgress, deficiencyThreshold = 80f, excessThreshold = 120f, deficiencyRecommendation = "增加主食摄入", excessRecommendation = "减少主食摄入"),
             NutritionRule("蛋白质", proteinProgress, deficiencyThreshold = 80f, excessThreshold = 150f, deficiencyRecommendation = "增加肉类、蛋类或豆制品", excessRecommendation = "适当减少肉类摄入"),
             NutritionRule("钙", calciumProgress, deficiencyThreshold = 80f, excessThreshold = Float.MAX_VALUE, deficiencyRecommendation = "增加奶制品或豆制品", excessRecommendation = null),
-            NutritionRule("铁", ironProgress, deficiencyThreshold = 80f, excessThreshold = Float.MAX_VALUE, deficiencyRecommendation = "增加红肉或动物肝脏", excessRecommendation = null)
+            NutritionRule("铁", ironProgress, deficiencyThreshold = 80f, excessThreshold = Float.MAX_VALUE, deficiencyRecommendation = "增加红肉或动物肝脏", excessRecommendation = null),
+            NutritionRule("维生素A", vitaminAProgress, deficiencyThreshold = 80f, excessThreshold = Float.MAX_VALUE, deficiencyRecommendation = "增加胡萝卜、动物肝脏等摄入", excessRecommendation = null),
+            NutritionRule("维生素C", vitaminCProgress, deficiencyThreshold = 80f, excessThreshold = Float.MAX_VALUE, deficiencyRecommendation = "增加新鲜蔬菜水果摄入", excessRecommendation = null)
         )
 
         // 应用营养检查规则
@@ -327,6 +355,8 @@ class NutritionMatcher @Inject constructor(
             proteinProgress = proteinProgress,
             calciumProgress = calciumProgress,
             ironProgress = ironProgress,
+            vitaminAProgress = vitaminAProgress,
+            vitaminCProgress = vitaminCProgress,
             isBalanced = isBalanced,
             deficiencies = deficiencies,
             excesses = excesses,
@@ -368,6 +398,12 @@ class NutritionMatcher @Inject constructor(
         }
         if (result.ironProgress >= 100f) {
             highlights.add("铁充足")
+        }
+        if (result.vitaminAProgress >= 100f) {
+            highlights.add("维生素A充足")
+        }
+        if (result.vitaminCProgress >= 100f) {
+            highlights.add("维生素C充足")
         }
         if (result.isBalanced) {
             highlights.add("营养均衡")

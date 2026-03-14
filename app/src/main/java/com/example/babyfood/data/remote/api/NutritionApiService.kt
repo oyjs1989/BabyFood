@@ -5,6 +5,7 @@ import com.example.babyfood.data.remote.dto.nutrition.NutritionDataResponse
 import com.example.babyfood.data.remote.dto.nutrition.NutritionGoalsResponse
 import com.example.babyfood.data.remote.dto.nutrition.NutritionGoalsUpdate
 import com.example.babyfood.data.remote.dto.nutrition.NutritionIntakeResponse
+import com.example.babyfood.data.remote.dto.nutrition.RuleVersionResponse
 import com.example.babyfood.data.remote.dto.nutrition.SafetyRiskResponse
 import com.example.babyfood.data.remote.dto.nutrition.TextureAdviceResponse
 import retrofit2.http.Body
@@ -20,6 +21,14 @@ import retrofit2.http.Query
  */
 interface NutritionApiService {
 
+    // ==================== 规则版本 ====================
+
+    /**
+     * 获取规则版本
+     */
+    @GET("api/v1/nutrition/rules/version")
+    suspend fun getRuleVersion(): RuleVersionResponse
+
     // ==================== 安全风险 ====================
 
     /**
@@ -28,7 +37,7 @@ interface NutritionApiService {
      * @param ageInMonths 宝宝月龄
      * @return 安全风险信息
      */
-    @GET("/api/v1/nutrition/safety-risks/{ingredientName}")
+    @GET("api/v1/nutrition/safety-risks/{ingredientName}")
     suspend fun getSafetyRisk(
         @Path("ingredientName") ingredientName: String,
         @Query("age_in_months") ageInMonths: Int
@@ -39,17 +48,18 @@ interface NutritionApiService {
      * @param ageInMonths 宝宝月龄（可选）
      * @return 安全风险列表
      */
-    @GET("/api/v1/nutrition/safety-risks")
+    @GET("api/v1/nutrition/safety-risks")
     suspend fun getAllSafetyRisks(
         @Query("age_in_months") ageInMonths: Int? = null
     ): List<SafetyRiskResponse>
 
     /**
      * 获取高风险食材
-     * @return 高风险食材列表
      */
-    @GET("/api/v1/nutrition/safety-risks/high-risk")
-    suspend fun getHighRiskIngredients(): List<SafetyRiskResponse>
+    @GET("api/v1/nutrition/safety-risks/high-risk")
+    suspend fun getHighRiskIngredients(
+        @Query("age_in_months") ageInMonths: Int? = null
+    ): List<SafetyRiskResponse>
 
     // ==================== 营养数据 ====================
 
@@ -58,7 +68,7 @@ interface NutritionApiService {
      * @param ingredientName 食材名称
      * @return 营养数据
      */
-    @GET("/api/v1/nutrition/nutrition-data/{ingredientName}")
+    @GET("api/v1/nutrition/nutrition-data/{ingredientName}")
     suspend fun getNutritionData(
         @Path("ingredientName") ingredientName: String
     ): NutritionDataResponse
@@ -67,15 +77,18 @@ interface NutritionApiService {
      * 获取所有营养数据
      * @return 营养数据列表
      */
-    @GET("/api/v1/nutrition/nutrition-data")
+    @GET("api/v1/nutrition/nutrition-data")
     suspend fun getAllNutritionData(): List<NutritionDataResponse>
 
     /**
      * 获取高铁食材
+     * @param threshold 铁含量阈值
      * @return 高铁食材列表
      */
-    @GET("/api/v1/nutrition/nutrition-data/high-iron")
-    suspend fun getHighIronIngredients(): List<NutritionDataResponse>
+    @GET("api/v1/nutrition/nutrition-data/high-iron")
+    suspend fun getHighIronIngredients(
+        @Query("threshold") threshold: Double = 2.0
+    ): List<NutritionDataResponse>
 
     // ==================== 营养目标 ====================
 
@@ -84,7 +97,7 @@ interface NutritionApiService {
      * @param babyId 宝宝 ID
      * @return 营养目标
      */
-    @GET("/api/v1/nutrition/nutrition-goals/{babyId}")
+    @GET("api/v1/nutrition/nutrition-goals/{babyId}")
     suspend fun getNutritionGoals(
         @Path("babyId") babyId: Int
     ): NutritionGoalsResponse
@@ -95,7 +108,7 @@ interface NutritionApiService {
      * @param goals 营养目标数据
      * @return 更新后的营养目标
      */
-    @PUT("/api/v1/nutrition/nutrition-goals/{babyId}")
+    @PUT("api/v1/nutrition/nutrition-goals/{babyId}")
     suspend fun updateNutritionGoals(
         @Path("babyId") babyId: Int,
         @Body goals: NutritionGoalsUpdate
@@ -106,10 +119,10 @@ interface NutritionApiService {
     /**
      * 计算营养摄入
      * @param babyId 宝宝 ID
-     * @param intake 摄入数据（包含 calories, protein, calcium, iron）
+     * @param intake 摄入数据
      * @return 营养摄入分析结果
      */
-    @POST("/api/v1/nutrition/nutrition-intake/{babyId}")
+    @POST("api/v1/nutrition/nutrition-intake/{babyId}")
     suspend fun calculateNutritionIntake(
         @Path("babyId") babyId: Int,
         @Body intake: Map<String, Double>
@@ -122,7 +135,7 @@ interface NutritionApiService {
      * @param ageInMonths 宝宝月龄
      * @return 质地建议
      */
-    @GET("/api/v1/nutrition/texture-advice/{ageInMonths}")
+    @GET("api/v1/nutrition/texture-advice/{ageInMonths}")
     suspend fun getTextureAdvice(
         @Path("ageInMonths") ageInMonths: Int
     ): TextureAdviceResponse
@@ -131,8 +144,13 @@ interface NutritionApiService {
 
     /**
      * 获取新鲜度建议
-     * @return 新鲜度建议列表
+     * @param ingredientName 食材名称
+     * @param ageInMonths 宝宝月龄
+     * @return 新鲜度建议
      */
-    @GET("/api/v1/nutrition/freshness-advice")
-    suspend fun getFreshnessAdvice(): List<FreshnessAdviceResponse>
+    @GET("api/v1/nutrition/freshness-advice")
+    suspend fun getFreshnessAdvice(
+        @Query("ingredient_name") ingredientName: String,
+        @Query("age_in_months") ageInMonths: Int
+    ): FreshnessAdviceResponse
 }

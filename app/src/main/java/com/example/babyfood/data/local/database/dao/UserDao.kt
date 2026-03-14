@@ -50,6 +50,12 @@ interface UserDao {
     fun getCurrentUser(): Flow<UserEntity?>
 
     /**
+     * 获取当前登录用户（同步版本）
+     */
+    @Query("SELECT * FROM users WHERE isLoggedIn = 1 LIMIT 1")
+    suspend fun getCurrentUserSync(): UserEntity?
+
+    /**
      * 设置登录状态
      */
     @Query("UPDATE users SET isLoggedIn = 0")
@@ -87,4 +93,10 @@ interface UserDao {
      */
     @Query("UPDATE users SET theme = :theme WHERE id = :userId")
     suspend fun updateTheme(userId: Long, theme: String)
+
+    /**
+     * 更新签到信息
+     */
+    @Query("UPDATE users SET points_balance = :pointsBalance, last_check_in_date = :lastCheckInDate WHERE id = :userId")
+    suspend fun updateCheckInInfo(userId: Long, pointsBalance: Int, lastCheckInDate: Long)
 }

@@ -16,15 +16,20 @@ data class SafetyRiskResponse(
     @SerialName("riskLevel")
     val riskLevel: String,  // FORBIDDEN, NOT_RECOMMENDED, REQUIRES_SPECIAL_HANDLING, CAUTIOUS_INTRODUCTION, NORMAL
     
-    @SerialName("minAgeMonths")
-    val minAgeMonths: Int,
+    @SerialName("riskReason")
+    val riskReason: String,
     
-    @SerialName("maxAgeMonths")
-    val maxAgeMonths: Int,
+    @SerialName("handlingAdvice")
+    val handlingAdvice: String? = null,
     
-    @SerialName("warningMessage")
-    val warningMessage: String? = null,
+    @SerialName("applicableAgeRangeStart")
+    val applicableAgeRangeStart: Int? = null,
     
-    @SerialName("handlingTips")
-    val handlingTips: String? = null
+    @SerialName("applicableAgeRangeEnd")
+    val applicableAgeRangeEnd: Int? = null,
+    
+    val severity: Int,
+    
+    @SerialName("dataSource")
+    val dataSource: String
 )

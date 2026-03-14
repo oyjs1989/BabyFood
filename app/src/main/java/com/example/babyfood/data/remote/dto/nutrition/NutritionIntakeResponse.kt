@@ -12,20 +12,12 @@ data class NutritionIntakeResponse(
     val babyId: Int,
     
     @SerialName("actualIntake")
-    val actualIntake: NutritionIntakeData,
+    val actualIntake: Map<String, Double>,
     
     val goals: NutritionGoalsResponse,
     
+    @SerialName("matchPercentage")
+    val matchPercentage: Map<String, Double>,
+    
     val warnings: List<String> = emptyList()
-)
-
-/**
- * 营养摄入数据
- */
-@Serializable
-data class NutritionIntakeData(
-    val calories: Double,
-    val protein: Double,
-    val calcium: Double,
-    val iron: Double
 )

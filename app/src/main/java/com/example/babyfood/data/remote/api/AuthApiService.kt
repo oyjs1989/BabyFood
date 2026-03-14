@@ -1,5 +1,6 @@
 package com.example.babyfood.data.remote.api
 
+import com.example.babyfood.data.remote.dto.CheckInResponse
 import com.example.babyfood.data.remote.dto.RegisterRequest
 import com.example.babyfood.data.remote.dto.RegisterResponse
 import com.example.babyfood.data.remote.dto.VerificationCodeResponse
@@ -8,6 +9,7 @@ import com.example.babyfood.domain.model.LoginResponse
 import com.example.babyfood.domain.model.LogoutRequest
 import com.example.babyfood.domain.model.LogoutResponse
 import retrofit2.http.Body
+import retrofit2.http.Header
 import retrofit2.http.POST
 
 /**
@@ -73,6 +75,14 @@ interface AuthApiService {
      */
     @POST("auth/logout")
     suspend fun logout(
-        @Body request: LogoutRequest
+        @Body request: LogoutRequest,
+        @Header("Authorization") token: String
     ): LogoutResponse
+
+    /**
+     * 每日签到
+     * @return 签到响应
+     */
+    @POST("auth/check-in")
+    suspend fun dailyCheckIn(): CheckInResponse
 }

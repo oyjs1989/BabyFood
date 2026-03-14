@@ -8,18 +8,19 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class NutritionGoalsResponse(
-    val id: Int,
-    
     @SerialName("babyId")
     val babyId: Int,
     
-    val calories: Double,
-    val protein: Double,
-    val calcium: Double,
-    val iron: Double,
+    val calories: Double? = null,
+    val protein: Double? = null,
+    val calcium: Double? = null,
+    val iron: Double? = null,
     
-    @SerialName("createdAt")
-    val createdAt: String,
+    @SerialName("vitaminA")
+    val vitaminA: Double? = null,
+    
+    @SerialName("vitaminC")
+    val vitaminC: Double? = null,
     
     @SerialName("updatedAt")
     val updatedAt: String
@@ -30,8 +31,14 @@ data class NutritionGoalsResponse(
  */
 @Serializable
 data class NutritionGoalsUpdate(
-    val calories: Double,
-    val protein: Double,
-    val calcium: Double,
-    val iron: Double
+    val calories: Double? = null,
+    val protein: Double? = null,
+    val calcium: Double? = null,
+    val iron: Double? = null,
+    
+    @SerialName("vitaminA")
+    val vitaminA: Double? = null,
+    
+    @SerialName("vitaminC")
+    val vitaminC: Double? = null
 )

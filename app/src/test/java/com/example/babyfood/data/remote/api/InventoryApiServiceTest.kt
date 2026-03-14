@@ -10,13 +10,16 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 import retrofit2.Retrofit
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 /**
  * InventoryApiService 集成测试
  * 使用 MockWebServer 模拟后端 API
  */
+@RunWith(JUnit4::class)
 class InventoryApiServiceTest {
 
     private lateinit var mockWebServer: MockWebServer
@@ -48,31 +51,27 @@ class InventoryApiServiceTest {
             [
                 {
                     "id": 1,
-                    "babyId": 1,
-                    "name": "胡萝卜",
-                    "category": "蔬菜",
-                    "quantity": 5,
-                    "unit": "根",
-                    "productionDate": "2026-01-01",
-                    "expiryDate": "2026-02-01",
-                    "storageMethod": "REFRIGERATED",
-                    "notes": "有机胡萝卜",
-                    "expiryStatus": "FRESH",
-                    "daysUntilExpiry": 10
+                    "cloudId": "item_1",
+                    "userId": 1,
+                    "name": "苹果",
+                    "quantity": 5.0,
+                    "unit": "个",
+                    "storageMethod": "REFRIGERATOR",
+                    "expiryDate": "2026-04-15",
+                    "createdAt": "2026-03-15T10:30:00",
+                    "updatedAt": "2026-03-15T10:30:00"
                 },
                 {
                     "id": 2,
-                    "babyId": 1,
-                    "name": "三文鱼",
-                    "category": "肉类",
-                    "quantity": 2,
-                    "unit": "块",
-                    "productionDate": "2026-01-10",
-                    "expiryDate": "2026-01-20",
-                    "storageMethod": "FROZEN",
-                    "notes": "挪威三文鱼",
-                    "expiryStatus": "EXPIRING_SOON",
-                    "daysUntilExpiry": 3
+                    "cloudId": "item_2",
+                    "userId": 1,
+                    "name": "菠菜",
+                    "quantity": 200.0,
+                    "unit": "克",
+                    "storageMethod": "REFRIGERATOR",
+                    "expiryDate": "2026-03-20",
+                    "createdAt": "2026-03-15T14:20:00",
+                    "updatedAt": "2026-03-15T14:20:00"
                 }
             ]
         """.trimIndent()
@@ -85,18 +84,13 @@ class InventoryApiServiceTest {
         )
 
         // Act
-        val result = apiService.getInventoryItems(babyId = 1, category = null, status = null)
+        val result = apiService.getInventoryItems()
 
         // Assert
         assertEquals(2, result.size)
-        assertEquals(1L, result[0].id)
-        assertEquals("胡萝卜", result[0].name)
-        assertEquals("REFRIGERATED", result[0].storageMethod)
-        assertEquals("FRESH", result[0].expiryStatus)
-        assertEquals(2L, result[1].id)
-        assertEquals("三文鱼", result[1].name)
-        assertEquals("FROZEN", result[1].storageMethod)
-        assertEquals("EXPIRING_SOON", result[1].expiryStatus)
+        assertEquals("item_1", result[0].cloudId)
+        assertEquals("苹果", result[0].name)
+        assertEquals(5.0, result[0].quantity, 0.01)
     }
 
     @Test
@@ -105,17 +99,15 @@ class InventoryApiServiceTest {
         val mockResponse = """
             {
                 "id": 1,
-                "babyId": 1,
-                "name": "胡萝卜",
-                "category": "蔬菜",
-                "quantity": 5,
-                "unit": "根",
-                "productionDate": "2026-01-01",
-                "expiryDate": "2026-02-01",
-                "storageMethod": "REFRIGERATED",
-                "notes": "有机胡萝卜",
-                "expiryStatus": "FRESH",
-                "daysUntilExpiry": 10
+                "cloudId": "item_1",
+                "userId": 1,
+                "name": "苹果",
+                "quantity": 5.0,
+                "unit": "个",
+                "storageMethod": "REFRIGERATOR",
+                "expiryDate": "2026-04-15",
+                "createdAt": "2026-03-15T10:30:00",
+                "updatedAt": "2026-03-15T10:30:00"
             }
         """.trimIndent()
 
@@ -127,48 +119,37 @@ class InventoryApiServiceTest {
         )
 
         // Act
-        val result = apiService.getInventoryItem(itemId = 1)
+        val result = apiService.getInventoryItem(cloudId = "item_1")
 
         // Assert
-        assertEquals(1L, result.id)
-        assertEquals(1L, result.babyId)
-        assertEquals("胡萝卜", result.name)
-        assertEquals("蔬菜", result.category)
-        assertEquals(5, result.quantity)
-        assertEquals("REFRIGERATED", result.storageMethod)
-        assertEquals("FRESH", result.expiryStatus)
-        assertEquals(10, result.daysUntilExpiry)
+        assertEquals("item_1", result.cloudId)
+        assertEquals("苹果", result.name)
     }
 
     @Test
     fun `createInventoryItem creates and returns new item`() = runBlocking {
         // Arrange
-        val request = CreateInventoryItemRequest(
-            babyId = 1,
-            name = "牛肉",
-            category = "肉类",
-            quantity = 500,
-            unit = "克",
-            productionDate = "2026-01-10",
-            expiryDate = "2026-01-25",
-            storageMethod = "FROZEN",
-            notes = "澳洲牛肉"
+        val request = InventoryItemCreate(
+            name = "胡萝卜",
+            quantity = 3.0,
+            unit = "根",
+            expiryDate = "2026-04-01",
+            storageMethod = "REFRIGERATOR",
+            notes = "新鲜购买"
         )
 
         val mockResponse = """
             {
                 "id": 3,
-                "babyId": 1,
-                "name": "牛肉",
-                "category": "肉类",
-                "quantity": 500,
-                "unit": "克",
-                "productionDate": "2026-01-10",
-                "expiryDate": "2026-01-25",
-                "storageMethod": "FROZEN",
-                "notes": "澳洲牛肉",
-                "expiryStatus": "FRESH",
-                "daysUntilExpiry": 8
+                "cloudId": "item_3",
+                "userId": 1,
+                "name": "胡萝卜",
+                "quantity": 3.0,
+                "unit": "根",
+                "storageMethod": "REFRIGERATOR",
+                "expiryDate": "2026-04-01",
+                "createdAt": "2026-03-15T09:00:00",
+                "updatedAt": "2026-03-15T09:00:00"
             }
         """.trimIndent()
 
@@ -180,38 +161,37 @@ class InventoryApiServiceTest {
         )
 
         // Act
-        val result = apiService.createInventoryItem(request)
+        val result = apiService.createInventoryItem(item = request)
 
         // Assert
-        assertEquals(3L, result.id)
-        assertEquals("牛肉", result.name)
-        assertEquals(500, result.quantity)
-        assertEquals("FROZEN", result.storageMethod)
-        assertEquals("FRESH", result.expiryStatus)
+        assertEquals("item_3", result.cloudId)
+        assertEquals("胡萝卜", result.name)
     }
 
     @Test
     fun `updateInventoryItem updates and returns item`() = runBlocking {
         // Arrange
-        val request = UpdateInventoryItemRequest(
-            quantity = 3,
-            notes = "已用掉2根"
+        val request = InventoryItemCreate(
+            name = "苹果",
+            quantity = 4.0,
+            unit = "个",
+            expiryDate = "2026-04-15",
+            storageMethod = "REFRIGERATOR",
+            notes = "吃掉了一个"
         )
 
         val mockResponse = """
             {
                 "id": 1,
-                "babyId": 1,
-                "name": "胡萝卜",
-                "category": "蔬菜",
-                "quantity": 3,
-                "unit": "根",
-                "productionDate": "2026-01-01",
-                "expiryDate": "2026-02-01",
-                "storageMethod": "REFRIGERATED",
-                "notes": "已用掉2根",
-                "expiryStatus": "FRESH",
-                "daysUntilExpiry": 10
+                "cloudId": "item_1",
+                "userId": 1,
+                "name": "苹果",
+                "quantity": 4.0,
+                "unit": "个",
+                "storageMethod": "REFRIGERATOR",
+                "expiryDate": "2026-04-15",
+                "createdAt": "2026-03-15T10:30:00",
+                "updatedAt": "2026-03-15T11:00:00"
             }
         """.trimIndent()
 
@@ -223,12 +203,11 @@ class InventoryApiServiceTest {
         )
 
         // Act
-        val result = apiService.updateInventoryItem(itemId = 1, request = request)
+        val result = apiService.updateInventoryItem(cloudId = "item_1", item = request)
 
         // Assert
-        assertEquals(1L, result.id)
-        assertEquals(3, result.quantity)
-        assertEquals("已用掉2根", result.notes)
+        assertEquals("item_1", result.cloudId)
+        assertEquals(4.0, result.quantity, 0.01)
     }
 
     @Test
@@ -236,35 +215,36 @@ class InventoryApiServiceTest {
         // Arrange
         mockWebServer.enqueue(
             MockResponse()
-                .setResponseCode(204)
+                .setResponseCode(200)
+                .setBody("{}")
+                .addHeader("Content-Type", "application/json")
         )
 
         // Act - should not throw
-        apiService.deleteInventoryItem(itemId = 1)
+        apiService.deleteInventoryItem(cloudId = "item_1")
 
         // Assert - verify request was made
         val request = mockWebServer.takeRequest()
         assertEquals("DELETE", request.method)
+        assertEquals("/api/v1/inventory-items/item_1", request.path)
     }
 
     @Test
-    fun `getExpiryAlerts returns expiring items`() = runBlocking {
+    fun `getExpiredAndUrgentItems returns list`() = runBlocking {
         // Arrange
         val mockResponse = """
             [
                 {
                     "id": 2,
-                    "babyId": 1,
-                    "name": "三文鱼",
-                    "category": "肉类",
-                    "quantity": 2,
-                    "unit": "块",
-                    "productionDate": "2026-01-10",
-                    "expiryDate": "2026-01-20",
-                    "storageMethod": "FROZEN",
-                    "notes": "挪威三文鱼",
-                    "expiryStatus": "EXPIRING_SOON",
-                    "daysUntilExpiry": 3
+                    "cloudId": "item_2",
+                    "userId": 1,
+                    "name": "菠菜",
+                    "quantity": 200.0,
+                    "unit": "克",
+                    "storageMethod": "REFRIGERATOR",
+                    "expiryDate": "2026-03-20",
+                    "createdAt": "2026-03-15T14:20:00",
+                    "updatedAt": "2026-03-15T14:20:00"
                 }
             ]
         """.trimIndent()
@@ -277,89 +257,14 @@ class InventoryApiServiceTest {
         )
 
         // Act
-        val result = apiService.getExpiryAlerts(babyId = 1, daysThreshold = 7)
+        val result = apiService.getExpiredAndUrgentItems()
 
         // Assert
         assertEquals(1, result.size)
-        assertEquals("三文鱼", result[0].name)
-        assertEquals("EXPIRING_SOON", result[0].expiryStatus)
-        assertEquals(3, result[0].daysUntilExpiry)
+        assertEquals("item_2", result[0].cloudId)
     }
 
     @Test
-    fun `getInventoryStats returns statistics`() = runBlocking {
-        // Arrange
-        val mockResponse = """
-            {
-                "babyId": 1,
-                "totalItems": 10,
-                "categories": {
-                    "蔬菜": 4,
-                    "肉类": 3,
-                    "水果": 2,
-                    "谷物": 1
-                },
-                "expiringSoonCount": 2,
-                "expiredCount": 0,
-                "freshCount": 8
-            }
-        """.trimIndent()
-
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody(mockResponse)
-                .addHeader("Content-Type", "application/json")
-        )
-
-        // Act
-        val result = apiService.getInventoryStats(babyId = 1)
-
-        // Assert
-        assertEquals(1L, result.babyId)
-        assertEquals(10, result.totalItems)
-        assertEquals(4, result.categories["蔬菜"])
-        assertEquals(2, result.expiringSoonCount)
-        assertEquals(0, result.expiredCount)
-        assertEquals(8, result.freshCount)
-    }
-
-    @Test
-    fun `consumeItem reduces quantity`() = runBlocking {
-        // Arrange
-        val mockResponse = """
-            {
-                "id": 1,
-                "babyId": 1,
-                "name": "胡萝卜",
-                "category": "蔬菜",
-                "quantity": 2,
-                "unit": "根",
-                "productionDate": "2026-01-01",
-                "expiryDate": "2026-02-01",
-                "storageMethod": "REFRIGERATED",
-                "notes": "",
-                "expiryStatus": "FRESH",
-                "daysUntilExpiry": 10
-            }
-        """.trimIndent()
-
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody(mockResponse)
-                .addHeader("Content-Type", "application/json")
-        )
-
-        // Act
-        val result = apiService.consumeItem(itemId = 1, amount = 3)
-
-        // Assert
-        assertEquals(1L, result.id)
-        assertEquals(2, result.quantity)
-    }
-
-    @Test(expected = retrofit2.HttpException::class)
     fun `getInventoryItem throws exception when not found`() = runBlocking {
         // Arrange
         mockWebServer.enqueue(
@@ -368,7 +273,12 @@ class InventoryApiServiceTest {
                 .setBody("Inventory item not found")
         )
 
-        // Act - should throw HttpException
-        apiService.getInventoryItem(itemId = 999)
+        // Act & Assert
+        try {
+            apiService.getInventoryItem(cloudId = "non_existent")
+            fail("Should throw HttpException")
+        } catch (e: retrofit2.HttpException) {
+            assertEquals(404, e.code())
+        }
     }
 }

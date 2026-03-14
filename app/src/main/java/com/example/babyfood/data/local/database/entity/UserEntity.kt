@@ -1,5 +1,6 @@
 package com.example.babyfood.data.local.database.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.babyfood.domain.model.User
@@ -9,7 +10,7 @@ import com.example.babyfood.domain.model.User
  */
 @Entity(tableName = "users")
 data class UserEntity(
-    @PrimaryKey(autoGenerate = true)
+    @PrimaryKey
     val id: Long = 0,
     val phone: String? = null,
     val email: String? = null,
@@ -21,7 +22,14 @@ data class UserEntity(
     val isPhoneVerified: Boolean = false,
     val isLoggedIn: Boolean = false, // 当前登录状态
     val lastLoginTime: String? = null, // 最后登录时间
-    val theme: String? = "light" // 主题设置：light/dark/auto
+    val theme: String? = "light", // 主题设置：light/dark/auto
+    val role: String = "USER",
+    
+    @ColumnInfo(name = "points_balance")
+    val pointsBalance: Int = 0,
+    
+    @ColumnInfo(name = "last_check_in_date")
+    val lastCheckInDate: Long? = null
 ) {
     fun toDomainModel(): User = User(
         id = id,
@@ -34,7 +42,10 @@ data class UserEntity(
         isPhoneVerified = isPhoneVerified,
         createdAt = createdAt.toLongOrNull() ?: 0L,
         updatedAt = updatedAt.toLongOrNull() ?: 0L,
-        theme = theme ?: "light"
+        theme = theme ?: "light",
+        role = role,
+        pointsBalance = pointsBalance,
+        lastCheckInDate = lastCheckInDate
     )
 }
 
@@ -53,5 +64,8 @@ fun User.toEntity(): UserEntity = UserEntity(
     isPhoneVerified = isPhoneVerified,
     isLoggedIn = true,
     lastLoginTime = null,
-    theme = theme
+    theme = theme,
+    role = role,
+    pointsBalance = pointsBalance,
+    lastCheckInDate = lastCheckInDate
 )

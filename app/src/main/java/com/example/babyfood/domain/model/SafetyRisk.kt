@@ -37,6 +37,28 @@ data class SafetyRisk(
                 dataSource = entity.dataSource
             )
         }
+
+        /**
+         * 从 DTO 转换为领域模型
+         */
+        fun fromDto(dto: com.example.babyfood.data.remote.dto.nutrition.SafetyRiskResponse): SafetyRisk {
+            val applicableAgeRange = if (dto.applicableAgeRangeStart != null && dto.applicableAgeRangeEnd != null) {
+                dto.applicableAgeRangeStart..dto.applicableAgeRangeEnd
+            } else {
+                null
+            }
+
+            return SafetyRisk(
+                id = dto.id.toLong(),
+                ingredientName = dto.ingredientName,
+                riskLevel = RiskLevel.valueOf(dto.riskLevel),
+                riskReason = dto.riskReason,
+                handlingAdvice = dto.handlingAdvice,
+                applicableAgeRange = applicableAgeRange,
+                severity = dto.severity,
+                dataSource = dto.dataSource
+            )
+        }
     }
 
     /**

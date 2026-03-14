@@ -108,9 +108,9 @@ class SafetyRiskAnalyzer @Inject constructor(
                         IngredientRisk(
                             ingredientName = ingredientName,
                             riskLevel = RiskLevel.valueOf(risk.riskLevel),
-                            riskReason = risk.warningMessage ?: "",
-                            handlingAdvice = risk.handlingTips,
-                            severity = getRiskSeverity(RiskLevel.valueOf(risk.riskLevel)),
+                            riskReason = risk.riskReason,
+                            handlingAdvice = risk.handlingAdvice,
+                            severity = risk.severity,
                             ignoreCount = ignoreCount
                         )
                     )
@@ -200,15 +200,21 @@ class SafetyRiskAnalyzer @Inject constructor(
             Log.d(TAG, "✓ 从后端 API 获取安全风险成功")
             
             // 转换为本地模型
+            val applicableAgeRange = if (response.applicableAgeRangeStart != null && response.applicableAgeRangeEnd != null) {
+                response.applicableAgeRangeStart..response.applicableAgeRangeEnd
+            } else {
+                null
+            }
+
             SafetyRisk(
                 id = response.id.toLong(),
                 ingredientName = response.ingredientName,
                 riskLevel = RiskLevel.valueOf(response.riskLevel),
-                applicableAgeRange = response.minAgeMonths..response.maxAgeMonths,
-                riskReason = response.warningMessage ?: "",
-                handlingAdvice = response.handlingTips,
-                severity = getRiskSeverity(RiskLevel.valueOf(response.riskLevel)),
-                dataSource = "api"
+                applicableAgeRange = applicableAgeRange,
+                riskReason = response.riskReason,
+                handlingAdvice = response.handlingAdvice,
+                severity = response.severity,
+                dataSource = response.dataSource
             )
         } catch (e: Exception) {
             Log.w(TAG, "⚠️ 从后端 API 获取失败: ${e.message}，降级到本地数据库")
@@ -245,7 +251,14 @@ class SafetyRiskAnalyzer @Inject constructor(
         val ingredientsStr = when (recipe.ingredients) {
             is List<*> -> {
                 @Suppress("UNCHECKED_CAST")
-                (recipe.ingredients as List<String>).joinToString(",")
+                if (recipe.ingredients.isNotEmpty() && recipe.ingredients[0] is String) {
+                    (recipe.ingredients as List<String>).joinToString(",")
+                } else {
+                    // 如果是 Ingredient 对象列表，提取名称
+                    recipe.ingredients.joinToString(",") { 
+                        if (it is com.example.babyfood.domain.model.Ingredient) it.name else it.toString()
+                    }
+                }
             }
             else -> recipe.ingredients.toString()
         }

@@ -1,6 +1,6 @@
 package com.example.babyfood.data.remote.api
 
-import com.example.babyfood.data.remote.dto.ingredienttrials.*
+import com.example.babyfood.data.remote.dto.ingredient_trials.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -10,13 +10,16 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 import retrofit2.Retrofit
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 /**
  * IngredientTrialsApiService 集成测试
  * 使用 MockWebServer 模拟后端 API
  */
+@RunWith(JUnit4::class)
 class IngredientTrialsApiServiceTest {
 
     private lateinit var mockWebServer: MockWebServer
@@ -42,27 +45,18 @@ class IngredientTrialsApiServiceTest {
     }
 
     @Test
-    fun `getTrials returns list of trials`() = runBlocking {
+    fun `getTrialsByBaby returns list`() = runBlocking {
         // Arrange
         val mockResponse = """
             [
                 {
                     "id": 1,
                     "babyId": 1,
-                    "ingredientName": "南瓜",
-                    "triedAt": "2026-01-10",
-                    "reaction": "GOOD",
+                    "ingredientName": "胡萝卜",
+                    "trialDate": "2026-03-10",
+                    "reaction": "NONE",
                     "notes": "宝宝很喜欢",
-                    "imageUrl": null
-                },
-                {
-                    "id": 2,
-                    "babyId": 1,
-                    "ingredientName": "菠菜",
-                    "triedAt": "2026-01-12",
-                    "reaction": "NEUTRAL",
-                    "notes": "吃了一点点",
-                    "imageUrl": "https://example.com/spinach.jpg"
+                    "createdAt": "2026-03-10T10:00:00"
                 }
             ]
         """.trimIndent()
@@ -75,70 +69,33 @@ class IngredientTrialsApiServiceTest {
         )
 
         // Act
-        val result = apiService.getTrials(babyId = 1, limit = 50)
+        val result = apiService.getTrialsByBaby(babyId = 1)
 
         // Assert
-        assertEquals(2, result.size)
-        assertEquals(1L, result[0].id)
-        assertEquals("南瓜", result[0].ingredientName)
-        assertEquals("GOOD", result[0].reaction)
-        assertEquals(2L, result[1].id)
-        assertEquals("菠菜", result[1].ingredientName)
-        assertEquals("NEUTRAL", result[1].reaction)
-    }
-
-    @Test
-    fun `getTrial returns single trial`() = runBlocking {
-        // Arrange
-        val mockResponse = """
-            {
-                "id": 1,
-                "babyId": 1,
-                "ingredientName": "南瓜",
-                "triedAt": "2026-01-10",
-                "reaction": "GOOD",
-                "notes": "宝宝很喜欢",
-                "imageUrl": null
-            }
-        """.trimIndent()
-
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody(mockResponse)
-                .addHeader("Content-Type", "application/json")
-        )
-
-        // Act
-        val result = apiService.getTrial(trialId = 1)
-
-        // Assert
-        assertEquals(1L, result.id)
-        assertEquals(1L, result.babyId)
-        assertEquals("南瓜", result.ingredientName)
-        assertEquals("GOOD", result.reaction)
+        assertEquals(1, result.size)
+        assertEquals("胡萝卜", result[0].ingredientName)
     }
 
     @Test
     fun `createTrial creates and returns new trial`() = runBlocking {
         // Arrange
-        val request = CreateTrialRequest(
+        val request = IngredientTrialCreate(
             babyId = 1,
-            ingredientName = "胡萝卜",
-            triedAt = "2026-01-15",
-            reaction = "GOOD",
-            notes = "第一次尝试，吃了很多"
+            ingredientName = "苹果",
+            trialDate = "2026-03-15",
+            reaction = "NONE",
+            notes = "切成小块喂食"
         )
 
         val mockResponse = """
             {
-                "id": 3,
+                "id": 2,
                 "babyId": 1,
-                "ingredientName": "胡萝卜",
-                "triedAt": "2026-01-15",
-                "reaction": "GOOD",
-                "notes": "第一次尝试，吃了很多",
-                "imageUrl": null
+                "ingredientName": "苹果",
+                "trialDate": "2026-03-15",
+                "reaction": "NONE",
+                "notes": "切成小块喂食",
+                "createdAt": "2026-03-15T09:00:00"
             }
         """.trimIndent()
 
@@ -150,31 +107,30 @@ class IngredientTrialsApiServiceTest {
         )
 
         // Act
-        val result = apiService.createTrial(request)
+        val result = apiService.createTrial(trial = request)
 
         // Assert
-        assertEquals(3L, result.id)
-        assertEquals("胡萝卜", result.ingredientName)
-        assertEquals("GOOD", result.reaction)
+        assertEquals(2, result.id)
+        assertEquals("苹果", result.ingredientName)
     }
 
     @Test
     fun `updateTrial updates and returns trial`() = runBlocking {
         // Arrange
-        val request = UpdateTrialRequest(
-            reaction = "EXCELLENT",
-            notes = "宝宝特别喜欢！"
+        val request = IngredientTrialUpdate(
+            reaction = "MILD",
+            notes = "发现轻微红疹"
         )
 
         val mockResponse = """
             {
                 "id": 1,
                 "babyId": 1,
-                "ingredientName": "南瓜",
-                "triedAt": "2026-01-10",
-                "reaction": "EXCELLENT",
-                "notes": "宝宝特别喜欢！",
-                "imageUrl": null
+                "ingredientName": "胡萝卜",
+                "trialDate": "2026-03-10",
+                "reaction": "MILD",
+                "notes": "发现轻微红疹",
+                "createdAt": "2026-03-10T10:00:00"
             }
         """.trimIndent()
 
@@ -186,12 +142,10 @@ class IngredientTrialsApiServiceTest {
         )
 
         // Act
-        val result = apiService.updateTrial(trialId = 1, request = request)
+        val result = apiService.updateTrial(trialId = 1, update = request)
 
         // Assert
-        assertEquals(1L, result.id)
-        assertEquals("EXCELLENT", result.reaction)
-        assertEquals("宝宝特别喜欢！", result.notes)
+        assertEquals("MILD", result.reaction)
     }
 
     @Test
@@ -199,7 +153,9 @@ class IngredientTrialsApiServiceTest {
         // Arrange
         mockWebServer.enqueue(
             MockResponse()
-                .setResponseCode(204)
+                .setResponseCode(200)
+                .setBody("{}")
+                .addHeader("Content-Type", "application/json")
         )
 
         // Act - should not throw
@@ -208,62 +164,7 @@ class IngredientTrialsApiServiceTest {
         // Assert - verify request was made
         val request = mockWebServer.takeRequest()
         assertEquals("DELETE", request.method)
-    }
-
-    @Test
-    fun `checkTrial checks if ingredient was tried`() = runBlocking {
-        // Arrange
-        val mockResponse = """
-            {
-                "hasTried": true,
-                "trialId": 1,
-                "triedAt": "2026-01-10",
-                "reaction": "GOOD"
-            }
-        """.trimIndent()
-
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody(mockResponse)
-                .addHeader("Content-Type", "application/json")
-        )
-
-        // Act
-        val result = apiService.checkTrial(babyId = 1, ingredientName = "南瓜")
-
-        // Assert
-        assertTrue(result.hasTried)
-        assertEquals(1L, result.trialId)
-        assertEquals("GOOD", result.reaction)
-    }
-
-    @Test
-    fun `checkTrial returns false for untried ingredient`() = runBlocking {
-        // Arrange
-        val mockResponse = """
-            {
-                "hasTried": false,
-                "trialId": null,
-                "triedAt": null,
-                "reaction": null
-            }
-        """.trimIndent()
-
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody(mockResponse)
-                .addHeader("Content-Type", "application/json")
-        )
-
-        // Act
-        val result = apiService.checkTrial(babyId = 1, ingredientName = "三文鱼")
-
-        // Assert
-        assertFalse(result.hasTried)
-        assertNull(result.trialId)
-        assertNull(result.reaction)
+        assertEquals("/api/v1/ingredient-trials/1", request.path)
     }
 
     @Test
@@ -272,15 +173,10 @@ class IngredientTrialsApiServiceTest {
         val mockResponse = """
             {
                 "babyId": 1,
-                "totalIngredientsTried": 25,
-                "flavorGroups": {
-                    "vegetables": 12,
-                    "fruits": 8,
-                    "proteins": 3,
-                    "grains": 2
-                },
-                "diversityScore": 75,
-                "recommendations": ["可以尝试更多谷物类食物"]
+                "totalTried": 10,
+                "diversityScore": 75.5,
+                "newIngredientsRecommendations": ["可以尝试增加蛋白质类食材"],
+                "triedCategories": ["VEGETABLE", "FRUIT"]
             }
         """.trimIndent()
 
@@ -295,23 +191,7 @@ class IngredientTrialsApiServiceTest {
         val result = apiService.getFlavorDiversity(babyId = 1)
 
         // Assert
-        assertEquals(1L, result.babyId)
-        assertEquals(25, result.totalIngredientsTried)
-        assertEquals(75, result.diversityScore)
-        assertEquals(12, result.flavorGroups["vegetables"])
-        assertEquals(1, result.recommendations.size)
-    }
-
-    @Test(expected = retrofit2.HttpException::class)
-    fun `getTrial throws exception when not found`() = runBlocking {
-        // Arrange
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(404)
-                .setBody("Trial not found")
-        )
-
-        // Act - should throw HttpException
-        apiService.getTrial(trialId = 999)
+        assertEquals(10, result.totalTried)
+        assertEquals(75.5, result.diversityScore, 0.01)
     }
 }

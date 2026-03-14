@@ -1,6 +1,6 @@
 package com.example.babyfood.data.remote.api
 
-import com.example.babyfood.data.remote.dto.healthrecords.*
+import com.example.babyfood.data.remote.dto.health_records.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -10,13 +10,16 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 import retrofit2.Retrofit
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 /**
  * HealthRecordsApiService 集成测试
  * 使用 MockWebServer 模拟后端 API
  */
+@RunWith(JUnit4::class)
 class HealthRecordsApiServiceTest {
 
     private lateinit var mockWebServer: MockWebServer
@@ -49,27 +52,19 @@ class HealthRecordsApiServiceTest {
                 {
                     "id": 1,
                     "babyId": 1,
-                    "date": "2026-01-15",
-                    "weight": 9.2,
-                    "height": 72.5,
-                    "headCircumference": 45.0,
-                    "hemoglobin": 115.0,
-                    "iron": 12.0,
-                    "calcium": 2.4,
-                    "notes": "8月龄体检",
+                    "recordDate": "2026-01-15",
+                    "hemoglobin": 120.5,
+                    "iron": 12.5,
+                    "notes": "常规体检",
                     "createdAt": "2026-01-15T10:30:00"
                 },
                 {
                     "id": 2,
                     "babyId": 1,
-                    "date": "2026-02-15",
-                    "weight": 9.8,
-                    "height": 74.0,
-                    "headCircumference": 46.0,
-                    "hemoglobin": null,
-                    "iron": null,
-                    "calcium": null,
-                    "notes": "9月龄体检",
+                    "recordDate": "2026-02-15",
+                    "hemoglobin": 118.2,
+                    "calcium": 2.2,
+                    "notes": "有些贫血倾向",
                     "createdAt": "2026-02-15T14:20:00"
                 }
             ]
@@ -83,15 +78,13 @@ class HealthRecordsApiServiceTest {
         )
 
         // Act
-        val result = apiService.getHealthRecords(babyId = 1, startDate = null, endDate = null, limit = 50)
+        val result = apiService.getHealthRecords(babyId = 1)
 
         // Assert
         assertEquals(2, result.size)
-        assertEquals(1L, result[0].id)
-        assertEquals("2026-01-15", result[0].date)
-        assertEquals(9.2, result[0].weight, 0.01)
-        assertEquals(2L, result[1].id)
-        assertEquals(9.8, result[1].weight, 0.01)
+        assertEquals(1, result[0].id)
+        assertEquals(120.5, result[0].hemoglobin!!, 0.01)
+        assertEquals(118.2, result[1].hemoglobin!!, 0.01)
     }
 
     @Test
@@ -101,14 +94,10 @@ class HealthRecordsApiServiceTest {
             {
                 "id": 1,
                 "babyId": 1,
-                "date": "2026-01-15",
-                "weight": 9.2,
-                "height": 72.5,
-                "headCircumference": 45.0,
-                "hemoglobin": 115.0,
-                "iron": 12.0,
-                "calcium": 2.4,
-                "notes": "8月龄体检",
+                "recordDate": "2026-01-15",
+                "hemoglobin": 120.5,
+                "iron": 12.5,
+                "notes": "常规体检",
                 "createdAt": "2026-01-15T10:30:00"
             }
         """.trimIndent()
@@ -121,44 +110,30 @@ class HealthRecordsApiServiceTest {
         )
 
         // Act
-        val result = apiService.getHealthRecord(recordId = 1)
+        val result = apiService.getHealthRecord(babyId = 1, recordId = 1)
 
         // Assert
-        assertEquals(1L, result.id)
-        assertEquals(1L, result.babyId)
-        assertEquals("2026-01-15", result.date)
-        assertEquals(9.2, result.weight, 0.01)
-        assertEquals(72.5, result.height, 0.01)
-        assertEquals(115.0, result.hemoglobin, 0.01)
+        assertEquals(1, result.id)
+        assertEquals(1, result.babyId)
+        assertEquals(120.5, result.hemoglobin!!, 0.01)
     }
 
     @Test
     fun `createHealthRecord creates and returns new record`() = runBlocking {
         // Arrange
-        val request = CreateHealthRecordRequest(
-            babyId = 1,
-            date = "2026-03-15",
-            weight = 10.2,
-            height = 75.0,
-            headCircumference = 46.5,
-            hemoglobin = 118.0,
-            iron = 12.5,
-            calcium = 2.5,
-            notes = "10月龄体检"
+        val request = HealthRecordCreate(
+            recordDate = "2026-03-15",
+            hemoglobin = 122.0,
+            notes = "一切良好"
         )
 
         val mockResponse = """
             {
                 "id": 3,
                 "babyId": 1,
-                "date": "2026-03-15",
-                "weight": 10.2,
-                "height": 75.0,
-                "headCircumference": 46.5,
-                "hemoglobin": 118.0,
-                "iron": 12.5,
-                "calcium": 2.5,
-                "notes": "10月龄体检",
+                "recordDate": "2026-03-15",
+                "hemoglobin": 122.0,
+                "notes": "一切良好",
                 "createdAt": "2026-03-15T09:00:00"
             }
         """.trimIndent()
@@ -171,35 +146,29 @@ class HealthRecordsApiServiceTest {
         )
 
         // Act
-        val result = apiService.createHealthRecord(request)
+        val result = apiService.createHealthRecord(babyId = 1, record = request)
 
         // Assert
-        assertEquals(3L, result.id)
-        assertEquals(10.2, result.weight, 0.01)
-        assertEquals(75.0, result.height, 0.01)
-        assertEquals(118.0, result.hemoglobin, 0.01)
+        assertEquals(3, result.id)
+        assertEquals(122.0, result.hemoglobin!!, 0.01)
     }
 
     @Test
     fun `updateHealthRecord updates and returns record`() = runBlocking {
         // Arrange
-        val request = UpdateHealthRecordRequest(
-            weight = 9.5,
-            notes = "8月龄体检 - 更新"
+        val request = HealthRecordCreate(
+            recordDate = "2026-01-15",
+            hemoglobin = 121.5,
+            notes = "已恢复"
         )
 
         val mockResponse = """
             {
                 "id": 1,
                 "babyId": 1,
-                "date": "2026-01-15",
-                "weight": 9.5,
-                "height": 72.5,
-                "headCircumference": 45.0,
-                "hemoglobin": 115.0,
-                "iron": 12.0,
-                "calcium": 2.4,
-                "notes": "8月龄体检 - 更新",
+                "recordDate": "2026-01-15",
+                "hemoglobin": 121.5,
+                "notes": "已恢复",
                 "createdAt": "2026-01-15T10:30:00"
             }
         """.trimIndent()
@@ -212,12 +181,11 @@ class HealthRecordsApiServiceTest {
         )
 
         // Act
-        val result = apiService.updateHealthRecord(recordId = 1, request = request)
+        val result = apiService.updateHealthRecord(babyId = 1, recordId = 1, record = request)
 
         // Assert
-        assertEquals(1L, result.id)
-        assertEquals(9.5, result.weight, 0.01)
-        assertEquals("8月龄体检 - 更新", result.notes)
+        assertEquals(1, result.id)
+        assertEquals(121.5, result.hemoglobin!!, 0.01)
     }
 
     @Test
@@ -225,93 +193,21 @@ class HealthRecordsApiServiceTest {
         // Arrange
         mockWebServer.enqueue(
             MockResponse()
-                .setResponseCode(204)
+                .setResponseCode(200)
+                .setBody("{}")
+                .addHeader("Content-Type", "application/json")
         )
 
         // Act - should not throw
-        apiService.deleteHealthRecord(recordId = 1)
+        apiService.deleteHealthRecord(babyId = 1, recordId = 1)
 
         // Assert - verify request was made
         val request = mockWebServer.takeRequest()
         assertEquals("DELETE", request.method)
+        assertEquals("/api/v1/babies/1/health-records/1", request.path)
     }
 
     @Test
-    fun `analyzeHealth returns analysis result`() = runBlocking {
-        // Arrange
-        val mockResponse = """
-            {
-                "weightAssessment": "正常",
-                "heightAssessment": "正常",
-                "headCircumferenceAssessment": "正常",
-                "hemoglobinAssessment": "正常",
-                "ironAssessment": "正常",
-                "calciumAssessment": "正常",
-                "overallAssessment": "健康",
-                "riskLevel": "LOW",
-                "suggestions": ["继续保持均衡饮食"],
-                "percentile": {
-                    "weight": 50.0,
-                    "height": 55.0,
-                    "headCircumference": 52.0
-                }
-            }
-        """.trimIndent()
-
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody(mockResponse)
-                .addHeader("Content-Type", "application/json")
-        )
-
-        // Act
-        val result = apiService.analyzeHealth(recordId = 1, babyId = 1)
-
-        // Assert
-        assertEquals("正常", result.weightAssessment)
-        assertEquals("健康", result.overallAssessment)
-        assertEquals("LOW", result.riskLevel)
-        assertEquals(1, result.suggestions.size)
-        assertEquals(50.0, result.percentile.weight, 0.01)
-    }
-
-    @Test
-    fun `getLatestHealthRecord returns most recent record`() = runBlocking {
-        // Arrange
-        val mockResponse = """
-            {
-                "id": 2,
-                "babyId": 1,
-                "date": "2026-02-15",
-                "weight": 9.8,
-                "height": 74.0,
-                "headCircumference": 46.0,
-                "hemoglobin": null,
-                "iron": null,
-                "calcium": null,
-                "notes": "9月龄体检",
-                "createdAt": "2026-02-15T14:20:00"
-            }
-        """.trimIndent()
-
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody(mockResponse)
-                .addHeader("Content-Type", "application/json")
-        )
-
-        // Act
-        val result = apiService.getLatestHealthRecord(babyId = 1)
-
-        // Assert
-        assertEquals(2L, result.id)
-        assertEquals("2026-02-15", result.date)
-        assertEquals(9.8, result.weight, 0.01)
-    }
-
-    @Test(expected = retrofit2.HttpException::class)
     fun `getHealthRecord throws exception when not found`() = runBlocking {
         // Arrange
         mockWebServer.enqueue(
@@ -320,7 +216,12 @@ class HealthRecordsApiServiceTest {
                 .setBody("Health record not found")
         )
 
-        // Act - should throw HttpException
-        apiService.getHealthRecord(recordId = 999)
+        // Act & Assert
+        try {
+            apiService.getHealthRecord(babyId = 1, recordId = 999)
+            fail("Should throw HttpException")
+        } catch (e: retrofit2.HttpException) {
+            assertEquals(404, e.code())
+        }
     }
 }

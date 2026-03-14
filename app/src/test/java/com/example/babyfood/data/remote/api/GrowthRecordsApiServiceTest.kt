@@ -1,6 +1,6 @@
 package com.example.babyfood.data.remote.api
 
-import com.example.babyfood.data.remote.dto.growthrecords.*
+import com.example.babyfood.data.remote.dto.growth_records.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -10,13 +10,16 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 import retrofit2.Retrofit
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 /**
  * GrowthRecordsApiService 集成测试
  * 使用 MockWebServer 模拟后端 API
  */
+@RunWith(JUnit4::class)
 class GrowthRecordsApiServiceTest {
 
     private lateinit var mockWebServer: MockWebServer
@@ -49,7 +52,7 @@ class GrowthRecordsApiServiceTest {
                 {
                     "id": 1,
                     "babyId": 1,
-                    "date": "2026-01-15",
+                    "recordDate": "2026-01-15",
                     "weight": 9.2,
                     "height": 72.5,
                     "headCircumference": 45.0,
@@ -58,7 +61,7 @@ class GrowthRecordsApiServiceTest {
                 {
                     "id": 2,
                     "babyId": 1,
-                    "date": "2026-02-15",
+                    "recordDate": "2026-02-15",
                     "weight": 9.8,
                     "height": 74.0,
                     "headCircumference": 46.0,
@@ -75,14 +78,14 @@ class GrowthRecordsApiServiceTest {
         )
 
         // Act
-        val result = apiService.getGrowthRecords(babyId = 1, startDate = null, endDate = null, limit = 50)
+        val result = apiService.getGrowthRecords(babyId = 1)
 
         // Assert
         assertEquals(2, result.size)
-        assertEquals(1L, result[0].id)
-        assertEquals("2026-01-15", result[0].date)
+        assertEquals(1, result[0].id)
+        assertEquals("2026-01-15", result[0].recordDate)
         assertEquals(9.2, result[0].weight, 0.01)
-        assertEquals(2L, result[1].id)
+        assertEquals(2, result[1].id)
         assertEquals(9.8, result[1].weight, 0.01)
     }
 
@@ -93,7 +96,7 @@ class GrowthRecordsApiServiceTest {
             {
                 "id": 1,
                 "babyId": 1,
-                "date": "2026-01-15",
+                "recordDate": "2026-01-15",
                 "weight": 9.2,
                 "height": 72.5,
                 "headCircumference": 45.0,
@@ -109,23 +112,22 @@ class GrowthRecordsApiServiceTest {
         )
 
         // Act
-        val result = apiService.getGrowthRecord(recordId = 1)
+        val result = apiService.getGrowthRecord(babyId = 1, recordId = 1)
 
         // Assert
-        assertEquals(1L, result.id)
-        assertEquals(1L, result.babyId)
-        assertEquals("2026-01-15", result.date)
+        assertEquals(1, result.id)
+        assertEquals(1, result.babyId)
+        assertEquals("2026-01-15", result.recordDate)
         assertEquals(9.2, result.weight, 0.01)
         assertEquals(72.5, result.height, 0.01)
-        assertEquals(45.0, result.headCircumference, 0.01)
+        assertEquals(45.0, result.headCircumference!!, 0.01)
     }
 
     @Test
     fun `createGrowthRecord creates and returns new record`() = runBlocking {
         // Arrange
-        val request = CreateGrowthRecordRequest(
-            babyId = 1,
-            date = "2026-03-15",
+        val request = GrowthRecordCreate(
+            recordDate = "2026-03-15",
             weight = 10.2,
             height = 75.0,
             headCircumference = 46.5
@@ -135,7 +137,7 @@ class GrowthRecordsApiServiceTest {
             {
                 "id": 3,
                 "babyId": 1,
-                "date": "2026-03-15",
+                "recordDate": "2026-03-15",
                 "weight": 10.2,
                 "height": 75.0,
                 "headCircumference": 46.5,
@@ -151,28 +153,30 @@ class GrowthRecordsApiServiceTest {
         )
 
         // Act
-        val result = apiService.createGrowthRecord(request)
+        val result = apiService.createGrowthRecord(babyId = 1, record = request)
 
         // Assert
-        assertEquals(3L, result.id)
+        assertEquals(3, result.id)
         assertEquals(10.2, result.weight, 0.01)
         assertEquals(75.0, result.height, 0.01)
-        assertEquals(46.5, result.headCircumference, 0.01)
+        assertEquals(46.5, result.headCircumference!!, 0.01)
     }
 
     @Test
     fun `updateGrowthRecord updates and returns record`() = runBlocking {
         // Arrange
-        val request = UpdateGrowthRecordRequest(
+        val request = GrowthRecordCreate(
+            recordDate = "2026-01-15",
             weight = 9.5,
-            height = 73.0
+            height = 73.0,
+            headCircumference = 45.0
         )
 
         val mockResponse = """
             {
                 "id": 1,
                 "babyId": 1,
-                "date": "2026-01-15",
+                "recordDate": "2026-01-15",
                 "weight": 9.5,
                 "height": 73.0,
                 "headCircumference": 45.0,
@@ -188,10 +192,10 @@ class GrowthRecordsApiServiceTest {
         )
 
         // Act
-        val result = apiService.updateGrowthRecord(recordId = 1, request = request)
+        val result = apiService.updateGrowthRecord(babyId = 1, recordId = 1, record = request)
 
         // Assert
-        assertEquals(1L, result.id)
+        assertEquals(1, result.id)
         assertEquals(9.5, result.weight, 0.01)
         assertEquals(73.0, result.height, 0.01)
     }
@@ -201,68 +205,33 @@ class GrowthRecordsApiServiceTest {
         // Arrange
         mockWebServer.enqueue(
             MockResponse()
-                .setResponseCode(204)
+                .setResponseCode(200)
+                .setBody("{}")
+                .addHeader("Content-Type", "application/json")
         )
 
         // Act - should not throw
-        apiService.deleteGrowthRecord(recordId = 1)
+        apiService.deleteGrowthRecord(babyId = 1, recordId = 1)
 
         // Assert - verify request was made
         val request = mockWebServer.takeRequest()
         assertEquals("DELETE", request.method)
+        assertEquals("/api/v1/babies/1/growth-records/1", request.path)
     }
 
     @Test
-    fun `getGrowthCurve returns curve data`() = runBlocking {
-        // Arrange
-        val mockResponse = """
-            {
-                "metric": "weight",
-                "records": [
-                    {"date": "2026-01-15", "value": 9.2, "ageInMonths": 8},
-                    {"date": "2026-02-15", "value": 9.8, "ageInMonths": 9}
-                ],
-                "percentile3": [{"ageInMonths": 8, "value": 7.5}, {"ageInMonths": 9, "value": 8.0}],
-                "percentile50": [{"ageInMonths": 8, "value": 9.0}, {"ageInMonths": 9, "value": 9.5}],
-                "percentile97": [{"ageInMonths": 8, "value": 11.0}, {"ageInMonths": 9, "value": 11.5}]
-            }
-        """.trimIndent()
-
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody(mockResponse)
-                .addHeader("Content-Type", "application/json")
-        )
-
-        // Act
-        val result = apiService.getGrowthCurve(babyId = 1, metric = "weight")
-
-        // Assert
-        assertEquals("weight", result.metric)
-        assertEquals(2, result.records.size)
-        assertEquals(9.2, result.records[0].value, 0.01)
-        assertEquals(2, result.percentile50.size)
-        assertEquals(9.0, result.percentile50[0].value, 0.01)
-    }
-
-    @Test
-    fun `getGrowthStats returns statistics`() = runBlocking {
+    fun `getGrowthAssessment returns assessment data`() = runBlocking {
         // Arrange
         val mockResponse = """
             {
                 "babyId": 1,
-                "currentAgeInMonths": 9,
-                "currentWeight": 9.8,
-                "currentHeight": 74.0,
-                "currentHeadCircumference": 46.0,
+                "assessmentDate": "2026-02-15",
                 "weightPercentile": 60.0,
                 "heightPercentile": 55.0,
                 "headCircumferencePercentile": 52.0,
-                "weightGainLastMonth": 0.6,
-                "heightGainLastMonth": 1.5,
-                "weightGainVelocity": "正常",
-                "heightGainVelocity": "正常"
+                "weightStatus": "正常",
+                "heightStatus": "正常",
+                "recommendations": ["继续保持均衡饮食"]
             }
         """.trimIndent()
 
@@ -274,48 +243,16 @@ class GrowthRecordsApiServiceTest {
         )
 
         // Act
-        val result = apiService.getGrowthStats(babyId = 1)
+        val result = apiService.getGrowthAssessment(babyId = 1)
 
         // Assert
-        assertEquals(1L, result.babyId)
-        assertEquals(9, result.currentAgeInMonths)
-        assertEquals(9.8, result.currentWeight, 0.01)
+        assertEquals(1, result.babyId)
         assertEquals(60.0, result.weightPercentile, 0.01)
-        assertEquals("正常", result.weightGainVelocity)
+        assertEquals("正常", result.weightStatus)
+        assertEquals(1, result.recommendations.size)
     }
 
     @Test
-    fun `syncFromHealthRecord syncs data from health record`() = runBlocking {
-        // Arrange
-        val mockResponse = """
-            {
-                "id": 4,
-                "babyId": 1,
-                "date": "2026-03-01",
-                "weight": 10.0,
-                "height": 74.5,
-                "headCircumference": 46.2,
-                "createdAt": "2026-03-01T10:00:00"
-            }
-        """.trimIndent()
-
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(201)
-                .setBody(mockResponse)
-                .addHeader("Content-Type", "application/json")
-        )
-
-        // Act
-        val result = apiService.syncFromHealthRecord(healthRecordId = 3, babyId = 1)
-
-        // Assert
-        assertEquals(4L, result.id)
-        assertEquals(10.0, result.weight, 0.01)
-        assertEquals(74.5, result.height, 0.01)
-    }
-
-    @Test(expected = retrofit2.HttpException::class)
     fun `getGrowthRecord throws exception when not found`() = runBlocking {
         // Arrange
         mockWebServer.enqueue(
@@ -324,7 +261,12 @@ class GrowthRecordsApiServiceTest {
                 .setBody("Growth record not found")
         )
 
-        // Act - should throw HttpException
-        apiService.getGrowthRecord(recordId = 999)
+        // Act & Assert
+        try {
+            apiService.getGrowthRecord(babyId = 1, recordId = 999)
+            fail("Should throw HttpException")
+        } catch (e: retrofit2.HttpException) {
+            assertEquals(404, e.code())
+        }
     }
 }

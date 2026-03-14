@@ -13,14 +13,18 @@ data class NutritionDataResponse(
     @SerialName("ingredientName")
     val ingredientName: String,
     
-    val calories: Double,  // 每100克热量（千卡）
-    val protein: Double,   // 每100克蛋白质（克）
-    val calcium: Double,   // 每100克钙（毫克）
-    val iron: Double,      // 每100克铁（毫克）
+    val calories: Double? = null,
+    val protein: Double? = null,
+    val fat: Double? = null,
+    val carbohydrates: Double? = null,
+    val fiber: Double? = null,
+    val calcium: Double? = null,
+    val iron: Double? = null,
+    val zinc: Double? = null,
     
     @SerialName("vitaminA")
-    val vitaminA: Double? = null,  // 每100克维生素A（μg）
+    val vitaminA: Double? = null,
     
     @SerialName("vitaminC")
-    val vitaminC: Double? = null   // 每100克维生素C（毫克）
+    val vitaminC: Double? = null
 )

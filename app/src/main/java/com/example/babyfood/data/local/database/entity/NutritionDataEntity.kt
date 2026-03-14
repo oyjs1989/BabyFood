@@ -12,9 +12,14 @@ data class NutritionDataEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val ingredientName: String,
-    val ironContent: Double,  // mg/100g
-    val zincContent: Double,  // mg/100g
-    val vitaminAContent: Double,  // mg/100g
-    val calciumContent: Double,  // mg/100g
-    val vitaminCContent: Double  // mg/100g
+    val calories: Double = 0.0,
+    val protein: Double = 0.0,
+    val fat: Double = 0.0,
+    val carbohydrates: Double = 0.0,
+    val fiber: Double = 0.0,
+    val calciumContent: Double = 0.0,
+    val ironContent: Double = 0.0,
+    val zincContent: Double = 0.0,
+    val vitaminAContent: Double = 0.0,
+    val vitaminCContent: Double = 0.0
 )

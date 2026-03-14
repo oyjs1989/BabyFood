@@ -9,6 +9,8 @@ data class NutritionIntake(
     val protein: Float = 0f,       // 已摄入蛋白质 (g)
     val calcium: Float = 0f,       // 已摄入钙 (mg)
     val iron: Float = 0f,          // 已摄入铁 (mg)
+    val vitaminA: Float = 0f,      // 已摄入维生素A (μg)
+    val vitaminC: Float = 0f,      // 已摄入维生素C (mg)
     val feedbackCount: Int = 0     // 已反馈餐次数
 ) {
     /**
@@ -19,7 +21,9 @@ data class NutritionIntake(
             caloriesProgress = if (goal.calories > 0) calories / goal.calories else 0f,
             proteinProgress = if (goal.protein > 0) protein / goal.protein else 0f,
             calciumProgress = if (goal.calcium > 0) calcium / goal.calcium else 0f,
-            ironProgress = if (goal.iron > 0) iron / goal.iron else 0f
+            ironProgress = if (goal.iron > 0) iron / goal.iron else 0f,
+            vitaminAProgress = if (goal.vitaminA > 0) vitaminA / goal.vitaminA else 0f,
+            vitaminCProgress = if (goal.vitaminC > 0) vitaminC / goal.vitaminC else 0f
         )
     }
 
@@ -35,16 +39,18 @@ data class NutritionIntake(
  * 营养摄入进度模型
  */
 data class NutritionProgress(
-    val caloriesProgress: Float,   // 热量进度（0.0-1.0）
-    val proteinProgress: Float,    // 蛋白质进度（0.0-1.0）
-    val calciumProgress: Float,    // 钙进度（0.0-1.0）
-    val ironProgress: Float        // 铁进度（0.0-1.0）
+    val caloriesProgress: Float,   // 热量进度
+    val proteinProgress: Float,    // 蛋白质进度
+    val calciumProgress: Float,    // 钙进度
+    val ironProgress: Float,       // 铁进度
+    val vitaminAProgress: Float,   // 维生素A进度
+    val vitaminCProgress: Float    // 维生素C进度
 ) {
     /**
      * 获取平均进度
      */
     fun getAverageProgress(): Float {
-        return (caloriesProgress + proteinProgress + calciumProgress + ironProgress) / 4f
+        return (caloriesProgress + proteinProgress + calciumProgress + ironProgress + vitaminAProgress + vitaminCProgress) / 6f
     }
 }
 

@@ -45,7 +45,9 @@ data class CloudNutrition(
     val fiber: Float?,
     val calcium: Float?,
     val iron: Float?,
-    val zinc: Float?
+    val zinc: Float?,
+    val vitaminA: Float? = null,
+    val vitaminC: Float? = null
 )
 
 /**
@@ -65,5 +67,7 @@ data class CloudNutritionGoal(
     val calories: Float,
     val protein: Float,
     val calcium: Float,
-    val iron: Float
+    val iron: Float,
+    val vitaminA: Float? = null,
+    val vitaminC: Float? = null
 )

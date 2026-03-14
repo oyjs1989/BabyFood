@@ -36,5 +36,7 @@ data class Nutrition(
     val carbohydrates: Float?, // g
     val fiber: Float?,       // g
     val calcium: Float?,     // mg
-    val iron: Float?         // mg
+    val iron: Float?,        // mg
+    val vitaminA: Float? = null, // μg
+    val vitaminC: Float? = null  // mg
 )

@@ -47,7 +47,10 @@ object NetworkModule {
      * API 基础 URL
      * 从 BuildConfig 读取配置文件中的后端服务器 IP 和端口
      */
-    private const val BASE_URL = "http://" + BuildConfig.BACKEND_SERVER_IP + ":" + BuildConfig.BACKEND_SERVER_PORT + "/"
+    private val BASE_URL: String = run {
+        val protocol = if (BuildConfig.BACKEND_SERVER_PORT == "443") "https://" else "http://"
+        protocol + BuildConfig.BACKEND_SERVER_IP + ":" + BuildConfig.BACKEND_SERVER_PORT + "/"
+    }
 
     /**
      * JSON 序列化配置

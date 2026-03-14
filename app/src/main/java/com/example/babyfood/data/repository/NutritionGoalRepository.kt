@@ -48,6 +48,8 @@ class NutritionGoalRepository @Inject constructor(
         Log.d(TAG, "蛋白质: ${goal.protein} g")
         Log.d(TAG, "钙: ${goal.calcium} mg")
         Log.d(TAG, "铁: ${goal.iron} mg")
+        Log.d(TAG, "维生素A: ${goal.vitaminA} μg")
+        Log.d(TAG, "维生素C: ${goal.vitaminC} mg")
 
         val existingGoal = nutritionGoalDao.getByBabyId(babyId)
         if (existingGoal == null) {
@@ -58,8 +60,8 @@ class NutritionGoalRepository @Inject constructor(
                     protein = goal.protein.toDouble(),
                     calcium = goal.calcium.toDouble(),
                     iron = goal.iron.toDouble(),
-                    vitaminA = 0.0,
-                    vitaminC = 0.0
+                    vitaminA = goal.vitaminA.toDouble(),
+                    vitaminC = goal.vitaminC.toDouble()
                 )
             )
             Log.d(TAG, "✓ 插入成功，ID: $id")
@@ -70,8 +72,8 @@ class NutritionGoalRepository @Inject constructor(
                 protein = goal.protein.toDouble(),
                 calcium = goal.calcium.toDouble(),
                 iron = goal.iron.toDouble(),
-                vitaminA = 0.0,
-                vitaminC = 0.0
+                vitaminA = goal.vitaminA.toDouble(),
+                vitaminC = goal.vitaminC.toDouble()
             )
             Log.d(TAG, "✓ 更新成功")
         }
@@ -116,6 +118,8 @@ private fun NutritionGoalEntity.toDomainModel(): NutritionGoal {
         calories = calories.toFloat(),
         protein = protein.toFloat(),
         calcium = calcium.toFloat(),
-        iron = iron.toFloat()
+        iron = iron.toFloat(),
+        vitaminA = vitaminA.toFloat(),
+        vitaminC = vitaminC.toFloat()
     )
 }

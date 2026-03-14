@@ -146,7 +146,7 @@ class AuthRepository @Inject constructor(
             // 调用后端登出 API
             if (token != null) {
                 val request = com.example.babyfood.domain.model.LogoutRequest(token = token)
-                val response = authApiService.logout(request)
+                val response = authApiService.logout(request, "Bearer $token")
 
                 if (response.success) {
                     Log.d(TAG, "✓ 后端登出成功")
@@ -347,8 +347,8 @@ class AuthRepository @Inject constructor(
      * 检查是否已登录
      */
     suspend fun isLoggedIn(): Boolean {
-        val user = userDao.getCurrentUser()
-        return user != null
+        val user = userDao.getCurrentUserSync()
+        return user != null && user.isLoggedIn
     }
 
     /**
@@ -561,6 +561,37 @@ class AuthRepository @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "❌ 密码修改失败: ${e.message}", e)
             Result.failure(e)
+        }
+    }
+
+    /**
+     * 每日签到
+     * @return Result<CheckInResponse> 签到结果
+     */
+    suspend fun dailyCheckIn(): Result<com.example.babyfood.data.remote.dto.CheckInResponse> {
+        Log.d(TAG, "========== 每日签到开始 ==========")
+        return try {
+            val response = authApiService.dailyCheckIn()
+            if (response.success) {
+                val userId = tokenStorage.getUserId()
+                if (userId != -1L) {
+                    userDao.updateCheckInInfo(
+                        userId = userId,
+                        pointsBalance = response.currentBalance,
+                        lastCheckInDate = Clock.System.now().toEpochMilliseconds()
+                    )
+                }
+                Log.d(TAG, "✓ 签到成功: 获得 ${response.pointsEarned} 积分，当前余额 ${response.currentBalance}")
+                Result.success(response)
+            } else {
+                Log.e(TAG, "❌ 签到失败: ${response.errorMessage}")
+                Result.failure(Exception(response.errorMessage ?: "签到失败"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ 签到异常: ${e.message}", e)
+            Result.failure(e)
+        } finally {
+            Log.d(TAG, "========== 每日签到结束 ==========")
         }
     }
 

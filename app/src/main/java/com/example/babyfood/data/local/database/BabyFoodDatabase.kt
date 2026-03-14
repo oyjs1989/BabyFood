@@ -504,6 +504,24 @@ val MIGRATION_16_17 = object : Migration(16, 17) {
     }
 }
 
+// 数据库迁移：从版本 17 到版本 18
+// 完善用户信息和营养数据表
+val MIGRATION_17_18 = object : Migration(17, 18) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // 1. users 表：添加 role, points_balance, last_check_in_date 字段
+        database.execSQL("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'USER'")
+        database.execSQL("ALTER TABLE users ADD COLUMN points_balance INTEGER NOT NULL DEFAULT 0")
+        database.execSQL("ALTER TABLE users ADD COLUMN last_check_in_date INTEGER")
+
+        // 2. nutrition_data 表：补全基础营养字段
+        database.execSQL("ALTER TABLE nutrition_data ADD COLUMN calories REAL NOT NULL DEFAULT 0.0")
+        database.execSQL("ALTER TABLE nutrition_data ADD COLUMN protein REAL NOT NULL DEFAULT 0.0")
+        database.execSQL("ALTER TABLE nutrition_data ADD COLUMN fat REAL NOT NULL DEFAULT 0.0")
+        database.execSQL("ALTER TABLE nutrition_data ADD COLUMN carbohydrates REAL NOT NULL DEFAULT 0.0")
+        database.execSQL("ALTER TABLE nutrition_data ADD COLUMN fiber REAL NOT NULL DEFAULT 0.0")
+    }
+}
+
 @Database(
     entities = [
         BabyEntity::class,
@@ -520,7 +538,7 @@ val MIGRATION_16_17 = object : Migration(16, 17) {
         UserWarningIgnoreEntity::class,
         IdMappingEntity::class
     ],
-    version = 17,  // 升级到版本 17（添加 id_mappings 表）
+    version = 18,  // 升级到版本 18
     exportSchema = false
 )
 @TypeConverters(Converters::class)
