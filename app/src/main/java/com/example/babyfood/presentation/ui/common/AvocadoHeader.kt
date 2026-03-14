@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,33 +24,29 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.babyfood.presentation.theme.Charcoal
-import com.example.babyfood.presentation.theme.Cream
-import com.example.babyfood.presentation.theme.Peach
-import com.example.babyfood.presentation.theme.SoftBrown
+import com.example.babyfood.R
+import com.example.babyfood.presentation.theme.*
 
 /**
  * 全局顶部 Header 组件
- * 设计风格：Peach 半透明背景 + backdrop blur 模糊效果
  */
 @Composable
 fun AvocadoHeader(
-    babyName: String = "未选择宝宝",
-    babyAge: String = "",
+    babyName: String,
+    babyAge: String,
     onNotificationsClick: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = Peach.copy(alpha = 0.8f)
+                color = PrimaryOrange.copy(alpha = 0.8f)
             )
             .then(
-                // 模拟 backdrop blur 效果的渐变叠加
                 Modifier.background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
@@ -72,21 +69,19 @@ fun AvocadoHeader(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Baby Profile Image - 圆形头像，Cream 背景，白色边框
+                // Baby Profile Image
                 Box(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(Cream)
+                        .background(SurfaceCream)
                         .border(2.dp, Color.White, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    // 宝宝头像占位符
                     Text("👶", fontSize = 20.sp)
                 }
 
                 Column {
-                    // "GROW HEALTHY" 标签 - SoftBrown 色，大写，粗体
                     Text(
                         text = "GROW HEALTHY",
                         style = androidx.compose.ui.text.TextStyle(
@@ -94,7 +89,7 @@ fun AvocadoHeader(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.5.sp
                         ),
-                        color = SoftBrown
+                        color = TextSub
                     )
                     // 宝宝名字行
                     Row(verticalAlignment = Alignment.Bottom) {
@@ -103,7 +98,7 @@ fun AvocadoHeader(
                             style = androidx.compose.ui.text.TextStyle(
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Charcoal
+                                color = TextMain
                             )
                         )
                         if (babyAge.isNotBlank()) {
@@ -112,7 +107,7 @@ fun AvocadoHeader(
                                 style = androidx.compose.ui.text.TextStyle(
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = Charcoal.copy(alpha = 0.6f)
+                                    color = TextMain.copy(alpha = 0.6f)
                                 ),
                                 modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
                             )
@@ -121,7 +116,7 @@ fun AvocadoHeader(
                 }
             }
 
-            // Notification Button - 圆形白色按钮，带阴影
+            // Notification Button
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -132,8 +127,8 @@ fun AvocadoHeader(
                 IconButton(onClick = onNotificationsClick) {
                     Icon(
                         imageVector = Icons.Default.Notifications,
-                        contentDescription = "通知",
-                        tint = Charcoal,
+                        contentDescription = stringResource(R.string.common_tip),
+                        tint = TextMain,
                         modifier = Modifier.size(24.dp)
                     )
                 }

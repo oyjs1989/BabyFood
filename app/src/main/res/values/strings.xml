@@ -278,4 +278,14 @@
 
     <!-- Language -->
     <string name="language_setting">Language Settings</string>
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_recipes">Recipes</string>
+    <string name="nav_plans">Plans</string>
+    <string name="nav_inventory">Inventory</string>
+    <string name="nav_baby">Baby</string>
+
+    <!-- Header -->
+    <string name="header_no_baby">No baby selected</string>
+    <string name="header_age_format">%1$d months</string>
 </resources>

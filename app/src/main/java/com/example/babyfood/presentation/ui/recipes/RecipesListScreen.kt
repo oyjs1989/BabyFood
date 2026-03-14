@@ -58,15 +58,15 @@ import androidx.compose.ui.res.stringResource
 import com.example.babyfood.R
 import com.example.babyfood.domain.model.Recipe
 import com.example.babyfood.domain.model.RiskLevel
-import com.example.babyfood.presentation.theme.AvocadoDark
-import com.example.babyfood.presentation.theme.AvocadoPrimary
-import com.example.babyfood.presentation.theme.BackgroundLight
-import com.example.babyfood.presentation.theme.Charcoal
+import com.example.babyfood.presentation.theme.PrimaryOrangeDark
+import com.example.babyfood.presentation.theme.PrimaryOrange
+import com.example.babyfood.presentation.theme.BackgroundWarm
+import com.example.babyfood.presentation.theme.TextMain
 import com.example.babyfood.presentation.theme.Coral
 import com.example.babyfood.presentation.theme.Cream
-import com.example.babyfood.presentation.theme.Peach
+import com.example.babyfood.presentation.theme.PrimaryOrangeLight
 import com.example.babyfood.presentation.theme.Primary
-import com.example.babyfood.presentation.theme.SoftBrown
+import com.example.babyfood.presentation.theme.TextSub
 import kotlinx.serialization.json.Json
 
 @Composable
@@ -99,7 +99,7 @@ fun RecipesListScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundLight)
+            .background(BackgroundWarm)
     ) {
         // 搜索栏
         SearchBar(
@@ -195,7 +195,7 @@ private fun RecipeListAppBar(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = stringResource(R.string.back),
-                tint = AvocadoDark,
+                tint = PrimaryOrangeDark,
                 modifier = Modifier.size(28.dp)
             )
         }
@@ -205,7 +205,7 @@ private fun RecipeListAppBar(
             text = stringResource(R.string.app_name),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
-            color = AvocadoDark
+            color = PrimaryOrangeDark
         )
 
         // 筛选按钮
@@ -213,7 +213,7 @@ private fun RecipeListAppBar(
             Icon(
                 imageVector = Icons.Default.Tune,
                 contentDescription = stringResource(R.string.common_filter),
-                tint = AvocadoDark,
+                tint = PrimaryOrangeDark,
                 modifier = Modifier.size(28.dp)
             )
         }
@@ -232,14 +232,14 @@ private fun SearchBar(
             .height(48.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(Cream)
-            .border(1.dp, Peach.copy(alpha = 0.3f), RoundedCornerShape(16.dp)),
+            .border(1.dp, PrimaryOrangeLight.copy(alpha = 0.3f), RoundedCornerShape(16.dp)),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // 搜索图标
         Icon(
             imageVector = Icons.Default.Search,
             contentDescription = null,
-            tint = Peach,
+            tint = PrimaryOrangeLight,
             modifier = Modifier.padding(start = 16.dp, end = 8.dp)
         )
 
@@ -256,7 +256,7 @@ private fun SearchBar(
                     Text(
                         text = stringResource(R.string.recipes_search_placeholder),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = SoftBrown.copy(alpha = 0.6f)
+                        color = TextSub.copy(alpha = 0.6f)
                     )
                 }
                 innerTextField()
@@ -328,20 +328,20 @@ private fun FilterChip(
     onClick: () -> Unit
 ) {
     val backgroundColor = when {
-        isSelected && isPrimary -> Peach
-        isSelected && !isPrimary -> AvocadoPrimary.copy(alpha = 0.3f)
+        isSelected && isPrimary -> PrimaryOrangeLight
+        isSelected && !isPrimary -> PrimaryOrange.copy(alpha = 0.3f)
         else -> Cream
     }
 
     val textColor = when {
-        isSelected && isPrimary -> Charcoal
-        isSelected && !isPrimary -> AvocadoDark
-        else -> SoftBrown
+        isSelected && isPrimary -> TextMain
+        isSelected && !isPrimary -> PrimaryOrangeDark
+        else -> TextSub
     }
 
     val border = when {
-        !isSelected -> BorderStroke(1.dp, Peach.copy(alpha = 0.3f))
-        isSelected && !isPrimary -> BorderStroke(1.dp, AvocadoPrimary.copy(alpha = 0.5f))
+        !isSelected -> BorderStroke(1.dp, PrimaryOrangeLight.copy(alpha = 0.3f))
+        isSelected && !isPrimary -> BorderStroke(1.dp, PrimaryOrange.copy(alpha = 0.5f))
         else -> null
     }
 
@@ -429,7 +429,7 @@ private fun RecipeCard(
                     text = recipe.name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Charcoal,
+                    color = TextMain,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -439,8 +439,8 @@ private fun RecipeCard(
                     NutritionTag(
                         icon = "⚡",
                         text = stringResource(R.string.recipes_iron_rich),
-                        backgroundColor = AvocadoPrimary.copy(alpha = 0.2f),
-                        textColor = AvocadoDark
+                        backgroundColor = PrimaryOrange.copy(alpha = 0.2f),
+                        textColor = PrimaryOrangeDark
                     )
                 } else {
                     // 默认显示一个营养标签
@@ -454,8 +454,8 @@ private fun RecipeCard(
                     NutritionTag(
                         icon = nutritionTag.second,
                         text = nutritionTag.first,
-                        backgroundColor = Peach.copy(alpha = 0.3f),
-                        textColor = SoftBrown
+                        backgroundColor = PrimaryOrangeLight.copy(alpha = 0.3f),
+                        textColor = TextSub
                     )
                 }
 
@@ -473,13 +473,13 @@ private fun RecipeCard(
                     Text(
                         text = difficulty,
                         style = MaterialTheme.typography.bodySmall,
-                        color = SoftBrown,
+                        color = TextSub,
                         fontWeight = FontWeight.Medium
                     )
 
                     Text(
                         text = "•",
-                        color = Peach,
+                        color = PrimaryOrangeLight,
                         fontSize = 12.sp
                     )
 
@@ -491,13 +491,13 @@ private fun RecipeCard(
                         Icon(
                             imageVector = Icons.Default.Schedule,
                             contentDescription = null,
-                            tint = Peach,
+                            tint = PrimaryOrangeLight,
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
                             text = stringResource(R.string.recipes_cooking_time_format, recipe.cookingTime ?: 15),
                             style = MaterialTheme.typography.bodySmall,
-                            color = SoftBrown,
+                            color = TextSub,
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -515,7 +515,7 @@ private fun RecipeCard(
                 Icon(
                     imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                     contentDescription = stringResource(R.string.common_favorite),
-                    tint = if (isFavorite) Coral else SoftBrown.copy(alpha = 0.5f),
+                    tint = if (isFavorite) Coral else TextSub.copy(alpha = 0.5f),
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -547,7 +547,7 @@ private fun RecipeImage(
             Text(
                 text = name.firstOrNull()?.toString() ?: "?",
                 style = MaterialTheme.typography.headlineMedium,
-                color = Peach,
+                color = PrimaryOrangeLight,
                 fontWeight = FontWeight.Bold
             )
         }

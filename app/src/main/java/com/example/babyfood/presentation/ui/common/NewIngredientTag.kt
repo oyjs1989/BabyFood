@@ -19,7 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.babyfood.presentation.theme.NewIngredientTag
+import com.example.babyfood.presentation.theme.NewIngredientColor
 import com.example.babyfood.presentation.theme.ScoreExcellent
 import com.example.babyfood.presentation.theme.ScoreFair
 import com.example.babyfood.presentation.theme.ScoreMedium
@@ -27,8 +27,6 @@ import com.example.babyfood.presentation.theme.ScorePoor
 
 /**
  * 新食材标签组件
- *
- * 标注食谱中的新食材（宝宝首次尝试的食材）
  */
 @Composable
 fun NewIngredientTag(
@@ -38,13 +36,13 @@ fun NewIngredientTag(
     Box(
         modifier = modifier
             .background(
-                color = NewIngredientTag,
+                color = NewIngredientColor,
                 shape = RoundedCornerShape(12.dp)
             )
             .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         Row(
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
             Text(
@@ -63,8 +61,6 @@ fun NewIngredientTag(
 
 /**
  * 新食材列表组件
- *
- * 显示食谱中的所有新食材
  */
 @Composable
 fun NewIngredientsList(
@@ -75,7 +71,7 @@ fun NewIngredientsList(
 
     Row(
         modifier = modifier,
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
     ) {
         Text(
@@ -91,8 +87,6 @@ fun NewIngredientsList(
 
 /**
  * 食材种类统计组件
- *
- * 显示食谱中的食材种类数量
  */
 @Composable
 fun IngredientVarietySummary(
@@ -108,7 +102,7 @@ fun IngredientVarietySummary(
 
     Row(
         modifier = modifier,
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
     ) {
         Text(
@@ -127,7 +121,7 @@ fun IngredientVarietySummary(
         Text(
             text = "新食材：$newIngredients",
             style = MaterialTheme.typography.bodySmall,
-            color = NewIngredientTag,
+            color = NewIngredientColor,
             fontWeight = FontWeight.Bold
         )
         Text(
@@ -147,5 +141,3 @@ fun IngredientVarietySummary(
         )
     }
 }
-
-// Preview function temporarily removed due to import resolution issues

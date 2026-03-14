@@ -267,4 +267,14 @@
     <string name="day_thu">四</string>
     <string name="day_fri">五</string>
     <string name="day_sat">六</string>
+    <!-- 导航 -->
+    <string name="nav_home">首页</string>
+    <string name="nav_recipes">食谱</string>
+    <string name="nav_plans">计划</string>
+    <string name="nav_inventory">仓库</string>
+    <string name="nav_baby">宝宝</string>
+
+    <!-- 顶部栏 -->
+    <string name="header_no_baby">未选择宝宝</string>
+    <string name="header_age_format">%1$d个月</string>
 </resources>

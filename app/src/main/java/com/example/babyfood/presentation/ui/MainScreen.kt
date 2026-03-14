@@ -50,17 +50,19 @@ import com.example.babyfood.presentation.ui.plans.PlanFormScreen
 import com.example.babyfood.presentation.ui.plans.PlansViewModel
 import com.example.babyfood.presentation.ui.plans.RecommendationEditorScreen
 import com.example.babyfood.presentation.ui.plans.RecommendationEditorRoute
+import androidx.compose.ui.res.stringResource
+import com.example.babyfood.R
 
 sealed class BottomNavItem(
     val route: String,
     val icon: ImageVector,
-    val label: String
+    val labelResId: Int
 ) {
-    object Home : BottomNavItem("home", AppIcons.Home, "首页")
-    object Recipes : BottomNavItem("recipes", AppIcons.Recipes, "食谱")
-    object Plans : BottomNavItem("plans", AppIcons.Plans, "计划")
-    object Inventory : BottomNavItem("inventory", AppIcons.Inventory, "仓库")
-    object Baby : BottomNavItem("baby", AppIcons.Baby, "宝宝")
+    object Home : BottomNavItem("home", AppIcons.Home, R.string.nav_home)
+    object Recipes : BottomNavItem("recipes", AppIcons.Recipes, R.string.nav_recipes)
+    object Plans : BottomNavItem("plans", AppIcons.Plans, R.string.nav_plans)
+    object Inventory : BottomNavItem("inventory", AppIcons.Inventory, R.string.nav_inventory)
+    object Baby : BottomNavItem("baby", AppIcons.Baby, R.string.nav_baby)
 }
 
 @Composable
@@ -84,8 +86,8 @@ fun MainScreen(
             // 只在核心业务页面展示 AvocadoHeader
             if (currentDestination?.route in listOf("home", "recipes", "plans", "inventory", "baby")) {
                 com.example.babyfood.presentation.ui.common.AvocadoHeader(
-                    babyName = selectedBaby?.name ?: "未选择宝宝",
-                    babyAge = selectedBaby?.let { "${it.ageInMonths}个月" } ?: "",
+                    babyName = selectedBaby?.name ?: stringResource(R.string.header_no_baby),
+                    babyAge = selectedBaby?.let { stringResource(R.string.header_age_format, it.ageInMonths) } ?: "",
                     onNotificationsClick = {
                         // TODO: Handle notifications
                     }
@@ -94,7 +96,8 @@ fun MainScreen(
         },
         bottomBar = {
             if (currentDestination?.route in listOf("home", "recipes", "plans", "inventory", "baby")) {
-                com.example.babyfood.presentation.ui.common.AvocadoBottomBar(
+                AppBottomBar(
+                    currentDestination = currentDestination,
                     navController = navController
                 )
             }
@@ -578,9 +581,10 @@ private fun AppBottomBar(
         tonalElevation = 0.dp
     ) {
         items.forEach { item ->
+            val label = stringResource(item.labelResId)
             NavigationBarItem(
-                icon = { Icon(item.icon, contentDescription = item.label) },
-                label = { Text(item.label) },
+                icon = { Icon(item.icon, contentDescription = label) },
+                label = { Text(label) },
                 selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
                 onClick = {
                     navController.navigate(item.route) {
