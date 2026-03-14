@@ -51,10 +51,16 @@ class BabyViewModel @Inject constructor(
 
     fun saveBaby(baby: Baby) {
         logMethodStart("保存宝宝")
+        val isFirstBaby = _uiState.value.babies.isEmpty()
         safeLaunch("保存宝宝") {
             if (baby.id == 0L) {
-                babyRepository.insert(baby)
+                val newId = babyRepository.insert(baby)
                 logSuccess("宝宝创建成功")
+                
+                // 如果是第一个宝宝，自动设置为当前宝宝
+                if (isFirstBaby) {
+                    setAsCurrentBaby(baby.copy(id = newId))
+                }
             } else {
                 babyRepository.update(baby)
                 logSuccess("宝宝更新成功")

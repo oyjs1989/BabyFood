@@ -290,7 +290,6 @@ fun BabyFormScreen(
                             avatarUrl = avatarUrl
                         )
                         viewModel.saveBaby(baby)
-                        onSave()
                     },
                     modifier = Modifier
                         .fillMaxWidth()
