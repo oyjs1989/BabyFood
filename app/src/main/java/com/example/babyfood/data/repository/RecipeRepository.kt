@@ -18,6 +18,7 @@ class RecipeRepository @Inject constructor(
     // Convert Entity to Domain model
     override fun RecipeEntity.toDomainModel(): Recipe = Recipe(
         id = id,
+        cloudId = cloudId,
         name = name,
         minAgeMonths = minAgeMonths,
         maxAgeMonths = maxAgeMonths,
@@ -38,6 +39,7 @@ class RecipeRepository @Inject constructor(
     // Convert Domain model to Entity
     override fun Recipe.toEntity(): RecipeEntity = RecipeEntity(
         id = id,
+        cloudId = cloudId,
         name = name,
         minAgeMonths = minAgeMonths,
         maxAgeMonths = maxAgeMonths,
@@ -61,6 +63,13 @@ class RecipeRepository @Inject constructor(
 
     suspend fun getById(id: Long): Recipe? =
         recipeDao.getById(id)?.toDomainModel()
+
+    /**
+     * 根据云端 ID 查找食谱
+     * 用于将 API 返回的 cloudId 映射到本地食谱
+     */
+    suspend fun findByCloudId(cloudId: String): Recipe? =
+        recipeDao.findByCloudId(cloudId)?.toDomainModel()
 
     suspend fun insert(item: Recipe): Long =
         recipeDao.insert(item.toEntity().prepareForInsert())

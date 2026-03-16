@@ -9,6 +9,7 @@ import com.example.babyfood.data.remote.api.AiProxyApiService
 import com.example.babyfood.data.remote.api.AuthApiService
 import com.example.babyfood.data.remote.api.BabyApiService
 import com.example.babyfood.data.remote.api.GrowthRecordsApiService
+import com.example.babyfood.data.remote.api.HealthAnalysisApiService
 import com.example.babyfood.data.remote.api.HealthRecordsApiService
 import com.example.babyfood.data.remote.api.ImageAnalysisApiService
 import com.example.babyfood.data.remote.api.IngredientTrialsApiService
@@ -17,6 +18,7 @@ import com.example.babyfood.data.remote.api.NutritionApiService
 import com.example.babyfood.data.remote.api.PlanApiService
 import com.example.babyfood.data.remote.api.PointsApiService
 import com.example.babyfood.data.remote.api.RecipeApiService
+import com.example.babyfood.data.remote.api.RecommendationApiService
 import com.example.babyfood.data.remote.api.SyncApiService
 import com.example.babyfood.data.remote.interceptor.JwtAuthInterceptor
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -184,6 +186,15 @@ object NetworkModule {
     }
 
     /**
+     * Recommendation API 服务
+     */
+    @Provides
+    @Singleton
+    fun provideRecommendationApiService(retrofit: Retrofit): RecommendationApiService {
+        return retrofit.create(RecommendationApiService::class.java)
+    }
+
+    /**
      * Plan API 服务
      */
     @Provides
@@ -253,6 +264,16 @@ object NetworkModule {
     @Singleton
     fun provideHealthRecordsApiService(retrofit: Retrofit): HealthRecordsApiService {
         return retrofit.create(HealthRecordsApiService::class.java)
+    }
+
+    /**
+     * Health Analysis API 服务
+     * 直接调用后端健康分析接口 /api/v1/health/analyze
+     */
+    @Provides
+    @Singleton
+    fun provideHealthAnalysisApiService(retrofit: Retrofit): HealthAnalysisApiService {
+        return retrofit.create(HealthAnalysisApiService::class.java)
     }
 
     /**

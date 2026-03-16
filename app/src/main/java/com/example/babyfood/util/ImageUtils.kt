@@ -181,10 +181,10 @@ object ImageUtils {
 
         android.util.Log.d(TAG, "创建临时文件: ${tempFile.absolutePath}")
 
-        // 使用 FileProvider 生成 content:// URI，避免 FileUriExposedException
+        // 使用当前安装包名拼接 authority，避免 namespace/applicationId 不一致时崩溃
         return FileProvider.getUriForFile(
             context,
-            "com.example.babyfood.fileprovider",
+            "${context.packageName}.fileprovider",
             tempFile
         )
     }

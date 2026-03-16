@@ -15,7 +15,7 @@ interface HealthAnalysisApiService {
      * @param request 健康分析请求
      * @return 健康分析响应
      */
-    @POST("api/v1/health/analyze")
+    @POST("/api/v1/health/analyze")
     suspend fun analyzeHealth(
         @Body request: HealthAnalysisRequest
     ): HealthAnalysisResponse

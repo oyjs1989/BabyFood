@@ -4,8 +4,7 @@ import com.example.babyfood.data.ai.recommendation.IronRichStrategy
 import com.example.babyfood.data.ai.ruleengine.RuleEngine
 import com.example.babyfood.data.ai.ruleengine.ValidationConstraints
 import com.example.babyfood.data.ai.ruleengine.ValidationResult
-import com.example.babyfood.data.ai.strategy.CheapModelStrategy
-import com.example.babyfood.data.ai.strategy.MainModelStrategy
+import com.example.babyfood.data.ai.strategy.RemoteRecommendationStrategy
 import com.example.babyfood.data.local.database.dao.NutritionDataDao
 import com.example.babyfood.data.repository.BabyRepository
 import com.example.babyfood.data.repository.InventoryRepository
@@ -21,13 +20,17 @@ import javax.inject.Singleton
 
 /**
  * AI 推荐服务
- * 整合规则层和模型策略，提供完整的辅食推荐功能
+ * 整合规则层和远程策略，提供完整的辅食推荐功能
+ * 
+ * 迁移说明：
+ * - 推荐生成已迁移到后端 API
+ * - 本地规则引擎仅用于日志记录，不影响 AI 结果
+ * - 遵循奥卡姆剃刀原则：AI 完全负责判断和分析
  */
 @Singleton
 class RecommendationService @Inject constructor(
     private val candidateRecipeService: CandidateRecipeService,
-    private val mainModelStrategy: MainModelStrategy,
-    private val cheapModelStrategy: CheapModelStrategy,
+    private val remoteRecommendationStrategy: RemoteRecommendationStrategy,
     private val ruleEngine: RuleEngine,
     private val babyRepository: BabyRepository,
     private val inventoryRepository: InventoryRepository,
@@ -40,32 +43,34 @@ class RecommendationService @Inject constructor(
     /**
      * 生成辅食推荐
      * 奥卡姆剃刀原则：仅做必要的数据准备，将判断和分析完全交给AI
+     * 
+     * 迁移说明：
+     * - 推荐生成已迁移到后端 API
+     * - 后端返回完整的周计划（包含 friendlyText）
+     * - 本地规则校验仅用于日志记录
      */
     suspend fun generateRecommendation(request: RecommendationRequest): RecommendationResponse {
         return try {
             logMethodStart("生成辅食推荐")
             logRequestData(request)
-            logD("奥卡姆剃刀原则：AI完全负责判断")
+            logD("奥卡姆剃刀原则：AI完全负责判断（后端 API）")
 
-            // 步骤1: 筛选候选食谱
+            // 步骤1: 筛选候选食谱（用于后端参考和本地日志）
             val candidateSet = selectCandidates(request)
             if (candidateSet.allRecipes.isEmpty()) {
                 return handleEmptyCandidates(request)
             }
 
-            // 步骤2: 使用AI生成周计划
-            val weeklyPlan = generateWeeklyPlanWithAI(candidateSet, request)
+            // 步骤2: 使用后端 AI 生成周计划（包含友好文案）
+            val weeklyPlan = generateWeeklyPlanWithBackend(candidateSet, request)
 
-            // 步骤3: 生成友好文案
-            val updatedWeeklyPlan = generateFriendlyTexts(weeklyPlan)
+            // 步骤3: 规则校验（仅记录日志，不影响结果）
+            val validationResult = validateWeeklyPlan(weeklyPlan, request)
 
-            // 步骤4: 规则校验
-            val validationResult = validateWeeklyPlan(updatedWeeklyPlan, request)
-
-            logSuccess("推荐生成成功（完全由 AI 生成）")
+            logSuccess("推荐生成成功（后端 API 生成）")
             logMethodEnd("生成辅食推荐")
 
-            buildSuccessResponse(updatedWeeklyPlan, validationResult, request.ageInMonths)
+            buildSuccessResponse(weeklyPlan, validationResult, request.ageInMonths)
 
         } catch (e: Exception) {
             logE("生成推荐发生异常: ${e.message}", e)
@@ -110,46 +115,39 @@ class RecommendationService @Inject constructor(
     }
 
     /**
-     * 步骤2: 使用AI生成周计划
+     * 步骤2: 使用后端 AI 生成周计划
+     * 后端返回完整的周计划，包含友好文案和营养摘要
      */
-    private suspend fun generateWeeklyPlanWithAI(
+    private suspend fun generateWeeklyPlanWithBackend(
         candidateSet: CandidateRecipeSet,
         request: RecommendationRequest
     ): WeeklyMealPlan {
-        logI("步骤2: 使用AI生成周计划（包含分析思路和营养目标）")
+        logI("步骤2: 调用后端 API 生成周计划")
 
-        val weeklyPlan = mainModelStrategy.generateWeeklyPlan(
+        val weeklyPlan = remoteRecommendationStrategy.generateWeeklyPlan(
             candidateSet = candidateSet,
             ageInMonths = request.ageInMonths,
             constraints = request.constraints,
-            startDate = request.startDate
+            startDate = request.startDate,
+            babyId = request.babyId,
+            allergies = request.allergies,
+            preferences = request.preferences,
+            availableIngredients = request.availableIngredients,
+            useAvailableIngredientsOnly = request.useAvailableIngredientsOnly
         )
 
-        logD("AI周计划生成完成，计划天数: ${weeklyPlan.dailyPlans.size}")
+        logD("后端周计划生成完成，计划天数: ${weeklyPlan.dailyPlans.size}")
         return weeklyPlan
     }
 
     /**
-     * 步骤3: 生成友好文案
-     */
-    private suspend fun generateFriendlyTexts(weeklyPlan: WeeklyMealPlan): WeeklyMealPlan {
-        logI("步骤3: 使用AI生成友好文案")
-
-        return weeklyPlan.copy(
-            dailyPlans = weeklyPlan.dailyPlans.map { dailyPlan ->
-                dailyPlan.copy(meals = cheapModelStrategy.generateBatchMealTexts(dailyPlan.meals))
-            }
-        )
-    }
-
-    /**
-     * 步骤4: 规则校验
+     * 步骤3: 规则校验（仅记录日志，不影响后端结果）
      */
     private fun validateWeeklyPlan(
         weeklyPlan: WeeklyMealPlan,
         request: RecommendationRequest
     ): ValidationResult {
-        logI("步骤4: 规则校验（仅记录日志，不影响AI结果）")
+        logI("步骤3: 规则校验（仅记录日志，不影响后端结果）")
 
         val allRecipes = weeklyPlan.dailyPlans.flatMap { it.meals.map { meal -> meal.recipe } }
         logD("待校验食谱数: ${allRecipes.size}")

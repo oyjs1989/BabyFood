@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 
 data class Recipe(
     val id: Long = 0,
+    val cloudId: String? = null,  // 云端唯一标识
     val name: String,
     val minAgeMonths: Int,   // 最小月龄
     val maxAgeMonths: Int,   // 最大月龄

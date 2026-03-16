@@ -35,28 +35,38 @@ class RemoteRecommendationStrategy @Inject constructor(
 
     /**
      * 生成一周饮食计划（远程）
-     * @param candidateSet 候选食谱集合（用于获取食谱 ID 映射）
+     * @param candidateSet 候选食谱集合（用于日志记录）
      * @param ageInMonths 宝宝年龄（月）
      * @param constraints 约束条件
      * @param startDate 开始日期
+     * @param babyId 宝宝 ID（用于后端记录）
+     * @param allergies 过敏食材列表
+     * @param preferences 偏好食材列表
+     * @param availableIngredients 可用食材列表
+     * @param useAvailableIngredientsOnly 是否仅使用可用食材
      * @return 一周饮食计划
      */
     suspend fun generateWeeklyPlan(
         candidateSet: CandidateRecipeSet,
         ageInMonths: Int,
         constraints: RecommendationConstraints,
-        startDate: LocalDate
+        startDate: LocalDate,
+        babyId: Long = 0L,
+        allergies: List<String> = emptyList(),
+        preferences: List<String> = emptyList(),
+        availableIngredients: List<String> = emptyList(),
+        useAvailableIngredientsOnly: Boolean = false
     ): WeeklyMealPlan {
         Log.d("RemoteRecommendationStrategy", "========== 开始调用云端 AI 推荐服务 ==========")
         
         // 构建请求
         val request = RecommendationRequest(
-            babyId = 0L,  // 临时 ID，实际使用时需要传入
+            babyId = babyId,
             ageInMonths = ageInMonths,
-            allergies = emptyList(),  // 从 candidateSet 中提取
-            preferences = emptyList(),  // 从 candidateSet 中提取
-            availableIngredients = emptyList(),
-            useAvailableIngredientsOnly = false,
+            allergies = allergies,
+            preferences = preferences,
+            availableIngredients = availableIngredients,
+            useAvailableIngredientsOnly = useAvailableIngredientsOnly,
             constraints = RecommendationConstraintsDto(
                 maxFishPerWeek = constraints.maxFishPerWeek,
                 maxEggPerWeek = constraints.maxEggPerWeek,
@@ -68,6 +78,8 @@ class RemoteRecommendationStrategy @Inject constructor(
         )
         
         Log.d("RemoteRecommendationStrategy", "请求参数: babyId=${request.babyId}, age=${request.ageInMonths}个月")
+        Log.d("RemoteRecommendationStrategy", "过敏食材: ${allergies.joinToString(", ")}")
+        Log.d("RemoteRecommendationStrategy", "偏好食材: ${preferences.joinToString(", ")}")
         Log.d("RemoteRecommendationStrategy", "约束条件: 每周最多鱼类${constraints.maxFishPerWeek}次, 每周最多蛋类${constraints.maxEggPerWeek}次")
         
         return try {
@@ -108,46 +120,21 @@ class RemoteRecommendationStrategy @Inject constructor(
     private suspend fun parseWeeklyPlan(dto: WeeklyPlanDto): WeeklyMealPlan {
         Log.d("RemoteRecommendationStrategy", "开始解析周计划...")
         
-        // 获取所有食谱，用于根据 recipeId 查找 Recipe 对象
-        val allRecipes = recipeRepository.getAllRecipes().first()
-        val recipeMap = allRecipes.associateBy { it.id }
-        
-        Log.d("RemoteRecommendationStrategy", "本地食谱数: ${allRecipes.size}")
-        
         // 解析每日计划
         val dailyPlans = dto.dailyPlans.map { dailyPlanDto ->
             Log.d("RemoteRecommendationStrategy", "  解析日期: ${dailyPlanDto.date}")
             
             // 解析每餐
-            val meals = dailyPlanDto.meals.map { mealDto ->
-                Log.d("RemoteRecommendationStrategy", "    解析餐食: ${mealDto.mealPeriod}, recipeId=${mealDto.recipeId}")
+            val meals = dailyPlanDto.meals.mapNotNull { mealDto ->
+                Log.d("RemoteRecommendationStrategy", "    解析餐食: ${mealDto.mealPeriod}, recipeCloudId=${mealDto.recipeCloudId}")
                 
-                // 根据 recipeId 查找 Recipe 对象
-                val recipe = recipeMap[mealDto.recipeId]?.let { foundRecipe ->
-                    Log.d("RemoteRecommendationStrategy", "    ✓ 找到食谱: ${foundRecipe.name}")
+                // 根据 recipeCloudId 查找 Recipe 对象
+                val recipe = recipeRepository.findByCloudId(mealDto.recipeCloudId)?.let { foundRecipe ->
+                    Log.d("RemoteRecommendationStrategy", "    ✓ 找到食谱: ${foundRecipe.name} (localId=${foundRecipe.id})")
                     foundRecipe
                 } ?: run {
-                    Log.w("RemoteRecommendationStrategy", "    ⚠️ 未找到食谱: recipeId=${mealDto.recipeId}，创建临时食谱")
-                    // 创建一个临时 Recipe 对象，避免崩溃
-                    Recipe(
-                        id = mealDto.recipeId,
-                        name = mealDto.recipeName,
-                        minAgeMonths = 6,
-                        maxAgeMonths = 36,
-                        ingredients = emptyList(),
-                        steps = emptyList(),
-                        nutrition = com.example.babyfood.domain.model.Nutrition(
-                            calories = 100f,
-                            protein = 5f,
-                            fat = 2f,
-                            carbohydrates = 15f,
-                            fiber = 1f,
-                            calcium = 50f,
-                            iron = 1f
-                        ),
-                        category = "未知",
-                        isBuiltIn = false
-                    )
+                    Log.w("RemoteRecommendationStrategy", "    ⚠️ 未找到食谱: recipeCloudId=${mealDto.recipeCloudId}，跳过此餐")
+                    return@mapNotNull null  // 找不到食谱时跳过此餐
                 }
                 
                 // 解析餐段时间段
@@ -160,7 +147,7 @@ class RemoteRecommendationStrategy @Inject constructor(
                 
                 PlannedMeal(
                     mealPeriod = mealPeriod,
-                    recipe = recipe,  // recipe 不可能为 null，因为上面已经处理了 null 情况
+                    recipe = recipe,
                     nutritionNotes = mealDto.nutritionNotes,
                     childFriendlyText = mealDto.childFriendlyText
                 )

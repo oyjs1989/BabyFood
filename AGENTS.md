@@ -59,6 +59,13 @@ tests/
 - Dependency Injection: Use Hilt
 
 ## Recent Changes
+- 004-android-business-logic-migration: Business logic migration to backend
+  - Milestone A: Protocol freeze - unified API contracts with backend
+  - Milestone B.1: Recommendation pipeline backend migration - RemoteRecommendationStrategy
+  - Milestone B.2: Candidate recipe filtering migration with cloudId/localId mapping
+  - Milestone B.3: Health analysis convergence - StandardHealthAnalysisStrategy
+  - Milestone B.4: Nutrition guidance services decision - all retain local fallback
+  - Milestone C: Code cleanup - removed deprecated strategies (MainModelStrategy, CheapModelStrategy, RemoteHealthAnalysisStrategy)
 - 001-architecture-optimization: Architecture optimization and security enhancement
   - User Story 1: Remove hardcoded API Key via backend proxy
   - User Story 2: Complete SyncManager with ID mapping and conflict resolution
@@ -131,10 +138,18 @@ tests/
 - Nutrition summary and deficiency/excess analysis
 
 ### AI Features
-- Health analysis (local rules + remote LLM)
-- Recipe recommendations (AI-powered)
+- Health analysis (backend-first with local fallback)
+  - StandardHealthAnalysisStrategy: Backend API `/api/v1/health/analyze`
+  - LocalHealthAnalysisStrategy: Local rule-based fallback
+- Recipe recommendations (backend-first)
+  - RemoteRecommendationStrategy: Backend API `/api/v1/recommendations/generate`
+  - RuleEngine: Local validation and filtering
+- Candidate recipe filtering (backend-first with local fallback)
+  - Backend API `/api/v1/recipes/candidates`
+  - Local fallback via RuleEngine
 - Strategy pattern for AI service selection
 - Iron-priority recommendations (IronRichStrategy)
+- **Backend-First Architecture**: All AI operations prioritize backend API, local processing as fallback
 
 ### Navigation
 - Navigation Compose for routing

@@ -37,6 +37,7 @@ data class RecipeEntity(
 ) : SyncableEntity {
     fun toDomainModel(): Recipe = Recipe(
         id = id,
+        cloudId = cloudId,
         name = name,
         minAgeMonths = minAgeMonths,
         maxAgeMonths = maxAgeMonths,
@@ -57,6 +58,7 @@ data class RecipeEntity(
 
 fun Recipe.toEntity(): RecipeEntity = RecipeEntity(
     id = id,
+    cloudId = cloudId,
     name = name,
     minAgeMonths = minAgeMonths,
     maxAgeMonths = maxAgeMonths,

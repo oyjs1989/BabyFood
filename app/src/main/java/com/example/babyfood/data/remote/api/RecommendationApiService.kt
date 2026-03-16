@@ -43,14 +43,14 @@ interface RecommendationApiService {
      *         "meals": [
      *           {
      *             "mealPeriod": "BREAKFAST",
-     *             "recipeId": 1,
+     *             "recipeCloudId": "uuid-1",
      *             "recipeName": "南瓜米糊",
      *             "nutritionNotes": "提供优质蛋白质和碳水化合物",
      *             "childFriendlyText": "早餐有南瓜米糊，香香的很好吃哦～"
      *           },
      *           {
      *             "mealPeriod": "LUNCH",
-     *             "recipeId": 15,
+     *             "recipeCloudId": "uuid-15",
      *             "recipeName": "鸡肉粥",
      *             "nutritionNotes": "提供丰富的蛋白质、维生素和矿物质",
      *             "childFriendlyText": "午餐有鸡肉粥，营养满满！"
@@ -153,7 +153,7 @@ data class DailyPlanDto(
 @kotlinx.serialization.Serializable
 data class MealDto(
     val mealPeriod: String,  // "BREAKFAST", "LUNCH", "DINNER", "SNACK"
-    val recipeId: Long,      // 食谱 ID，用于本地解析
+    val recipeCloudId: String,  // 云端食谱 UUID，用于本地映射
     val recipeName: String,  // 食谱名称，用于显示
     val nutritionNotes: String,
     val childFriendlyText: String

@@ -20,6 +20,13 @@ interface RecipeDao {
     @Query("SELECT * FROM recipes WHERE id = :recipeId")
     suspend fun getById(recipeId: Long): RecipeEntity?
 
+    /**
+     * 根据云端 ID 查找食谱
+     * 用于将 API 返回的 cloudId 映射到本地食谱
+     */
+    @Query("SELECT * FROM recipes WHERE cloudId = :cloudId LIMIT 1")
+    suspend fun findByCloudId(cloudId: String): RecipeEntity?
+
     @Query("SELECT * FROM recipes WHERE id IN (:recipeIds)")
     suspend fun getByIds(recipeIds: List<Long>): List<RecipeEntity>
 

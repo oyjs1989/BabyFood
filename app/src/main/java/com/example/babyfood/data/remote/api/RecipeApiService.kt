@@ -64,4 +64,56 @@ interface RecipeApiService {
     suspend fun deleteRecipe(
         @Path("cloudId") cloudId: String
     )
+    
+    /**
+     * 获取候选食谱
+     * 根据宝宝年龄、过敏食材、偏好等条件筛选候选食谱
+     * @param request 候选食谱请求
+     * @return 按餐次分类的候选食谱
+     */
+    @POST("api/v1/recipes/candidates")
+    suspend fun getCandidates(
+        @Body request: CandidateRecipesRequest
+    ): CandidateRecipesResponse
 }
+
+/**
+ * 候选食谱请求
+ */
+@kotlinx.serialization.Serializable
+data class CandidateRecipesRequest(
+    val ageInMonths: Int,
+    val allergies: List<String> = emptyList(),
+    val preferences: List<String> = emptyList(),
+    val availableIngredients: List<String> = emptyList(),
+    val avoidIngredients: List<String> = emptyList(),
+    val useAvailableIngredientsOnly: Boolean = false
+)
+
+/**
+ * 候选食谱响应
+ */
+@kotlinx.serialization.Serializable
+data class CandidateRecipesResponse(
+    val breakfast: List<CandidateRecipeItem> = emptyList(),
+    val lunch: List<CandidateRecipeItem> = emptyList(),
+    val dinner: List<CandidateRecipeItem> = emptyList(),
+    val snack: List<CandidateRecipeItem> = emptyList(),
+    val totalCount: Int,
+    val filteredCount: Int
+)
+
+/**
+ * 候选食谱项
+ */
+@kotlinx.serialization.Serializable
+data class CandidateRecipeItem(
+    val cloudId: String,
+    val name: String,
+    val minAgeMonths: Int,
+    val maxAgeMonths: Int,
+    val category: String,
+    val isIronRich: Boolean = false,
+    val ironContent: Double? = null,
+    val textureType: String? = null
+)
