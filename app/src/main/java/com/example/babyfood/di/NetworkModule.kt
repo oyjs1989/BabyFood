@@ -21,6 +21,7 @@ import com.example.babyfood.data.remote.api.RecipeApiService
 import com.example.babyfood.data.remote.api.RecommendationApiService
 import com.example.babyfood.data.remote.api.SyncApiService
 import com.example.babyfood.data.remote.interceptor.JwtAuthInterceptor
+import com.example.babyfood.data.remote.interceptor.TokenRefreshAuthenticator
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
 import dagger.Provides
@@ -98,6 +99,67 @@ object NetworkModule {
         return JwtAuthInterceptor(tokenStorage = tokenStorage)
     }
 
+    @Provides
+    @Singleton
+    fun provideTokenRefreshAuthenticator(
+        tokenStorage: TokenStorage,
+        authApiService: AuthApiService
+    ): TokenRefreshAuthenticator {
+        return TokenRefreshAuthenticator(
+            tokenStorage = tokenStorage,
+            authApiService = authApiService
+        )
+    }
+
+    @Provides
+    @Singleton
+    @AuthRetrofit
+    fun provideAuthOkHttpClient(
+        loggingInterceptor: HttpLoggingInterceptor
+    ): OkHttpClient {
+        val builder = OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+
+        if (BASE_URL.startsWith("https://") && BuildConfig.DEBUG) {
+            try {
+                val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+                    override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+                    override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+                    override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+                })
+
+                val sslContext = SSLContext.getInstance("SSL")
+                sslContext.init(null, trustAllCerts, SecureRandom())
+
+                builder.sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
+                builder.hostnameVerifier { _, _ -> true }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        return builder.build()
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    @Provides
+    @Singleton
+    @AuthRetrofit
+    fun provideAuthRetrofit(
+        @AuthRetrofit okHttpClient: OkHttpClient,
+        json: Json
+    ): Retrofit {
+        val contentType = "application/json".toMediaType()
+        return Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(json.asConverterFactory(contentType))
+            .build()
+    }
+
     /**
      * OkHttp 客户端
      * 连接超时 30 秒，读取超时 30 秒，写入超时 30 秒
@@ -106,11 +168,13 @@ object NetworkModule {
     @Singleton
     fun provideOkHttpClient(
         loggingInterceptor: HttpLoggingInterceptor,
-        jwtAuthInterceptor: JwtAuthInterceptor
+        jwtAuthInterceptor: JwtAuthInterceptor,
+        tokenRefreshAuthenticator: TokenRefreshAuthenticator
     ): OkHttpClient {
         val builder = OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
             .addInterceptor(jwtAuthInterceptor)
+            .authenticator(tokenRefreshAuthenticator)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
@@ -226,7 +290,7 @@ object NetworkModule {
      */
     @Provides
     @Singleton
-    fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
+    fun provideAuthApiService(@AuthRetrofit retrofit: Retrofit): AuthApiService {
         return retrofit.create(AuthApiService::class.java)
     }
 
@@ -332,3 +396,7 @@ object NetworkModule {
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class TestRetrofit
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class AuthRetrofit

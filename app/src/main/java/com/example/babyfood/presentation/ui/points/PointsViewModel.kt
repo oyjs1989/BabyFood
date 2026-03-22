@@ -1,10 +1,8 @@
 package com.example.babyfood.presentation.ui.points
 
-import androidx.lifecycle.viewModelScope
 import com.example.babyfood.data.remote.api.PointsApiService
 import com.example.babyfood.data.repository.AuthRepository
 import com.example.babyfood.domain.model.CheckInResponse
-import com.example.babyfood.domain.model.PointsHistoryResponse
 import com.example.babyfood.domain.model.PointsInfo
 import com.example.babyfood.domain.model.PointsTransaction
 import com.example.babyfood.presentation.ui.BaseViewModel
@@ -12,7 +10,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import retrofit2.HttpException
 import javax.inject.Inject
 
 /**
@@ -65,8 +67,8 @@ class PointsViewModel @Inject constructor(
 
         safeLaunch(
             errorMessage = "加载积分信息",
-            onError = {
-                _errorMessage.value = "网络错误，请稍后重试"
+            onError = { throwable ->
+                _errorMessage.value = mapPointsErrorMessage(throwable, fallback = "加载积分信息失败，请稍后重试")
                 _isLoading.value = false
                 logMethodEnd("加载积分信息")
             }
@@ -103,8 +105,8 @@ class PointsViewModel @Inject constructor(
 
         safeLaunch(
             errorMessage = "每日签到",
-            onError = {
-                _errorMessage.value = "网络错误，请稍后重试"
+            onError = { throwable ->
+                _errorMessage.value = mapPointsErrorMessage(throwable, fallback = "签到失败，请稍后重试")
                 _isLoading.value = false
                 logMethodEnd("每日签到")
             }
@@ -147,8 +149,8 @@ class PointsViewModel @Inject constructor(
 
         safeLaunch(
             errorMessage = "加载积分历史",
-            onError = {
-                _errorMessage.value = "网络错误，请稍后重试"
+            onError = { throwable ->
+                _errorMessage.value = mapPointsErrorMessage(throwable, fallback = "加载积分历史失败，请稍后重试")
                 _isLoading.value = false
                 logMethodEnd("加载积分历史")
             }
@@ -212,5 +214,30 @@ class PointsViewModel @Inject constructor(
      */
     fun refreshPointsInfo() {
         loadPointsInfo()
+    }
+
+    private fun mapPointsErrorMessage(throwable: Throwable, fallback: String): String {
+        return when (throwable) {
+            is HttpException -> {
+                val detail = extractErrorDetail(throwable)
+                when (throwable.code()) {
+                    401 -> "登录状态已失效，请重新登录"
+                    500 -> detail ?: "积分服务暂时不可用，请稍后重试"
+                    else -> detail ?: fallback
+                }
+            }
+            else -> fallback
+        }
+    }
+
+    private fun extractErrorDetail(exception: HttpException): String? {
+        return runCatching {
+            val raw = exception.response()?.errorBody()?.string()
+            if (raw.isNullOrBlank()) {
+                null
+            } else {
+                Json.parseToJsonElement(raw).jsonObject["detail"]?.jsonPrimitive?.contentOrNull
+            }
+        }.getOrNull()
     }
 }

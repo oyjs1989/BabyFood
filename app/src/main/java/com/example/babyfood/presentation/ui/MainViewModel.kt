@@ -31,9 +31,26 @@ class MainViewModel @Inject constructor(
     private val _selectedBaby = MutableStateFlow<Baby?>(null)
     /** 当前选中的宝宝，供顶部 AvocadoHeader 等使用 */
     val selectedBaby: StateFlow<Baby?> = _selectedBaby.asStateFlow()
+    val isLoggedIn: StateFlow<Boolean> = authRepository.observeLoginState()
+    private val _isAuthCheckCompleted = MutableStateFlow(false)
+    val isAuthCheckCompleted: StateFlow<Boolean> = _isAuthCheckCompleted.asStateFlow()
 
     init {
+        bootstrapSession()
         refreshSelectedBaby()
+    }
+
+    /**
+     * App 启动时恢复会话
+     */
+    private fun bootstrapSession() {
+        viewModelScope.launch {
+            try {
+                authRepository.restoreSession()
+            } finally {
+                _isAuthCheckCompleted.value = true
+            }
+        }
     }
 
     /**
@@ -74,6 +91,19 @@ class MainViewModel @Inject constructor(
                 onFailure()
             }
             logMethodEnd("注销")
+        }
+    }
+
+    /**
+     * 处理会话过期
+     * token 过期或服务端返回 401 时，统一清理本地登录态
+     */
+    fun handleSessionExpired(onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            authRepository.clearLocalSession()
+            _selectedBaby.value = null
+            _isAuthCheckCompleted.value = true
+            onComplete()
         }
     }
 

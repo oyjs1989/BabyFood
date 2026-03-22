@@ -6,6 +6,9 @@ import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -40,6 +43,9 @@ class TokenStorage @Inject constructor(
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
 
+    private val _loginState = MutableStateFlow(hasValidStoredToken())
+    val loginState: StateFlow<Boolean> = _loginState.asStateFlow()
+
     /**
      * 保存 Token 信息
      *
@@ -67,6 +73,8 @@ class TokenStorage @Inject constructor(
             apply()
         }
 
+        _loginState.value = true
+
         android.util.Log.d(TAG, "✓ Token 保存成功")
         android.util.Log.d(TAG, "========== 保存 Token 结束 ==========")
     }
@@ -77,12 +85,20 @@ class TokenStorage @Inject constructor(
      * @return 访问令牌，如果已过期或不存在则返回 null
      */
     fun getToken(): String? {
+        val token = sharedPreferences.getString(KEY_TOKEN, null)
+        if (token.isNullOrBlank()) {
+            _loginState.value = false
+            return null
+        }
+
         if (isTokenExpired()) {
             android.util.Log.d(TAG, "Token 已过期，清除 Token")
             clear()
             return null
         }
-        return sharedPreferences.getString(KEY_TOKEN, null)
+
+        _loginState.value = true
+        return token
     }
 
     /**
@@ -121,6 +137,7 @@ class TokenStorage @Inject constructor(
     fun clear() {
         android.util.Log.d(TAG, "========== 清除 Token ==========")
         sharedPreferences.edit().clear().apply()
+        _loginState.value = false
         android.util.Log.d(TAG, "✓ Token 已清除")
     }
 
@@ -131,6 +148,12 @@ class TokenStorage @Inject constructor(
      */
     fun isLoggedIn(): Boolean {
         return getToken() != null
+    }
+
+    private fun hasValidStoredToken(): Boolean {
+        val token = sharedPreferences.getString(KEY_TOKEN, null)
+        val expiresAt = sharedPreferences.getLong(KEY_EXPIRES_AT, 0L)
+        return !token.isNullOrBlank() && System.currentTimeMillis() < expiresAt
     }
 
     companion object {

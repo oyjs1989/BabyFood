@@ -14,7 +14,11 @@ import com.example.babyfood.domain.model.RecommendationRequest
 import com.example.babyfood.domain.model.RecommendationResponse
 import com.example.babyfood.domain.model.WeeklyMealPlan
 import com.example.babyfood.util.Loggable
-import com.example.babyfood.util.Logger
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import retrofit2.HttpException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -72,6 +76,10 @@ class RecommendationService @Inject constructor(
 
             buildSuccessResponse(weeklyPlan, validationResult, request.ageInMonths)
 
+        } catch (e: HttpException) {
+            val friendlyMessage = mapHttpExceptionToMessage(e)
+            logE("生成推荐发生HTTP异常: $friendlyMessage", e)
+            RecommendationResponse(success = false, errorMessage = friendlyMessage)
         } catch (e: Exception) {
             logE("生成推荐发生异常: ${e.message}", e)
             RecommendationResponse(success = false, errorMessage = "生成推荐失败：${e.message}")
@@ -357,5 +365,28 @@ class RecommendationService @Inject constructor(
             hasAllergies -> "宝宝设置了过敏食材（${request.allergies.joinToString("、")}），过滤后没有找到合适的食谱"
             else -> "当前年龄段（${age}个月）没有适合的辅食食谱"
         }
+    }
+
+    private fun mapHttpExceptionToMessage(e: HttpException): String {
+        val detail = extractErrorDetail(e)
+        return when (e.code()) {
+            401 -> "登录状态已失效，请重新登录"
+            402 -> detail ?: "积分不足，请先获取更多积分后再试"
+            422 -> detail ?: "当前条件下无法生成推荐，请调整后重试"
+            500 -> detail ?: "推荐服务暂时不可用，请稍后重试"
+            503 -> detail ?: "AI 服务暂时不可用，请稍后重试"
+            else -> detail ?: "生成推荐失败：HTTP ${e.code()}"
+        }
+    }
+
+    private fun extractErrorDetail(e: HttpException): String? {
+        return runCatching {
+            val raw = e.response()?.errorBody()?.string()
+            if (raw.isNullOrBlank()) {
+                null
+            } else {
+                Json.parseToJsonElement(raw).jsonObject["detail"]?.jsonPrimitive?.contentOrNull
+            }
+        }.getOrNull()
     }
 }

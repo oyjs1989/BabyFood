@@ -70,24 +70,68 @@ fun MainScreen(
     mainViewModel: MainViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
+    val pointsViewModel: com.example.babyfood.presentation.ui.points.PointsViewModel = hiltViewModel()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     val selectedBaby by mainViewModel.selectedBaby.collectAsState(initial = null)
+    val isLoggedIn by mainViewModel.isLoggedIn.collectAsState()
+    val isAuthCheckCompleted by mainViewModel.isAuthCheckCompleted.collectAsState()
+    val pointsInfo by pointsViewModel.pointsInfo.collectAsState()
+    val authRoutes = remember { setOf("login", "register", "legal/terms", "legal/privacy") }
+    val mainRoutes = remember { setOf("home", "recipes", "plans", "inventory", "baby") }
 
     // 进入主 Tab 时刷新当前选中的宝宝，使顶部 Header 与切换宝宝操作同步
-    LaunchedEffect(currentDestination?.route) {
+    LaunchedEffect(currentDestination?.route, isLoggedIn) {
         if (currentDestination?.route in listOf("home", "recipes", "plans", "inventory", "baby")) {
             mainViewModel.refreshSelectedBaby()
+            if (isLoggedIn) {
+                pointsViewModel.refreshPointsInfo()
+            }
         }
+    }
+
+    // token 过期或 401 未授权后，自动返回登录页；已登录时若仍停留在登录页，则自动进入首页
+    LaunchedEffect(isAuthCheckCompleted, isLoggedIn, currentDestination?.route) {
+        if (!isAuthCheckCompleted) {
+            return@LaunchedEffect
+        }
+
+        val currentRoute = currentDestination?.route
+
+        if (!isLoggedIn && currentRoute != null && currentRoute !in authRoutes) {
+            mainViewModel.handleSessionExpired {
+                navController.navigate("login") {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+        } else if (isLoggedIn && (currentRoute == null || currentRoute in authRoutes)) {
+            navController.navigate("home") {
+                popUpTo("login") { inclusive = true }
+            }
+        }
+    }
+
+    if (!isAuthCheckCompleted) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+        return
     }
 
     Scaffold(
         topBar = {
             // 只在核心业务页面展示 AvocadoHeader
-            if (currentDestination?.route in listOf("home", "recipes", "plans", "inventory", "baby")) {
+            if (currentDestination?.route in mainRoutes) {
                 com.example.babyfood.presentation.ui.common.AvocadoHeader(
                     babyName = selectedBaby?.name ?: stringResource(R.string.header_no_baby),
                     babyAge = selectedBaby?.let { stringResource(R.string.header_age_format, it.ageInMonths) } ?: "",
+                    pointsBalance = if (isLoggedIn) pointsInfo?.currentBalance else null,
+                    onPointsClick = {
+                        navController.navigate("points")
+                    },
                     onNotificationsClick = {
                         // TODO: Handle notifications
                     }
@@ -95,7 +139,7 @@ fun MainScreen(
             }
         },
         bottomBar = {
-            if (currentDestination?.route in listOf("home", "recipes", "plans", "inventory", "baby")) {
+            if (currentDestination?.route in mainRoutes) {
                 AppBottomBar(
                     currentDestination = currentDestination,
                     navController = navController
@@ -105,7 +149,7 @@ fun MainScreen(
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = "login",
+            startDestination = if (isLoggedIn) "home" else "login",
             modifier = Modifier.padding(paddingValues),
             enterTransition = {
                 fadeIn(
@@ -255,6 +299,9 @@ fun MainScreen(
                     },
                     onNavigateToRecommendationEditor = { babyId ->
                         navController.navigate("plans/recommendation/editor/$babyId")
+                    },
+                    onNavigateToPoints = {
+                        navController.navigate("points")
                     }
                 )
             }

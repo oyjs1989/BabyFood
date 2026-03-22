@@ -15,6 +15,7 @@ import com.example.babyfood.domain.model.LoginResponse
 import com.example.babyfood.domain.model.User
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
@@ -62,6 +63,51 @@ class AuthRepository @Inject constructor(
         userDao.getCurrentUser().map { entity -> entity?.toDomainModel() }
 
     /**
+     * 观察登录态（基于有效 Token）
+     */
+    fun observeLoginState(): StateFlow<Boolean> = tokenStorage.loginState
+
+    /**
+     * 启动时恢复会话
+     * 优先使用有效 access token；若 access token 失效但存在 refresh token，则尝试自动刷新
+     */
+    suspend fun restoreSession(): AuthState {
+        Log.d(TAG, "========== 开始恢复会话 ==========")
+
+        val currentUser = userDao.getCurrentUserSync()
+        val accessToken = getToken()
+        if (accessToken != null && currentUser != null && currentUser.isLoggedIn) {
+            Log.d(TAG, "✓ 检测到有效 access token，直接恢复登录态")
+            return AuthState.LoggedIn(currentUser.toDomainModel())
+        }
+
+        val refreshTokenValue = getRefreshToken()
+        if (!refreshTokenValue.isNullOrBlank()) {
+            Log.d(TAG, "access token 不可用，尝试使用 refresh token 自动恢复会话")
+            return when (val refreshState = refreshToken()) {
+                is AuthState.LoggedIn -> {
+                    val userEntity = refreshState.user.toEntity()
+                    userDao.insertUser(userEntity)
+                    val loginTime = Clock.System.now().toString()
+                    userDao.setLoggedIn(userEntity.id, loginTime)
+                    Log.d(TAG, "✓ 会话恢复成功")
+                    refreshState
+                }
+
+                else -> {
+                    Log.w(TAG, "⚠️ 会话恢复失败，清理本地登录态")
+                    clearLocalSession()
+                    AuthState.NotLoggedIn
+                }
+            }
+        }
+
+        Log.d(TAG, "未找到可恢复的会话，进入未登录状态")
+        clearLocalSession()
+        return AuthState.NotLoggedIn
+    }
+
+    /**
      * 用户登录
      * @param account 手机号或邮箱
      * @param password 密码
@@ -86,7 +132,7 @@ class AuthRepository @Inject constructor(
                     userDao.insertUser(userEntity)
                     val loginTime = Clock.System.now().toString()
                     userDao.setLoggedIn(userEntity.id, loginTime)
-                    saveToken(response.token, response.refreshToken)
+                    saveToken(response.token, response.refreshToken, response.user.id)
                     Log.d(TAG, "✓ 登录成功")
                     Log.d(TAG, "用户ID: ${response.user.id}")
                     Log.d(TAG, "用户昵称: ${response.user.nickname}")
@@ -119,7 +165,7 @@ class AuthRepository @Inject constructor(
                     userDao.insertUser(userEntity)
                     val loginTime = Clock.System.now().toString()
                     userDao.setLoggedIn(userEntity.id, loginTime)
-                    saveToken(response.token, response.refreshToken)
+                    saveToken(response.token, response.refreshToken, response.user.id)
                     Log.d(TAG, "✓ 注册成功")
                     Log.d(TAG, "用户ID: ${response.user.id}")
                     Log.d(TAG, "========== 注册完成 ==========")
@@ -158,10 +204,7 @@ class AuthRepository @Inject constructor(
             }
 
             // 清除所有用户的登录状态
-            userDao.logoutAll()
-
-            // 清除Token
-            clearToken()
+            clearLocalSession()
 
             Log.d(TAG, "✓ 登出成功")
             Log.d(TAG, "========== 登出完成 ==========")
@@ -172,14 +215,22 @@ class AuthRepository @Inject constructor(
 
             // 即使 API 调用失败，也清除本地状态
             try {
-                userDao.logoutAll()
-                clearToken()
+                clearLocalSession()
             } catch (clearException: Exception) {
                 Log.e(TAG, "❌ 清除本地状态失败: ${clearException.message}")
             }
 
             false
         }
+    }
+
+    /**
+     * 清除本地会话状态
+     * 用于 token 过期、401 未授权或主动登出后的统一收口
+     */
+    suspend fun clearLocalSession() {
+        userDao.logoutAll()
+        clearToken()
     }
 
     /**
@@ -701,8 +752,7 @@ class AuthRepository @Inject constructor(
         }
     }
 
-    private fun saveToken(token: String?, refreshToken: String?) {
-        val userId = tokenStorage.getUserId()
+    private fun saveToken(token: String?, refreshToken: String?, userId: Long) {
         tokenStorage.saveToken(
             token = token ?: "",
             refreshToken = refreshToken ?: "",

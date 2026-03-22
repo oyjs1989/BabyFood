@@ -51,6 +51,7 @@ fun PlanListScreen(
     onNavigateToDetail: (Long) -> Unit = {},
     onNavigateToAdd: (Long) -> Unit = {},
     onNavigateToRecommendationEditor: (Long) -> Unit = {},
+    onNavigateToPoints: () -> Unit = {},
     viewModel: PlansViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -173,10 +174,23 @@ fun PlanListScreen(
     
     // 错误对话框
     if (uiState.error != null) {
+        val shouldShowPointsAction = uiState.error?.contains("积分", ignoreCase = false) == true
         AlertDialog(
             onDismissRequest = { viewModel.clearError() },
             title = { Text(stringResource(R.string.common_error)) },
             text = { Text(uiState.error ?: "") },
+            dismissButton = {
+                if (shouldShowPointsAction) {
+                    TextButton(
+                        onClick = {
+                            viewModel.clearError()
+                            onNavigateToPoints()
+                        }
+                    ) {
+                        Text("去积分页")
+                    }
+                }
+            },
             confirmButton = {
                 TextButton(onClick = { viewModel.clearError() }) {
                     Text(stringResource(R.string.confirm))
