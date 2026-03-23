@@ -106,7 +106,12 @@ class PointsViewModel @Inject constructor(
         safeLaunch(
             errorMessage = "每日签到",
             onError = { throwable ->
-                _errorMessage.value = mapPointsErrorMessage(throwable, fallback = "签到失败，请稍后重试")
+                val mappedMessage = mapPointsErrorMessage(throwable, fallback = "签到失败，请稍后重试")
+                _errorMessage.value = mappedMessage
+                // 后端返回“今日已签到”时，刷新积分状态，避免 UI 仍显示可签到
+                if (mappedMessage.contains("已签到")) {
+                    loadPointsInfo()
+                }
                 _isLoading.value = false
                 logMethodEnd("每日签到")
             }
@@ -188,6 +193,7 @@ class PointsViewModel @Inject constructor(
      * 检查用户是否有足够的积分进行AI推荐
      * @return 是否有足够积分
      */
+    @Suppress("unused")
     fun hasEnoughPointsForRecommendation(): Boolean {
         val info = _pointsInfo.value ?: return false
         return info.currentBalance >= AI_RECOMMENDATION_COST
@@ -197,6 +203,7 @@ class PointsViewModel @Inject constructor(
      * 获取当前积分余额
      * @return 积分余额
      */
+    @Suppress("unused")
     fun getCurrentBalance(): Int {
         return _pointsInfo.value?.currentBalance ?: 0
     }
@@ -205,6 +212,7 @@ class PointsViewModel @Inject constructor(
      * 检查今日是否已签到
      * @return 今日是否已签到
      */
+    @Suppress("unused")
     fun hasCheckedInToday(): Boolean {
         return _pointsInfo.value?.todayCheckedIn ?: false
     }
@@ -219,25 +227,43 @@ class PointsViewModel @Inject constructor(
     private fun mapPointsErrorMessage(throwable: Throwable, fallback: String): String {
         return when (throwable) {
             is HttpException -> {
-                val detail = extractErrorDetail(throwable)
+                val payload = extractErrorPayload(throwable)
                 when (throwable.code()) {
+                    400 -> {
+                        if (payload.errorCode == "4001" || payload.errorMessage?.contains("已签到") == true) {
+                            "今日已签到，请明天再来"
+                        } else {
+                            payload.errorMessage ?: fallback
+                        }
+                    }
                     401 -> "登录状态已失效，请重新登录"
-                    500 -> detail ?: "积分服务暂时不可用，请稍后重试"
-                    else -> detail ?: fallback
+                    500 -> payload.errorMessage ?: "积分服务暂时不可用，请稍后重试"
+                    else -> payload.errorMessage ?: fallback
                 }
             }
             else -> fallback
         }
     }
 
-    private fun extractErrorDetail(exception: HttpException): String? {
+    private fun extractErrorPayload(exception: HttpException): PointsErrorPayload {
         return runCatching {
             val raw = exception.response()?.errorBody()?.string()
             if (raw.isNullOrBlank()) {
-                null
+                PointsErrorPayload()
             } else {
-                Json.parseToJsonElement(raw).jsonObject["detail"]?.jsonPrimitive?.contentOrNull
+                val jsonObject = Json.parseToJsonElement(raw).jsonObject
+                PointsErrorPayload(
+                    errorMessage = jsonObject["errorMessage"]?.jsonPrimitive?.contentOrNull
+                        ?: jsonObject["detail"]?.jsonPrimitive?.contentOrNull
+                        ?: jsonObject["message"]?.jsonPrimitive?.contentOrNull,
+                    errorCode = jsonObject["errorCode"]?.jsonPrimitive?.contentOrNull
+                )
             }
-        }.getOrNull()
+        }.getOrDefault(PointsErrorPayload())
     }
+
+    private data class PointsErrorPayload(
+        val errorMessage: String? = null,
+        val errorCode: String? = null
+    )
 }
