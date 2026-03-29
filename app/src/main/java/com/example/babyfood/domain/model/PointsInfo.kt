@@ -9,13 +9,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class PointsInfo(
     override val success: Boolean = true,
-    @SerialName("errorMessage")
+    @SerialName("error_message")
     override val errorMessage: String? = null,
-    @SerialName("currentBalance")
+    @SerialName("current_balance")
     val currentBalance: Int = 0,
-    @SerialName("lastCheckInDate")
+    @SerialName("last_check_in_date")
     val lastCheckInDate: Long? = null,
-    @SerialName("todayCheckedIn")
+    @SerialName("today_checked_in")
     val todayCheckedIn: Boolean = false
 ) : ApiResponse
 

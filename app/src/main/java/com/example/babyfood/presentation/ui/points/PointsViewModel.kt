@@ -130,6 +130,13 @@ class PointsViewModel @Inject constructor(
             if (response.success) {
                 logSuccess("签到成功")
                 logD("获得积分: ${response.pointsEarned}, 当前积分: ${response.currentBalance}, 连续签到: ${response.consecutiveDays}")
+                _pointsInfo.value = PointsInfo(
+                    success = true,
+                    errorMessage = null,
+                    currentBalance = response.currentBalance,
+                    lastCheckInDate = null,
+                    todayCheckedIn = response.todayCheckedIn
+                )
                 // 重新加载积分信息
                 loadPointsInfo()
             } else {
